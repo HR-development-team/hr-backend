@@ -25,7 +25,8 @@
       "@models/*": ["models/*"],
       "@routes/*": ["routes/*"],
       "@schemas/*": ["schemas/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@constants/*": ["constants/*"]
     }
   }
 }

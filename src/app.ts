@@ -1,7 +1,10 @@
-import { setResponseHeader } from "@middleware/set-headers.js";
-import { httpLogger } from "@utils/logger.js";
 import cors, { CorsOptions } from "cors";
 import express, { Application, Request, Response } from "express";
+import { httpLogger } from "@utils/logger.js";
+
+import { setResponseHeader } from "@middleware/set-headers.js";
+
+import masterDepartments from "@routes/masterDepartmentRoutes.js";
 
 const app: Application = express();
 
@@ -49,8 +52,6 @@ app.get("/", setResponseHeader, (req: Request, res: Response) => {
 // ====================================================================
 // ||                    ROUTE REGISTERING GOES HERE                 ||
 // ====================================================================
-// Example:
-// import authRoutes from '@routes/auth.js';
-// app.use('/api/v1/auth', authRoutes);
+app.use("/api/v1/master-departments", masterDepartments);
 
 export default app;

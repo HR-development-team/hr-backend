@@ -1,0 +1,19 @@
+export const API_STATUS = {
+  SUCCESS: "00",
+  FAILED: "01",
+  PENDING: "02",
+  NOT_FOUND: "03",
+  UNAUTHORIZED: "04",
+  CONFLICT: "05",
+  BAD_REQUEST: "99",
+};
+
+export const RESPONSE_DATA_KEYS = {
+  // Master Data
+  DEPARTMENTS: "master_departments",
+  POSITIONS: "master_positions",
+
+  // Transactional/Core Data
+  EMPLOYEE: "employee",
+  LEAVE_REQUESTS: "leave_requests",
+};

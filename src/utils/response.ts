@@ -34,7 +34,7 @@ export function errorResponse(
   customStatus: string,
   message: string,
   httpStatusCode: number = 400,
-  data: unknown = null,
+  errorDetails: unknown = null,
 ) {
   const responseBody: Record<string, unknown> = {
     status: customStatus,
@@ -42,8 +42,8 @@ export function errorResponse(
     datetime: formatAPIResponseDatetime(),
   };
 
-  if (data !== null && data !== undefined) {
-    responseBody.data = data;
+  if (errorDetails !== null && errorDetails !== undefined) {
+    responseBody.errors = errorDetails;
   }
 
   return res.status(httpStatusCode).json(responseBody);
