@@ -10,7 +10,9 @@
     "migrate": "knex migrate:latest",
     "migrate:up": "knex migrate:up",
     "migrate:make": "npx knex migrate:make",
-    "migrate:rollback": "knex migrate:rollback --all"
+    "migrate:rollback": "knex migrate:rollback --all",
+    "seed": "knex seed:run",
+    "seed:make": "knex seed:make"
   },
   "keywords": [],
   "author": "marstech-internship",

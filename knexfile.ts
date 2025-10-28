@@ -13,7 +13,11 @@ const knexConfig: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME || "marstech_hr_dev",
     },
     migrations: {
-      directory: "./src/migrations",
+      directory: "./src/database/migrations",
+      extension: "ts",
+    },
+    seeds: {
+      directory: "./src/database/seeds",
       extension: "ts",
     },
   },
