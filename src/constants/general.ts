@@ -12,9 +12,7 @@ export const RESPONSE_DATA_KEYS = {
   // Master Data
   DEPARTMENTS: "master_departments",
   POSITIONS: "master_positions",
+  EMPLOYEES: "master_employees",
 
-  // Transactional/Core Data
-  EMPLOYEES: "employees",
-  USERS: "users",
   LEAVE_REQUESTS: "leave_requests",
 };

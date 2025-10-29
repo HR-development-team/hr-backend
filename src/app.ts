@@ -6,6 +6,7 @@ import { setResponseHeader } from "@middleware/set-headers.js";
 
 import masterDepartments from "@routes/masterDepartmentRoutes.js";
 import masterPositions from "@routes/masterPositionRoutes.js";
+import masterEmployees from "@routes/masterEmployeeRoutes.js";
 
 const app: Application = express();
 
@@ -55,5 +56,6 @@ app.get("/", setResponseHeader, (req: Request, res: Response) => {
 // ====================================================================
 app.use("/api/v1/master-departments", masterDepartments);
 app.use("/api/v1/master-positions", masterPositions);
+app.use("/api/v1/master-employees", masterEmployees);
 
 export default app;
