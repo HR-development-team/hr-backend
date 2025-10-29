@@ -1,0 +1,34 @@
+import { z } from "zod";
+
+export const addMasterPositionsSchema = z.object({
+  name: z
+    .string({
+      required_error: "Nama wajib diisi",
+    })
+    .min(3, "Nama posisi minimal 3 karakter")
+    .max(100, "Nama posisi maksimal 100 karakter"),
+  department_id: z.number({
+    invalid_type_error: "ID departemen harus berupa angka.",
+    required_error: "ID departemen wajib diisi.",
+  }),
+});
+
+export const updateMasterPositionsSchema = z
+  .object({
+    name: z
+      .string()
+      .min(3, "Nama posisi minimal 3 karakter")
+      .max(100, "Nama posisi maksimal 100 karakter")
+      .optional(),
+    department_id: z
+      .number({
+        invalid_type_error: "ID departemen harus berupa angka.",
+      })
+      .optional(),
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message:
+      "Setidaknya satu field (name atau department_id) harus diisi untuk pembaruan.",
+    path: ["body"],
+  });
