@@ -9,7 +9,7 @@ import {
 import { verifyToken } from "@middleware/jwt.js";
 
 const router = Router();
-// router.use(verifyToken);
+router.use(verifyToken);
 
 router.get("/", fetchAllUsers);
 router.get("/:id", fetchUsersById);
