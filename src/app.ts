@@ -4,9 +4,10 @@ import { httpLogger } from "@utils/logger.js";
 
 import { setResponseHeader } from "@middleware/set-headers.js";
 
-import masterDepartments from "@routes/masterDepartmentRoutes.js";
-import masterPositions from "@routes/masterPositionRoutes.js";
-import masterEmployees from "@routes/masterEmployeeRoutes.js";
+import masterDepartmentRoutes from "@routes/masterDepartmentRoutes.js";
+import masterPositionRoutes from "@routes/masterPositionRoutes.js";
+import masterEmployeeRoutes from "@routes/masterEmployeeRoutes.js";
+import userRoutes from "@routes/userRoutes.js";
 
 const app: Application = express();
 
@@ -54,8 +55,9 @@ app.get("/", setResponseHeader, (req: Request, res: Response) => {
 // ====================================================================
 // ||                    ROUTE REGISTERING GOES HERE                 ||
 // ====================================================================
-app.use("/api/v1/master-departments", masterDepartments);
-app.use("/api/v1/master-positions", masterPositions);
-app.use("/api/v1/master-employees", masterEmployees);
+app.use("/api/v1/master-departments", masterDepartmentRoutes);
+app.use("/api/v1/master-positions", masterPositionRoutes);
+app.use("/api/v1/master-employees", masterEmployeeRoutes);
+app.use("/api/v1/users", userRoutes);
 
 export default app;
