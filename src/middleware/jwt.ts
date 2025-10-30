@@ -6,7 +6,7 @@ import { API_STATUS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { errorResponse } from "@utils/response.js";
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: TokenPayload;
 }
 
@@ -20,7 +20,7 @@ interface JOSEError extends Error {
 export const verifyToken = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const JWT_SECRET = process.env.JWT_SECRET;
   if (!JWT_SECRET) {
@@ -29,7 +29,7 @@ export const verifyToken = async (
       res,
       API_STATUS.FAILED,
       "Konfigurasi server tidak lengkap.",
-      500,
+      500
     );
   }
 
@@ -43,7 +43,7 @@ export const verifyToken = async (
         res,
         API_STATUS.UNAUTHORIZED,
         "Akses Ditolak: Token tidak tersedia.",
-        401,
+        401
       );
     }
 
@@ -65,7 +65,7 @@ export const verifyToken = async (
         res,
         API_STATUS.UNAUTHORIZED,
         "Token kedaluwarsa, silakan login kembali.",
-        401,
+        401
       );
     }
     if (
@@ -76,7 +76,7 @@ export const verifyToken = async (
         res,
         API_STATUS.UNAUTHORIZED,
         "Token tidak valid (tanda tangan salah atau format rusak).",
-        401,
+        401
       );
     }
 
@@ -84,7 +84,7 @@ export const verifyToken = async (
       res,
       API_STATUS.FAILED,
       "Terjadi kesalahan pada server saat memverifikasi token.",
-      500,
+      500
     );
   }
 };
