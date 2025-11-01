@@ -11,6 +11,7 @@ import userRoutes from "@routes/userRoutes.js";
 import profileRoutes from "@routes/profileRoutes.js";
 import employeeAttendanceRoutes from "@routes/employeeAttendanceRoutes.js";
 import adminAttendanceRoutes from "@routes/adminAttendanceRoutes.js";
+import authRoutes from "@routes/authRoutes.js";
 
 const app: Application = express();
 
@@ -65,5 +66,6 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/profiles", profileRoutes);
 app.use("/api/v1/attendances", employeeAttendanceRoutes);
 app.use("/api/v1/attendances", adminAttendanceRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 export default app;

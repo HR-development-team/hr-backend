@@ -9,10 +9,15 @@ export const API_STATUS = {
 };
 
 export const RESPONSE_DATA_KEYS = {
+  // Master Data
   DEPARTMENTS: "master_departments",
   POSITIONS: "master_positions",
   EMPLOYEES: "master_employees",
+  LEAVE_TYPES: "leave_types",
   USERS: "users",
+  AUTH: "auth",
+
+  // transaction Data
   ATTENDANCES: "attendances",
   LEAVE_REQUESTS: "leave_requests",
 };
