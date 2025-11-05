@@ -23,11 +23,17 @@ export const getMasterLeaveTypesById = async (
 export const addMasterLeaveTypes = async ({
   name,
   description = null,
+  deduction,
 }: {
   name: string;
+  deduction: number;
   description?: string | null;
 }): Promise<LeaveType> => {
-  const [id] = await db(LEAVE_TYPE_TABLE).insert({ name, description });
+  const [id] = await db(LEAVE_TYPE_TABLE).insert({
+    name,
+    deduction,
+    description,
+  });
 
   return db(LEAVE_TYPE_TABLE).where({ id, description }).first();
 };
@@ -39,14 +45,16 @@ export const editMasterLeaveTypes = async ({
   id,
   name,
   description,
+  deduction,
 }: {
   name?: string;
   id: number;
+  deduction?: number;
   description?: string | null;
 }): Promise<LeaveType | null> => {
   await db(LEAVE_TYPE_TABLE)
     .where({ id })
-    .update({ name, description, updated_at: new Date() });
+    .update({ name, deduction, description, updated_at: new Date() });
   return db(LEAVE_TYPE_TABLE).where({ id }).first();
 };
 
