@@ -21,4 +21,5 @@ export const RESPONSE_DATA_KEYS = {
   ATTENDANCES: "attendances",
   LEAVE_REQUESTS: "leave_requests",
   LEAVE_BALANCES: "leave_balances",
+  PAYROLL_PERIODS: "payroll_periods",
 };
