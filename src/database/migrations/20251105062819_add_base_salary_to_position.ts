@@ -5,7 +5,7 @@ const POSITIONS_TABLE = "master_positions";
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable(POSITIONS_TABLE, (table) => {
     table
-      .integer("base_salary")
+      .decimal("base_salary", 12, 2)
       .notNullable()
       .defaultTo(0)
       .after("position_code");

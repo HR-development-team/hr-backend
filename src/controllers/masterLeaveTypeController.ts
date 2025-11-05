@@ -112,8 +112,12 @@ export const createMasterLeaveTypes = async (req: Request, res: Response) => {
       );
     }
 
-    const { name, description } = validation.data;
-    const masterLeaveTypes = await addMasterLeaveTypes({ name, description });
+    const { name, deduction, description } = validation.data;
+    const masterLeaveTypes = await addMasterLeaveTypes({
+      name,
+      deduction,
+      description,
+    });
 
     return successResponse(
       res,
@@ -167,11 +171,12 @@ export const updateMasterLeaveTypes = async (req: Request, res: Response) => {
     }
 
     const validatedData = validation.data;
-    const { name, description } = validatedData;
+    const { name, deduction, description } = validatedData;
 
     const masterLeaveTypes = await editMasterLeaveTypes({
       id,
       name,
+      deduction,
       description,
     });
 
