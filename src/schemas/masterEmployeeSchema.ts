@@ -11,7 +11,7 @@ export const addMasterEmployeesSchema = z.object({
     .max(100, "Nama belakang maksimal 100 karakter"),
   join_date: z
     .string({ required_error: "Tanggal masuk wajib diisi" })
-    .date("Format tanggal masuk tidak valid."),
+    .date("Format tanggal masuk tidak valid."), // Pastikan ini .date() atau .datetime() jika Anda transformasi
   contact_phone: z
     .string()
     .min(3, "Nomor telepon minimal 3 karakter")
@@ -53,3 +53,9 @@ export const updateMasterEmployeesSchema = z
     message: "Setidaknya satu field harus diisi untuk pembaruan.",
     path: ["body"],
   });
+
+// --- TAMBAHKAN BARIS DI BAWAH INI ---
+
+// Membuat & mengekspor tipe TypeScript dari skema Zod
+export type CreateMasterEmployeeData = z.infer<typeof addMasterEmployeesSchema>;
+export type UpdateEmployeeData = z.infer<typeof updateMasterEmployeesSchema>;
