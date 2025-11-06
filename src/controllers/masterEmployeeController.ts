@@ -22,6 +22,7 @@ export const fetchAllMasterEmployees = async (req: Request, res: Response) => {
   try {
     const employees = await getAllMasterEmployees();
 
+    // NANTI: Ini juga mungkin perlu diubah jika key-nya salah
     return successResponse(
       res,
       API_STATUS.SUCCESS,
@@ -69,6 +70,7 @@ export const fetchMasterEmployeesById = async (req: Request, res: Response) => {
       );
     }
 
+    // NANTI: Ini juga mungkin perlu diubah jika key-nya salah
     return successResponse(
       res,
       API_STATUS.SUCCESS,
@@ -91,6 +93,11 @@ export const fetchMasterEmployeesById = async (req: Request, res: Response) => {
 
 /**
  * [POST] /master-employees - Create a new Employee
+ * --- PERBAIKAN RESPON JSON ADA DI SINI ---
+ */
+/**
+ * [POST] /master-employees - Create a new Employee
+ * --- PERBAIKAN RESPON JSON ADA DI SINI ---
  */
 export const createMasterEmployees = async (req: Request, res: Response) => {
   try {
@@ -126,6 +133,22 @@ export const createMasterEmployees = async (req: Request, res: Response) => {
       contact_phone,
     });
 
+    // 1. Buat string datetime format YYYYMMDDHHMMSS
+    const datetime = new Date()
+      .toISOString()
+      .replace(/[-:T.Z]/g, "")
+      .slice(0, 14);
+
+    // 2. Kirim respons JSON secara manual agar sesuai target
+    return res.status(201).json({
+      status: API_STATUS.SUCCESS, // Pastikan ini bernilai "00"
+      message: "Data master karyawan berhasil dibuat",
+      datetime: datetime,
+      master_employees: masterEmployees, // Key sudah benar
+    });
+
+    /*
+    // KODE LAMA ANDA DIKOMENTARI
     return successResponse(
       res,
       API_STATUS.SUCCESS,
@@ -134,6 +157,7 @@ export const createMasterEmployees = async (req: Request, res: Response) => {
       201,
       RESPONSE_DATA_KEYS.EMPLOYEES
     );
+    */
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error creating employees:${dbError}`);
@@ -148,8 +172,12 @@ export const createMasterEmployees = async (req: Request, res: Response) => {
 
 /**
  * [PUT] /master-employees/:id - Edit a Employee
+ * --- PERBAIKAN ERROR TYPESCRIPT ADA DI SINI ---
  */
-export const updateMasterEmployees = async (req: Request, res: Response) => {
+export const updateMasterEmployees = async (
+  req: Request,
+  res: Response
+) => {
   try {
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
@@ -177,7 +205,14 @@ export const updateMasterEmployees = async (req: Request, res: Response) => {
       );
     }
 
+    // --- PERUBAHAN DIMULAI DI SINI ---
     const validatedData = validation.data;
+
+    // Kirim 'id' dan 'validatedData' sebagai dua argumen terpisah
+    const masterEmployees = await editMasterEmployees(id, validatedData);
+
+    /*
+    // KODE LAMA ANDA YANG MENYEBABKAN ERROR
     const { first_name, last_name, address, contact_phone, position_id } =
       validatedData;
 
@@ -189,6 +224,8 @@ export const updateMasterEmployees = async (req: Request, res: Response) => {
       contact_phone,
       position_id,
     });
+    */
+    // --- PERUBAHAN SELESAI ---
 
     // Validate employee not found
     if (!masterEmployees) {
