@@ -8,6 +8,16 @@ export interface LeaveBalance {
   updated_at?: Date;
 }
 
+export interface LeaveBalanceUser {
+  id: number;
+  balance: number;
+  year: number;
+  created_at?: Date;
+  updated_at?: Date;
+  leave_type_name: string;
+  leave_type_description: string;
+}
+
 // Data required for the Bulk Grant operation (applies to all employees)
 export interface BulkGrantData {
   leave_type_id: number;

@@ -5,6 +5,7 @@ import {
   EmployeeBalanceReport,
   LeaveBalance,
   LeaveBalanceReport,
+  LeaveBalanceUser,
   SpecificUpdateData,
 } from "types/leaveBalanceTypes.js";
 import { LeaveRequest } from "types/leaveRequestTypes.js";
@@ -205,22 +206,25 @@ export const getAllLeaveBalanceReport = async (): Promise<
  * Retrieves a single leave balance record for a specific employee and leave type.
  */
 export const findEmployeeBalance = async (
-  employeeId: number,
-  leaveTypeId: number
-): Promise<LeaveBalance | null> => {
-  const currentYear = new Date().getFullYear();
-
-  const balanceRecord = await db(LEAVE_BALANCE_TABLE)
+  employeeId: number
+): Promise<LeaveBalanceUser[]> => {
+  return await db(LEAVE_BALANCE_TABLE)
+    .join(
+      LEAVE_TYPE_TABLE,
+      `${LEAVE_BALANCE_TABLE}.leave_type_id`,
+      "=",
+      `${LEAVE_TYPE_TABLE}.id`
+    )
     .where({
       employee_id: employeeId,
-      leave_type_id: leaveTypeId,
-      year: currentYear,
     })
-    .select("*")
-    .first();
-
-  // Note: If no record is found (first time request), the result is null.
-  return balanceRecord ?? null;
+    .select([
+      `${LEAVE_BALANCE_TABLE}.id`,
+      `${LEAVE_BALANCE_TABLE}.balance`,
+      `${LEAVE_BALANCE_TABLE}.year`,
+      `${LEAVE_TYPE_TABLE}.name AS leave_type_name`,
+      `${LEAVE_TYPE_TABLE}.description AS leave_type_description`,
+    ]);
 };
 
 /**

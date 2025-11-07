@@ -192,12 +192,12 @@ export async function seed(knex: Knex): Promise<void> {
   // 6. Seed Leave Types (Essential for Leave Balance API)
   await knex(TABLE_KEYS.LEAVE_TYPES).insert([
     {
-      name: "Annual Leave",
+      name: "Cuti Tahunan",
       deduction: 10000,
       description: "Cuti Tahunan Karyawan",
     },
     {
-      name: "Sick Leave",
+      name: "Cuti Sakit",
       deduction: 0,
       description: "Cuti Sakit (Wajib ada surat dokter)",
     },
