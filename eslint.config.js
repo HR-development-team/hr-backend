@@ -9,7 +9,6 @@ export default [
       "@typescript-eslint": tseslint,
       prettier: prettierPlugin,
     },
-    extends: ["plugin:@typescript-eslint/recommended", "prettier"],
     rules: {
       "@typescript-eslint/no-unused-vars": "warn",
       "no-console": "warn",

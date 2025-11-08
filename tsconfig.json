@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*.ts"],
+  "include": ["server.ts", "src/**/*.ts"],
   "exclude": ["node_modules"],
   "compilerOptions": {
     "lib": ["es2020"],
@@ -15,18 +15,20 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
 
-    "baseUrl": "./src",
+    "baseUrl": "./",
     "paths": {
-      "@controllers/*": ["controllers/*"],
-      "@core/*": ["core/*"],
-      "@keys/*": ["keys/*"],
-      "@middleware/*": ["middleware/*"],
-      "@migrations/*": ["migrations/*"],
-      "@models/*": ["models/*"],
-      "@routes/*": ["routes/*"],
-      "@schemas/*": ["schemas/*"],
-      "@utils/*": ["utils/*"],
-      "@constants/*": ["constants/*"]
+      "core/*": ["src/core/*"],
+      "types/*": ["src/types/*"],
+      "@controllers/*": ["src/controllers/*"],
+      "@core/*": ["src/core/*"],
+      "@keys/*": ["src/keys/*"],
+      "@middleware/*": ["src/middleware/*"],
+      "@migrations/*": ["src/migrations/*"],
+      "@models/*": ["src/models/*"],
+      "@routes/*": ["src/routes/*"],
+      "@schemas/*": ["src/schemas/*"],
+      "@utils/*": ["src/utils/*"],
+      "@constants/*": ["src/constants/*"]
     }
   }
 }
