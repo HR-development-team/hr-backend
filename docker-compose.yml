@@ -11,25 +11,25 @@ services:
     env_file:
       - .env
     networks:
-      - titan-network
+      - marstech-network
 
   mysql:
     image: mysql:8.0
-    container_name: titan-mysql
+    container_name: marstech-mysql
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: titan
-      MYSQL_USER: titan
-      MYSQL_PASSWORD: titanpass
+      MYSQL_DATABASE: marstech
+      MYSQL_USER: marstech
+      MYSQL_PASSWORD: marstechpass
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - titan-network
+      - marstech-network
 
 volumes:
   mysql_data:
 
 networks:
-  titan-network:
+  marstech-network:
