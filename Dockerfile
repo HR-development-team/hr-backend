@@ -14,7 +14,7 @@ RUN npm run build
 # ----------------------------
 # 2) RUN STAGE
 # ----------------------------
-FROM node:20
+FROM node:20-slim
 
 WORKDIR /app
 
@@ -24,4 +24,8 @@ RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
-CMD ["npm", "start"]
+# Ensure the mysql already running
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
+
+ENTRYPOINT ["./entrypoint.sh"]

@@ -21,6 +21,7 @@ export async function seed(knex: Knex): Promise<void> {
   await knex(TABLE_KEYS.POSITIONS).del();
   await knex(TABLE_KEYS.DEPARTMENTS).del();
   await knex(TABLE_KEYS.LEAVE_TYPES).del();
+  await knex(TABLE_KEYS.PAYROLL_PERIODS).del();
 
   // 2. Seed Departments
   const [techDeptId] = await knex(TABLE_KEYS.DEPARTMENTS).insert({
