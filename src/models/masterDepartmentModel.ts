@@ -1,20 +1,40 @@
 import { db } from "@core/config/knex.js";
-
-interface Department {
-  id: number;
-  department_code: string;
-  name: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
+import {
+  CreateDepartment,
+  Department,
+  GetAllDepartment,
+  UpdateDepartment,
+} from "types/masterDepartmentTypes.js";
 
 const DEPARTMENT_TABLE = "master_departments";
 
 /**
+ * Function for generating department code
+ */
+async function generateDepartmentCode() {
+  const PREFIX = "DPT";
+  const PAD_LENGTH = 7;
+
+  const lastRow = await db("master_departments")
+    .select("department_code")
+    .orderBy("id", "desc")
+    .first();
+
+  if (!lastRow) {
+    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
+  }
+
+  const lastCode = lastRow.department_code;
+  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
+  const newNumber = lastNumber + 1;
+  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
+}
+
+/**
  * Get all master department.
  */
-export const getAllMasterDepartments = async (): Promise<Department[]> =>
-  await db(DEPARTMENT_TABLE).select("*");
+export const getAllMasterDepartments = async (): Promise<GetAllDepartment[]> =>
+  await db(DEPARTMENT_TABLE).select("id", "department_code", "name");
 
 /**
  * Get department by ID.
@@ -27,14 +47,17 @@ export const getMasterDepartmentsById = async (
 /**
  * Creates new department.
  */
-export const addMasterDepartments = async ({
-  name,
-  department_code,
-}: {
-  name: string;
-  department_code: string;
-}): Promise<Department> => {
-  const [id] = await db(DEPARTMENT_TABLE).insert({ name, department_code });
+export const addMasterDepartments = async (
+  data: CreateDepartment
+): Promise<Department> => {
+  const { name, description } = data;
+  const department_code = await generateDepartmentCode();
+
+  const [id] = await db(DEPARTMENT_TABLE).insert({
+    name,
+    department_code,
+    description,
+  });
 
   return db(DEPARTMENT_TABLE).where({ id }).first();
 };
@@ -42,23 +65,19 @@ export const addMasterDepartments = async ({
 /**
  * edit an existing department record.
  */
-export const editMasterDepartments = async ({
-  id,
-  name,
-  department_code,
-}: {
-  name?: string;
-  id: number;
-  department_code?: string;
-}): Promise<Department | null> => {
+export const editMasterDepartments = async (
+  data: UpdateDepartment
+): Promise<Department | null> => {
+  const { id, name, description } = data;
+
   await db(DEPARTMENT_TABLE)
     .where({ id })
-    .update({ name, department_code, updated_at: new Date() });
+    .update({ name, description, updated_at: new Date() });
   return db(DEPARTMENT_TABLE).where({ id }).first();
 };
 
 /**
- * Remove existing mesin
+ * Remove existing department
  */
 export async function removeMasterDepartments(id: number): Promise<number> {
   return db(DEPARTMENT_TABLE).where({ id }).delete();
