@@ -115,10 +115,10 @@ export const createMasterDepartments = async (req: Request, res: Response) => {
       );
     }
 
-    const { name, department_code } = validation.data;
+    const { name, description } = validation.data;
     const masterDepartments = await addMasterDepartments({
       name,
-      department_code,
+      description,
     });
 
     return successResponse(
@@ -220,12 +220,12 @@ export const updateMasterDepartments = async (req: Request, res: Response) => {
     }
 
     const validatedData = validation.data;
-    const { name, department_code } = validatedData;
+    const { name, description } = validatedData;
 
     const masterDepartments = await editMasterDepartments({
       id,
       name,
-      department_code,
+      description,
     });
 
     // Validate department not found

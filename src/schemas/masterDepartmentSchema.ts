@@ -5,10 +5,10 @@ export const addMasterDepartmentsSchema = z.object({
     .string()
     .min(3, "Nama departemen minimal 3 karakter")
     .max(100, "Nama departemen maksimal 100 karakter"),
-  department_code: z
+  description: z
     .string()
-    .min(2, "Kode departemen minimal 2 karakter")
-    .max(20, "Kode departemen maksimal 20 karakter"),
+    .max(500, "Deskripsi maksimal 500 karakter.")
+    .optional(),
 });
 
 export const updateMasterDepartmentsSchema = z
@@ -18,10 +18,9 @@ export const updateMasterDepartmentsSchema = z
       .min(2, "Nama departemen minimal 2 karakter")
       .max(100, "Nama departemen maksimal 100 karakter")
       .optional(),
-    department_code: z
+    description: z
       .string()
-      .min(2, "Kode departemen minimal 2 karakter")
-      .max(20, "Kode departemen maksimal 20 karakter")
+      .max(500, "Deskripsi maksimal 500 karakter.")
       .optional(),
   })
   .strict("Terdapat field yang tidak diperbolehkan.")
