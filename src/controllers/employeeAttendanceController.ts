@@ -99,7 +99,7 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      `Berhasil check-in, Selamat bekerja ${profile!.first_name} ${profile!.last_name}`,
+      `Berhasil check-in, Selamat bekerja ${profile!.full_name}`,
       checkInData,
       201,
       RESPONSE_DATA_KEYS.ATTENDANCES
@@ -217,7 +217,7 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      `Berhasil check-out, Selamat beristirahat ${profile!.first_name} ${profile!.last_name}`,
+      `Berhasil check-out, Selamat beristirahat ${profile!.full_name}`,
       checkOutData,
       200,
       RESPONSE_DATA_KEYS.ATTENDANCES

@@ -1,11 +1,11 @@
 import type { Knex } from "knex";
 
-// interface AttendanceRow {
-//   employee_id: number;
-//   work_date: string;
-//   check_in_time: string | null; // Allow string or null
-//   check_out_time: string | null; // Allow string or null
-// }
+interface AttendanceRow {
+  employee_id: number;
+  work_date: string;
+  check_in_time: string | null; // Allow string or null
+  check_out_time: string | null; // Allow string or null
+}
 
 export async function seed(knex: Knex): Promise<void> {
   // Deletes ALL existing entries in the 'attendances' table
