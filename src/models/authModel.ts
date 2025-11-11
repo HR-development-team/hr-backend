@@ -1,29 +1,18 @@
 import { db } from "@core/config/knex.js";
-
-export interface AuthUser {
-  id: number;
-  email: string;
-  password: string;
-  employee_id: number;
-  role: "admin" | "employee";
-  created_at?: Date;
-  updated_at?: Date;
-}
+import { User } from "types/userTypes.js";
 
 /**
  * Get user by email
  */
-export const findUserByEmail = async (
-  email: string
-): Promise<AuthUser | null> => {
-  const user = await db<AuthUser>("users").where({ email }).first();
+export const findUserByEmail = async (email: string): Promise<User | null> => {
+  const user = await db("users").where({ email }).first();
   return user ?? null;
 };
 
 /**
  * Get user by id
  */
-export const findUserById = async (id: number): Promise<AuthUser | null> => {
-  const user = await db<AuthUser>("users").where({ id }).first();
+export const findUserById = async (id: number): Promise<User | null> => {
+  const user = await db("users").where({ id }).first();
   return user ?? null;
 };
