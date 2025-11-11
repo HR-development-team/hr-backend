@@ -4,6 +4,7 @@ import {
   GetAllEmployee,
   UpdateEmployee,
   Employee,
+  GetEmployeeById,
 } from "types/masterEmployeeTypes.js";
 import { db } from "@core/config/knex.js";
 
@@ -75,7 +76,41 @@ export const getAllMasterEmployees = async (): Promise<GetAllEmployee[]> =>
  */
 export const getMasterEmployeesById = async (
   id: number
-): Promise<Employee | null> => await db(EMPLOYEE_TABLE).where({ id }).first();
+): Promise<GetEmployeeById | null> =>
+  await db(EMPLOYEE_TABLE)
+    .select(
+      // Employee fields
+      "master_employees.*",
+
+      // Position fields
+      "master_positions.position_code",
+      "master_positions.name as position_name",
+
+      // Division fields
+      "master_divisions.division_code as division_code",
+      "master_divisions.name as division_name",
+
+      // Department fields
+      "master_departments.department_code as department_code",
+      "master_departments.name as department_name"
+    )
+    .leftJoin(
+      "master_positions",
+      "master_employees.position_code",
+      "master_positions.position_code"
+    )
+    .leftJoin(
+      "master_divisions",
+      "master_positions.division_code",
+      "master_divisions.division_code"
+    )
+    .leftJoin(
+      "master_departments",
+      "master_divisions.department_code",
+      "master_departments.department_code"
+    )
+    .where({ "master_employees.id": id })
+    .first();
 
 /**
  * Creates new employee.
