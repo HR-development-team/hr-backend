@@ -1,123 +1,118 @@
-import { db as knex } from "core/config/knex.js";
+import { EMPLOYEE_TABLE } from "@constants/database.js";
 import {
-  CreateEmployeeData,
+  CreateEmployee,
+  GetAllEmployee,
+  UpdateEmployee,
   Employee,
-  UpdateEmployeeData,
-} from "types/employeeTypes.js";
-
-const EMPLOYEE_TABLE = "master_employees";
-const POSITION_TABLE = "master_positions";
-const DEPARTMENT_TABLE = "master_departments";
-
-const employeeSelectFields = [
-  `${EMPLOYEE_TABLE}.id`,
-  `${EMPLOYEE_TABLE}.first_name`,
-  `${EMPLOYEE_TABLE}.last_name`,
-  `${EMPLOYEE_TABLE}.contact_phone`,
-  `${EMPLOYEE_TABLE}.address`,
-  `${EMPLOYEE_TABLE}.join_date`,
-  `${EMPLOYEE_TABLE}.position_id`,
-  `${EMPLOYEE_TABLE}.created_at`,
-  `${EMPLOYEE_TABLE}.updated_at`,
-  `${POSITION_TABLE}.name as position_name`,
-  `${POSITION_TABLE}.department_id`,
-  `${DEPARTMENT_TABLE}.name as department_name`,
-];
-
-const queryBuilder = () => {
-  return knex(EMPLOYEE_TABLE)
-    .join(
-      POSITION_TABLE,
-      `${EMPLOYEE_TABLE}.position_id`,
-      "=",
-      `${POSITION_TABLE}.id`
-    )
-    .join(
-      DEPARTMENT_TABLE,
-      `${POSITION_TABLE}.department_id`,
-      "=",
-      `${DEPARTMENT_TABLE}.id`
-    );
-};
+} from "types/masterEmployeeTypes.js";
+import { db } from "@core/config/knex.js";
 
 /**
- * [GET] Mengambil semua karyawan
+ * Function for generating employee code
  */
-export const getAllMasterEmployees = async (): Promise<Employee[]> => {
-  return queryBuilder().select(employeeSelectFields);
-};
+async function generateEmployeeCode() {
+  const PREFIX = "KWN";
+  const PAD_LENGTH = 7;
+
+  const lastRow = await db(EMPLOYEE_TABLE)
+    .select("employee_code")
+    .orderBy("id", "desc")
+    .first();
+
+  if (!lastRow) {
+    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
+  }
+
+  const lastCode = lastRow.employee_code;
+  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
+  const newNumber = lastNumber + 1;
+  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
+}
 
 /**
- * [GET BY ID] Mengambil satu karyawan berdasarkan ID
+ * Get all master employees.
+ */
+export const getAllMasterEmployees = async (): Promise<GetAllEmployee[]> =>
+  await db(EMPLOYEE_TABLE)
+    .select(
+      "master_employees.id",
+      "master_employees.employee_code",
+      "master_employees.full_name",
+      "master_employees.join_date",
+      "master_employees.position_code",
+      "master_employees.employment_status",
+
+      // Position fields
+      "master_positions.position_code",
+      "master_positions.name as position_name",
+
+      // Division fields
+      "master_divisions.division_code as division_code",
+      "master_divisions.name as division_name",
+
+      // Department fields
+      "master_departments.department_code as department_code",
+      "master_departments.name as department_name"
+    )
+    .leftJoin(
+      "master_positions",
+      "master_employees.position_code",
+      "master_positions.position_code"
+    )
+    .leftJoin(
+      "master_divisions",
+      "master_positions.division_code",
+      "master_divisions.division_code"
+    )
+    .leftJoin(
+      "master_departments",
+      "master_divisions.department_code",
+      "master_departments.department_code"
+    );
+
+/**
+ * Get employee by ID.
  */
 export const getMasterEmployeesById = async (
   id: number
-): Promise<Employee | null> => {
-  const employee = await queryBuilder()
-    .select(employeeSelectFields)
-    .where(`${EMPLOYEE_TABLE}.id`, id)
-    .first();
-
-  return employee || null;
-};
+): Promise<Employee | null> => await db(EMPLOYEE_TABLE).where({ id }).first();
 
 /**
- * [POST] Menambahkan karyawan baru
+ * Creates new employee.
  */
 export const addMasterEmployees = async (
-  data: CreateEmployeeData
-): Promise<Employee | null> => {
-  // 1. Lakukan insert. Hasilnya adalah array [insertId]
-  const [insertId] = await knex(EMPLOYEE_TABLE).insert(data);
+  data: CreateEmployee
+): Promise<Employee> => {
+  const employee_code = await generateEmployeeCode();
+  const employeeToInsert = {
+    ...data,
+    employee_code,
+  };
+  const [id] = await db(EMPLOYEE_TABLE).insert(employeeToInsert);
 
-  // 2. Cek apakah insertId valid (bukan 0 atau undefined)
-  if (!insertId) {
-    throw new Error(
-      "Gagal membuat karyawan, tidak ada ID yang dikembalikan dari database."
-    );
-  }
-
-  // 3. Gunakan 'insertId' yang valid untuk mengambil data lengkap
-  const newEmployee = await getMasterEmployeesById(insertId);
-  return newEmployee;
+  return db(EMPLOYEE_TABLE).where({ id }).first();
 };
 
 /**
- * [PUT] Mengedit karyawan berdasarkan ID
- * --- INI ADALAH FUNGSI YANG DIPERBAIKI ---
+ * edit an existing position record.
  */
 export const editMasterEmployees = async (
-  id: number,
-  data: UpdateEmployeeData
+  data: UpdateEmployee
 ): Promise<Employee | null> => {
-  const affectedRows = await knex(EMPLOYEE_TABLE)
-    .where({ id: id })
-    .update(data);
+  const { id, ...updateData } = data;
 
-  if (affectedRows === 0) {
-    return null; // Karyawan tidak ditemukan
-  }
-
-  // Kembalikan data karyawan yang sudah diupdate (lengkap dengan join)
-  return getMasterEmployeesById(id);
+  await db(EMPLOYEE_TABLE).where({ id }).update(updateData);
+  return db(EMPLOYEE_TABLE).where({ id }).first();
 };
 
 /**
- * [DELETE] Menghapus karyawan berdasarkan ID
+ * Remove existing employee
  */
-export const removeMasterEmployees = async (
-  id: number
-): Promise<number | null> => {
-  const affectedRows = await knex(EMPLOYEE_TABLE).where({ id: id }).del();
-
-  if (affectedRows === 0) {
-    return null; // Karyawan tidak ditemukan
-  }
-  return affectedRows;
-};
+export const removeMasterEmployees = async (id: number): Promise<number> =>
+  await db(EMPLOYEE_TABLE).where({ id }).delete();
 
 export const totalMasterEmployees = async (): Promise<number> => {
-  const [totalMasterEmployeeResult] = await knex(EMPLOYEE_TABLE).count(
+  const [totalMasterEmployeeResult] = await db(EMPLOYEE_TABLE).count(
     "id as total_employees"
   );
 
