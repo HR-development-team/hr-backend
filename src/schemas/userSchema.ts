@@ -1,10 +1,7 @@
 import { z } from "zod";
 
 export const addUsersSchema = z.object({
-  employee_id: z.number({
-    required_error: "ID Pegawai wajib diisi.",
-    invalid_type_error: "ID Pegawai harus berupa angka.",
-  }),
+  employee_code: z.string().length(10, "Kode karyawan harus tepat 10 karakter"),
   email: z
     .string({ required_error: "Email wajib diisi" })
     .email("Email tidak valid")
@@ -20,10 +17,9 @@ export const addUsersSchema = z.object({
 
 export const updateUsersSchema = z
   .object({
-    employee_id: z
-      .number({
-        invalid_type_error: "ID Pegawai harus berupa angka.",
-      })
+    employee_code: z
+      .string()
+      .length(10, "Kode karyawan harus tepat 10 karakter")
       .optional(),
     email: z
       .string()
