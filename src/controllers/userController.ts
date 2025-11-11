@@ -14,7 +14,7 @@ import { hashPassword } from "@utils/bcrypt.js";
 import { DatabaseError } from "types/errorTypes.js";
 
 /**
- * [GET] /-users - Fetch all Users
+ * [GET] /users - Fetch all Users
  */
 export const fetchAllUsers = async (req: Request, res: Response) => {
   try {
@@ -41,7 +41,7 @@ export const fetchAllUsers = async (req: Request, res: Response) => {
 };
 
 /**
- * [GET] /-users/:id - Fetch User by id
+ * [GET] /users/:id - Fetch User by id
  */
 export const fetchUsersById = async (req: Request, res: Response) => {
   try {
@@ -88,7 +88,7 @@ export const fetchUsersById = async (req: Request, res: Response) => {
 };
 
 /**
- * [POST] /-users - Create a new User
+ * [POST] /users - Create a new User
  */
 export const createUsers = async (req: Request, res: Response) => {
   try {
@@ -107,76 +107,95 @@ export const createUsers = async (req: Request, res: Response) => {
       );
     }
 
-    const { email, password, role, employee_id } = validation.data;
+    const { email, password, role, employee_code } = validation.data;
     const hashedPassword = await hashPassword(password);
 
-    const Users = await addUsers({
+    const users = await addUsers({
       email,
       password: hashedPassword,
       role,
-      employee_id,
+      employee_code,
     });
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data user berhasil dibuat",
-      Users,
+      users,
       201,
       RESPONSE_DATA_KEYS.USERS
     );
   } catch (error) {
     const dbError = error as DatabaseError;
 
-    if (
-      // Specific MySQL/MariaDB duplicate entry code
-      dbError.code === "ER_DUP_ENTRY" ||
-      dbError.errno === 1062
-    ) {
+    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
       const errorMessage = dbError.sqlMessage || dbError.message;
+      const validationErrors = [];
 
-      // Check for duplicate email entry
+      // --- Duplicate User CODE ---
+      if (
+        errorMessage &&
+        (errorMessage.includes("user_code") ||
+          errorMessage.includes("uni_user_code"))
+      ) {
+        validationErrors.push({
+          field: "employee_code",
+          message: "Kode karyawan yang dimasukkan sudah ada.",
+        });
+      }
+
+      // --- Duplicate user email ---
       if (
         errorMessage &&
         (errorMessage.includes("email") || errorMessage.includes("idx_email"))
       ) {
-        appLogger.warn("User creation failed: Duplicate email entry.");
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "email",
-              message:
-                "Email yang dimasukkan sudah terdaftar. Silakan gunakan email lain.",
-            },
-          ]
-        );
+        validationErrors.push({
+          field: "email",
+          message:
+            "Email yang dimasukkan sudah terdaftar. Silakan gunakan email lain.",
+        });
       }
 
-      // Check for duplicate employee_id entry
+      // --- Duplicate user employee_code ---
       if (
         errorMessage &&
-        (errorMessage.includes("employee_id") ||
-          errorMessage.includes("uni_employee_id"))
+        (errorMessage.includes("employee_code") ||
+          errorMessage.includes("uni_employee_code"))
       ) {
+        validationErrors.push({
+          field: "employee_id",
+          message:
+            "Pegawai ini sudah memiliki akun login. Tidak dapat membuat akun ganda.",
+        });
+      }
+
+      // --- Send Duplicate Entry Response if any unique field failed ---
+      if (validationErrors.length > 0) {
+        appLogger.warn(
+          "Employee creation failed: Duplicate entry detected for unique field(s)."
+        );
         return errorResponse(
           res,
           API_STATUS.BAD_REQUEST,
           "Validasi gagal",
           400,
-          [
-            {
-              field: "employee_id",
-              message:
-                "Pegawai ini sudah memiliki akun login. Tidak dapat membuat akun ganda.",
-            },
-          ]
+          validationErrors
         );
       }
     }
+
+    //  Check if the employee code exist or not
+    if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
+      appLogger.warn("User creation failed: employee_code does not exist.");
+
+      return errorResponse(res, API_STATUS.BAD_REQUEST, "Validasi gagal", 400, [
+        {
+          field: "employee_code",
+          message: "Kode karyawan tidak ditemukan.",
+        },
+      ]);
+    }
+
     appLogger.error(`Error creating users:${dbError}`);
     return errorResponse(
       res,
@@ -188,7 +207,7 @@ export const createUsers = async (req: Request, res: Response) => {
 };
 
 /**
- * [PUT] /-users/:id - Edit a User
+ * [PUT] /users/:id - Edit a User
  */
 export const updateUsers = async (req: Request, res: Response) => {
   try {
@@ -218,19 +237,11 @@ export const updateUsers = async (req: Request, res: Response) => {
       );
     }
 
-    const validatedData = validation.data;
-    const { email, password, role, employee_id } = validatedData;
-
-    const Users = await editUsers({
-      id,
-      email,
-      password,
-      role,
-      employee_id,
-    });
+    const userData = validation.data;
+    const users = await editUsers({ id, ...userData });
 
     // Validate employee not found
-    if (!Users) {
+    if (!users) {
       return errorResponse(
         res,
         API_STATUS.NOT_FOUND,
@@ -243,11 +254,68 @@ export const updateUsers = async (req: Request, res: Response) => {
       res,
       API_STATUS.SUCCESS,
       "Data User berhasil diperbarui",
-      Users,
+      users,
       200,
       RESPONSE_DATA_KEYS.USERS
     );
   } catch (error) {
+    const dbError = error as DatabaseError;
+
+    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
+      const errorMessage = dbError.sqlMessage || dbError.message;
+      const validationErrors = [];
+
+      // --- Duplicate User CODE ---
+      if (
+        errorMessage &&
+        (errorMessage.includes("user_code") ||
+          errorMessage.includes("uni_user_code"))
+      ) {
+        validationErrors.push({
+          field: "employee_code",
+          message: "Kode karyawan yang dimasukkan sudah ada.",
+        });
+      }
+
+      // --- Duplicate user email ---
+      if (
+        errorMessage &&
+        (errorMessage.includes("email") || errorMessage.includes("idx_email"))
+      ) {
+        validationErrors.push({
+          field: "email",
+          message:
+            "Email yang dimasukkan sudah terdaftar. Silakan gunakan email lain.",
+        });
+      }
+
+      // --- Duplicate user employee_code ---
+      if (
+        errorMessage &&
+        (errorMessage.includes("employee_code") ||
+          errorMessage.includes("uni_employee_code"))
+      ) {
+        validationErrors.push({
+          field: "employee_id",
+          message:
+            "Pegawai ini sudah memiliki akun login. Tidak dapat membuat akun ganda.",
+        });
+      }
+
+      // --- Send Duplicate Entry Response if any unique field failed ---
+      if (validationErrors.length > 0) {
+        appLogger.warn(
+          "Employee creation failed: Duplicate entry detected for unique field(s)."
+        );
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Validasi gagal",
+          400,
+          validationErrors
+        );
+      }
+    }
     appLogger.error(`Error editing users:${error}`);
 
     return errorResponse(
@@ -260,7 +328,7 @@ export const updateUsers = async (req: Request, res: Response) => {
 };
 
 /**
- * [DELETE] /-users/:id - Delete a User
+ * [DELETE] /users/:id - Delete a User
  */
 export const destroyUsers = async (req: Request, res: Response) => {
   try {
