@@ -30,6 +30,16 @@ export interface Employee {
   updated_at: string;
 }
 
+export interface GetEmployeeById extends Employee {
+  employee_code: string;
+  position_code: string;
+  position_name: string;
+  division_code: string;
+  division_name: string;
+  department_code: string;
+  department_name: string;
+}
+
 export interface GetAllEmployee {
   id: number;
   full_name: string;
