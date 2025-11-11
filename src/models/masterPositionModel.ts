@@ -33,7 +33,7 @@ async function generatePositionCode() {
  * Get all master position.
  */
 export const getAllMasterPositions = async (): Promise<GetAllPosition[]> =>
-  await db("master_positions")
+  await db(POSITION_TABLE)
     .select(
       "master_positions.id",
       "master_positions.position_code",
@@ -73,17 +73,13 @@ export const getMasterPositionsById = async (
 export const addMasterPositions = async (
   data: CreatePosition
 ): Promise<Position> => {
-  const { name, division_code, base_salary, description } = data;
   const position_code = await generatePositionCode();
-
-  const [id] = await db(POSITION_TABLE).insert({
-    name,
+  const positionToInsert = {
+    ...data,
     position_code,
-    division_code,
-    base_salary,
-    description,
-  });
+  };
 
+  const [id] = await db(POSITION_TABLE).insert(positionToInsert);
   return db(POSITION_TABLE).where({ id }).first();
 };
 
@@ -93,23 +89,14 @@ export const addMasterPositions = async (
 export const editMasterPositions = async (
   data: UpdatePosition
 ): Promise<Position | null> => {
-  const { id, name, division_code, base_salary, description } = data;
-  const position_code = await generatePositionCode();
+  const { id, ...updateData } = data;
 
-  await db(POSITION_TABLE).where({ id }).update({
-    name,
-    position_code,
-    division_code,
-    base_salary,
-    description,
-    updated_at: db.fn.now(),
-  });
+  await db(POSITION_TABLE).where({ id }).update(updateData);
   return db(POSITION_TABLE).where({ id }).first();
 };
 
 /**
  * Remove existing positions
  */
-export async function removeMasterPositions(id: number): Promise<number> {
-  return db(POSITION_TABLE).where({ id }).delete();
-}
+export const removeMasterPositions = async (id: number): Promise<number> =>
+  await db(POSITION_TABLE).where({ id }).delete();
