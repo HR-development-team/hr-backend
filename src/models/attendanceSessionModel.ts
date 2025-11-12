@@ -9,7 +9,7 @@ import {
   CreateAttendanceSession,
   GetAllAttendanceSession,
   GetAttendanceById,
-  UpdateAttendanceSessionData,
+  UpdateAttendanceSession,
 } from "types/attendanceSessionTypes.js";
 
 /**
@@ -191,6 +191,7 @@ export const addAttendanceSessions = async (
     ...data,
     session_code,
   };
+
   const [id] = await db(ATTENDANCE_SESSION_TABLE).insert(sessionToInsert);
   return db(ATTENDANCE_SESSION_TABLE).where({ id }).first();
 };
@@ -199,7 +200,7 @@ export const addAttendanceSessions = async (
  * edit an existing attendance record.
  */
 export const editAttendanceSessions = async (
-  data: UpdateAttendanceSessionData
+  data: UpdateAttendanceSession
 ): Promise<AttendanceSession | null> => {
   const { id, ...updateData } = data;
 

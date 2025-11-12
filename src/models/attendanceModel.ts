@@ -1,12 +1,39 @@
+import {
+  ATTENDANCE_SESSION_TABLE,
+  ATTENDANCE_TABLE,
+  EMPLOYEE_TABLE,
+} from "@constants/database.js";
 import { db } from "@core/config/knex.js";
 import { Knex } from "knex";
+import { GetAllAttendanceSession } from "types/attendanceSessionTypes.js";
 import {
   Attendance,
   CheckInPayload,
   CheckOutPayload,
+  GetAllAttendance,
 } from "types/attendanceTypes.js";
 
-const ATTENDANCE_TABLE = "attendances";
+/**
+ * Function for generating attendance code
+ */
+async function generateAttendanceCode() {
+  const PREFIX = "ABS";
+  const PAD_LENGTH = 7;
+
+  const lastRow = await db(ATTENDANCE_TABLE)
+    .select("attendance_code")
+    .orderBy("id", "desc")
+    .first();
+
+  if (!lastRow) {
+    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
+  }
+
+  const lastCode = lastRow.attendance_code;
+  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
+  const newNumber = lastNumber + 1;
+  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
+}
 
 /**
  * Creates a new attendance record (check-in).
@@ -14,15 +41,13 @@ const ATTENDANCE_TABLE = "attendances";
 export const recordCheckIn = async (
   data: CheckInPayload
 ): Promise<Attendance> => {
-  const { session_id, employee_id, check_in_time, check_in_status } = data;
+  const attendance_code = await generateAttendanceCode();
+  const attendanceToInsert = {
+    ...data,
+    attendance_code,
+  };
 
-  const [id] = await db(ATTENDANCE_TABLE).insert({
-    session_id,
-    employee_id,
-    check_in_time,
-    check_in_status,
-  });
-
+  const [id] = await db(ATTENDANCE_TABLE).insert(attendanceToInsert);
   return db(ATTENDANCE_TABLE).where({ id }).first();
 };
 
@@ -32,10 +57,11 @@ export const recordCheckIn = async (
 export const recordCheckOut = async (
   data: CheckOutPayload
 ): Promise<Attendance | null> => {
-  const { session_id, employee_id, check_out_time, check_out_status } = data;
+  const { session_code, employee_code, check_out_time, check_out_status } =
+    data;
 
   const updateCount = await db(ATTENDANCE_TABLE)
-    .where({ employee_id, session_id })
+    .where({ employee_code, session_code })
     .whereNull("check_out_time")
     .update({ check_out_time, check_out_status, updated_at: new Date() });
 
@@ -43,22 +69,105 @@ export const recordCheckOut = async (
     return null;
   }
 
-  return db(ATTENDANCE_TABLE).where({ employee_id, session_id }).first();
+  return db(ATTENDANCE_TABLE).where({ employee_code, session_code }).first();
 };
 
 /**
  * Get all attendance.
  */
-export const getAllAttendances = async (): Promise<Attendance[]> =>
-  await db(ATTENDANCE_TABLE).select("*");
+export const getAllAttendances = async (): Promise<GetAllAttendanceSession[]> =>
+  await db(ATTENDANCE_TABLE)
+    .select(
+      `${ATTENDANCE_TABLE}.id`,
+      `${ATTENDANCE_TABLE}.attendance_code`,
+      `${ATTENDANCE_TABLE}.employee_code`,
+      `${ATTENDANCE_TABLE}.session_code`,
+      `${ATTENDANCE_TABLE}.check_in_time`,
+      `${ATTENDANCE_TABLE}.check_out_time`,
+      `${ATTENDANCE_TABLE}.check_in_status`,
+      `${ATTENDANCE_TABLE}.check_out_status`,
+
+      // Employee Fields
+      `${EMPLOYEE_TABLE}.full_name as employee_name`,
+
+      // Session Fields
+      `${ATTENDANCE_SESSION_TABLE}.status as session_status`,
+      `${ATTENDANCE_SESSION_TABLE}.date as session_date`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ATTENDANCE_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${ATTENDANCE_SESSION_TABLE}`,
+      `${ATTENDANCE_TABLE}.session_code`,
+      `${ATTENDANCE_SESSION_TABLE}.session_code`
+    );
+
+/**
+ * Get attendance by id.
+ */
+export const getAttendanceById = async (id: number): Promise<Attendance[]> =>
+  await db(ATTENDANCE_TABLE)
+    .select(
+      `${ATTENDANCE_TABLE}.*`,
+
+      // Employee Fields
+      `${EMPLOYEE_TABLE}.full_name as employee_name`,
+
+      // Session Fields
+      `${ATTENDANCE_SESSION_TABLE}.status as session_status`,
+      `${ATTENDANCE_SESSION_TABLE}.date as session_date`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ATTENDANCE_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${ATTENDANCE_SESSION_TABLE}`,
+      `${ATTENDANCE_TABLE}.session_code`,
+      `${ATTENDANCE_SESSION_TABLE}.session_code`
+    )
+    .where({ "attendances.id": id })
+    .first();
 
 /**
  * Get all attendance that belong to an employee.
  */
 export const getEmployeeAttendances = async (
-  employeeId: number
-): Promise<Attendance[]> =>
-  await db(ATTENDANCE_TABLE).select("*").where({ employee_id: employeeId });
+  employeeCode: string
+): Promise<GetAllAttendance[]> =>
+  await db(ATTENDANCE_TABLE)
+    .select(
+      `${ATTENDANCE_TABLE}.id`,
+      `${ATTENDANCE_TABLE}.attendance_code`,
+      `${ATTENDANCE_TABLE}.employee_code`,
+      `${ATTENDANCE_TABLE}.session_code`,
+      `${ATTENDANCE_TABLE}.check_in_time`,
+      `${ATTENDANCE_TABLE}.check_out_time`,
+      `${ATTENDANCE_TABLE}.check_in_status`,
+      `${ATTENDANCE_TABLE}.check_out_status`,
+
+      // Employee Fields
+      `${EMPLOYEE_TABLE}.full_name as employee_name`,
+
+      // Session Fields
+      `${ATTENDANCE_SESSION_TABLE}.status as session_status`,
+      `${ATTENDANCE_SESSION_TABLE}.date as session_date`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ATTENDANCE_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${ATTENDANCE_SESSION_TABLE}`,
+      `${ATTENDANCE_TABLE}.session_code`,
+      `${ATTENDANCE_SESSION_TABLE}.session_code`
+    )
+    .where({ "attendances.employee_code": employeeCode });
 
 /**
  * Get total work days for an employee in a given date range.
