@@ -20,7 +20,6 @@ export interface GetAllUser {
 
 export interface CreateUserData {
   email: string;
-  user_code: string;
   password: string;
   employee_code: string;
   role: "admin" | "employee";
@@ -28,7 +27,6 @@ export interface CreateUserData {
 
 export interface UpdateUserData {
   id: number;
-  user_code: string;
   email?: string;
   password?: string;
   role?: "admin" | "employee";
