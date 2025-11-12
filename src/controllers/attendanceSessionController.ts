@@ -107,7 +107,7 @@ export const createAttendanceSessions = async (
 ) => {
   try {
     const validation = addAttendanceSessionsSchema.safeParse(req.body);
-    const currentUserId = req.user!.id;
+    const currentUserCode = req.user!.user_code;
 
     if (!validation.success) {
       return errorResponse(
@@ -122,17 +122,11 @@ export const createAttendanceSessions = async (
       );
     }
 
-    const { status, cutoff_time, close_time, open_time, date } =
-      validation.data;
-
-    const attendanceSessions = await addAttendanceSessions({
-      status,
-      cutoff_time,
-      close_time,
-      open_time,
-      created_by: currentUserId,
-      date,
-    });
+    const sessionData = {
+      created_by: currentUserCode,
+      ...validation.data,
+    };
+    const attendanceSessions = await addAttendanceSessions(sessionData);
 
     return successResponse(
       res,
@@ -148,27 +142,44 @@ export const createAttendanceSessions = async (
     // Handle duplicate date constraint
     if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
       const errorMessage = dbError.sqlMessage || dbError.message;
+      const validationErrors = [];
 
+      // --- Duplicate Session CODE ---
+      if (
+        errorMessage &&
+        (errorMessage.includes("session_code") ||
+          errorMessage.includes("uni_session_code"))
+      ) {
+        validationErrors.push({
+          field: "session_code",
+          message: "Kode sesi absensi yang dimasukkan sudah ada.",
+        });
+      }
+
+      // --- Duplicate date ---
       if (
         errorMessage &&
         (errorMessage.includes("date") ||
           errorMessage.includes("uni_attendance_sessions_date"))
       ) {
+        validationErrors.push({
+          field: "date",
+          message:
+            "Tanggal sesi absensi sudah ada. Hanya boleh ada satu sesi per tanggal.",
+        });
+      }
+
+      // --- Send Duplicate Entry Response if any unique field failed ---
+      if (validationErrors.length > 0) {
         appLogger.warn(
-          "AttendanceSession creation failed: Duplicate session date entry."
+          "Attendance session creation failed: Duplicate entry detected for unique field(s)."
         );
         return errorResponse(
           res,
           API_STATUS.BAD_REQUEST,
           "Validasi gagal",
           400,
-          [
-            {
-              field: "date",
-              message:
-                "Tanggal sesi absensi sudah ada. Hanya boleh ada satu sesi per tanggal.",
-            },
-          ]
+          validationErrors
         );
       }
     }
@@ -214,16 +225,10 @@ export const updateAttendanceSessions = async (req: Request, res: Response) => {
       );
     }
 
-    const { date, status, open_time, close_time, cutoff_time } =
-      validation.data;
-
+    const attendanceSessionData = validation.data;
     const attendanceSession = await editAttendanceSessions({
       id,
-      cutoff_time,
-      close_time,
-      open_time,
-      status,
-      date,
+      ...attendanceSessionData,
     });
 
     // Check if not found

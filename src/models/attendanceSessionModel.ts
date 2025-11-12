@@ -1,19 +1,73 @@
+import {
+  ATTENDANCE_SESSION_TABLE,
+  EMPLOYEE_TABLE,
+  USER_TABLE,
+} from "@constants/database.js";
 import { db } from "@core/config/knex.js";
 import {
   AttendanceSession,
-  CreateAttendanceSessionData,
+  CreateAttendanceSession,
+  GetAllAttendanceSession,
   GetAttendanceById,
   UpdateAttendanceSessionData,
 } from "types/attendanceSessionTypes.js";
 
-const ATTENDANCE_SESSION_TABLE = "attendance_sessions";
+/**
+ * Function for generating attendance session code
+ */
+async function generateAttendanceCode() {
+  const PREFIX = "SSA";
+  const PAD_LENGTH = 7;
+
+  const lastRow = await db(ATTENDANCE_SESSION_TABLE)
+    .select("session_code")
+    .orderBy("id", "desc")
+    .first();
+
+  if (!lastRow) {
+    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
+  }
+
+  const lastCode = lastRow.session_code;
+  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
+  const newNumber = lastNumber + 1;
+  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
+}
 
 /**
  * Get all attendance session
  */
 export const getAllAttendanceSessions = async (): Promise<
-  AttendanceSession[]
-> => await db(ATTENDANCE_SESSION_TABLE).select("*");
+  GetAllAttendanceSession[]
+> =>
+  await db(ATTENDANCE_SESSION_TABLE)
+    .select(
+      `${ATTENDANCE_SESSION_TABLE}.id`,
+      `${ATTENDANCE_SESSION_TABLE}.session_code`,
+      `${ATTENDANCE_SESSION_TABLE}.date`,
+      `${ATTENDANCE_SESSION_TABLE}.status`,
+      `${ATTENDANCE_SESSION_TABLE}.open_time`,
+      `${ATTENDANCE_SESSION_TABLE}.cutoff_time`,
+      `${ATTENDANCE_SESSION_TABLE}.close_time`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+
+      // User Fields
+      `${USER_TABLE}.role as created_by_role`,
+
+      // Employee Fields
+      `${EMPLOYEE_TABLE}.employee_code as created_by_employee_code`,
+      `${EMPLOYEE_TABLE}.full_name as created_by_full_name`
+    )
+    .leftJoin(
+      `${USER_TABLE}`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+      `${USER_TABLE}.user_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${USER_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    );
 
 /**
  * Get attendance session by date.
@@ -21,47 +75,123 @@ export const getAllAttendanceSessions = async (): Promise<
 export const getAttendanceSessionsByDate = async (
   date: string
 ): Promise<AttendanceSession | null> =>
-  await db(ATTENDANCE_SESSION_TABLE).where({ date }).first();
+  await db(ATTENDANCE_SESSION_TABLE)
+    .select(
+      `${ATTENDANCE_SESSION_TABLE}.id`,
+      `${ATTENDANCE_SESSION_TABLE}.session_code`,
+      `${ATTENDANCE_SESSION_TABLE}.date`,
+      `${ATTENDANCE_SESSION_TABLE}.status`,
+      `${ATTENDANCE_SESSION_TABLE}.open_time`,
+      `${ATTENDANCE_SESSION_TABLE}.cutoff_time`,
+      `${ATTENDANCE_SESSION_TABLE}.close_time`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+
+      // User Fields
+      `${USER_TABLE}.role as created_by_role`,
+
+      // Employee Fields
+      `${EMPLOYEE_TABLE}.employee_code as created_by_employee_code`,
+      `${EMPLOYEE_TABLE}.full_name as created_by_full_name`
+    )
+    .leftJoin(
+      `${USER_TABLE}`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+      `${USER_TABLE}.user_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${USER_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .where(`${ATTENDANCE_SESSION_TABLE}.date`, date)
+    .first();
 
 /**
  * Get attendance session by ID.
  */
 export const getAttendanceSessionsById = async (
   id: number
-): Promise<GetAttendanceById | null> => {
-  const attendanceSession = await db(ATTENDANCE_SESSION_TABLE)
+): Promise<GetAttendanceById | null> =>
+  await db(ATTENDANCE_SESSION_TABLE)
     .select(
-      `${ATTENDANCE_SESSION_TABLE}.*`,
-      "u.email AS created_by_email",
-      "u.role AS created_by_role",
-      "e.first_name AS created_by_first_name",
-      "e.last_name AS created_by_last_name"
+      `${ATTENDANCE_SESSION_TABLE}.id`,
+      `${ATTENDANCE_SESSION_TABLE}.session_code`,
+      `${ATTENDANCE_SESSION_TABLE}.date`,
+      `${ATTENDANCE_SESSION_TABLE}.status`,
+      `${ATTENDANCE_SESSION_TABLE}.open_time`,
+      `${ATTENDANCE_SESSION_TABLE}.cutoff_time`,
+      `${ATTENDANCE_SESSION_TABLE}.close_time`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+
+      // User Fields
+      `${USER_TABLE}.role as created_by_role`,
+
+      // Employee Fields
+      `${EMPLOYEE_TABLE}.employee_code as created_by_employee_code`,
+      `${EMPLOYEE_TABLE}.full_name as created_by_full_name`
     )
-    .innerJoin({ u: "users" }, `${ATTENDANCE_SESSION_TABLE}.created_by`, "u.id")
-    .innerJoin({ e: "master_employees" }, "u.employee_id", "e.id")
+    .leftJoin(
+      `${USER_TABLE}`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+      `${USER_TABLE}.user_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${USER_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
     .where(`${ATTENDANCE_SESSION_TABLE}.id`, id)
     .first();
 
-  return attendanceSession || null;
-};
+/**
+ * Get attendance session by Code.
+ */
+export const getAttendanceSessionsByCode = async (
+  code: string
+): Promise<GetAttendanceById | null> =>
+  await db(ATTENDANCE_SESSION_TABLE)
+    .select(
+      `${ATTENDANCE_SESSION_TABLE}.id`,
+      `${ATTENDANCE_SESSION_TABLE}.session_code`,
+      `${ATTENDANCE_SESSION_TABLE}.date`,
+      `${ATTENDANCE_SESSION_TABLE}.status`,
+      `${ATTENDANCE_SESSION_TABLE}.open_time`,
+      `${ATTENDANCE_SESSION_TABLE}.cutoff_time`,
+      `${ATTENDANCE_SESSION_TABLE}.close_time`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+
+      // User Fields
+      `${USER_TABLE}.role as created_by_role`,
+
+      // Employee Fields
+      `${EMPLOYEE_TABLE}.employee_code as created_by_employee_code`,
+      `${EMPLOYEE_TABLE}.full_name as created_by_full_name`
+    )
+    .leftJoin(
+      `${USER_TABLE}`,
+      `${ATTENDANCE_SESSION_TABLE}.created_by`,
+      `${USER_TABLE}.user_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${USER_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .where(`${ATTENDANCE_SESSION_TABLE}.session_code`, code)
+    .first();
 
 /**
  * Creates a new attendance session.
  */
 export const addAttendanceSessions = async (
-  data: CreateAttendanceSessionData
+  data: CreateAttendanceSession
 ): Promise<AttendanceSession> => {
-  const { open_time, close_time, cutoff_time, status, date, created_by } = data;
-
-  const [id] = await db(ATTENDANCE_SESSION_TABLE).insert({
-    open_time,
-    close_time,
-    cutoff_time,
-    status,
-    created_by,
-    date,
-  });
-
+  const session_code = await generateAttendanceCode();
+  const sessionToInsert = {
+    ...data,
+    session_code,
+  };
+  const [id] = await db(ATTENDANCE_SESSION_TABLE).insert(sessionToInsert);
   return db(ATTENDANCE_SESSION_TABLE).where({ id }).first();
 };
 
@@ -71,16 +201,9 @@ export const addAttendanceSessions = async (
 export const editAttendanceSessions = async (
   data: UpdateAttendanceSessionData
 ): Promise<AttendanceSession | null> => {
-  const { id, open_time, close_time, cutoff_time, status, date } = data;
+  const { id, ...updateData } = data;
 
-  await db(ATTENDANCE_SESSION_TABLE).where({ id }).update({
-    open_time,
-    close_time,
-    cutoff_time,
-    status,
-    date,
-    updated_at: new Date(),
-  });
+  await db(ATTENDANCE_SESSION_TABLE).where({ id }).update(updateData);
   return db(ATTENDANCE_SESSION_TABLE).where({ id }).first();
 };
 

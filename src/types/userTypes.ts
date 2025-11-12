@@ -1,5 +1,6 @@
 export interface User {
   id: number;
+  user_code: string;
   email: string;
   role: "admin" | "employee";
   password: string;
@@ -10,6 +11,7 @@ export interface User {
 
 export interface GetAllUser {
   id: number;
+  user_code: string;
   email: string;
   role: "admin" | "employee";
   employee_code: string;
@@ -18,6 +20,7 @@ export interface GetAllUser {
 
 export interface CreateUserData {
   email: string;
+  user_code: string;
   password: string;
   employee_code: string;
   role: "admin" | "employee";
@@ -25,6 +28,7 @@ export interface CreateUserData {
 
 export interface UpdateUserData {
   id: number;
+  user_code: string;
   email?: string;
   password?: string;
   role?: "admin" | "employee";

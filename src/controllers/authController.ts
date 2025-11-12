@@ -55,6 +55,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const userResponse = {
       id: user.id,
       email: user.email,
+      user_code: user.user_code,
       employee_code: user.employee_code,
       role: user.role,
     };
