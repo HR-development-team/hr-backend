@@ -153,6 +153,7 @@ export const getMasterEmployeesByCode = async (
     )
     .where({ "master_employees.employee_code": code })
     .first();
+
 /**
  * Creates new employee.
  */
@@ -165,7 +166,6 @@ export const addMasterEmployees = async (
     employee_code,
   };
   const [id] = await db(EMPLOYEE_TABLE).insert(employeeToInsert);
-
   return db(EMPLOYEE_TABLE).where({ id }).first();
 };
 

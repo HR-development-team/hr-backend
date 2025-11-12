@@ -1,14 +1,15 @@
-import { Response } from "express";
+import { Response, Request } from "express";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { checkInSchema, checkOutSchema } from "@schemas/attendanceSchema.js";
 import { errorResponse, successResponse } from "@utils/response.js";
 import {
+  getAttendanceById,
   getEmployeeAttendances,
   recordCheckIn,
   recordCheckOut,
 } from "@models/attendanceModel.js";
 import { AuthenticatedRequest } from "@middleware/jwt.js";
-import { getMasterEmployeesById } from "@models/masterEmployeeModel.js";
+import { getMasterEmployeesByCode } from "@models/masterEmployeeModel.js";
 import { appLogger } from "@utils/logger.js";
 import { formatDate } from "@utils/formatDate.js";
 import { DatabaseError } from "types/errorTypes.js";
@@ -18,9 +19,7 @@ import { getAttendanceSessionsByDate } from "@models/attendanceSessionModel.js";
  * [POST] /attendances/check-in - Record Employee Check-In
  */
 export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
-  // FIX: Because the relation is changed from id to employee code
-  // We need to changed it too
-  const employeeId = 2;
+  const employeeCode = req.user!.employee_code;
 
   try {
     // validate the request first
@@ -39,10 +38,10 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // check if the employee exist or not in database
-    const profile = await getMasterEmployeesById(employeeId);
+    const profile = await getMasterEmployeesByCode(employeeCode);
     if (!profile) {
       appLogger.error(
-        `FATAL: User ID ${req.user!.id} has no linked Employee profile.`
+        `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
       );
       return errorResponse(
         res,
@@ -92,8 +91,8 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
 
     // Record check-in data
     const checkInData = await recordCheckIn({
-      employee_id: employeeId,
-      session_id: attendanceSession.id,
+      employee_code: employeeCode,
+      session_code: attendanceSession.session_code,
       check_in_time: now,
       check_in_status: checkInStatus,
     });
@@ -110,7 +109,7 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
     const dbError = error as DatabaseError;
 
     if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
-      appLogger.warn(`Employee ${employeeId} attempted duplicate check-in.`);
+      appLogger.warn(`Employee ${employeeCode} attempted duplicate check-in.`);
       return errorResponse(
         res,
         API_STATUS.FAILED,
@@ -149,14 +148,11 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
       );
     }
 
-    // check if the employee exist or not in database
-    // FIX: Because the relation is changed from id to employee code
-    // We need to changed it too
-    const employeeId = 2;
-    const profile = await getMasterEmployeesById(employeeId);
+    const employeeCode = req.user!.employee_code;
+    const profile = await getMasterEmployeesByCode(employeeCode);
     if (!profile) {
       appLogger.error(
-        `FATAL: User ID ${req.user!.id} has no linked Employee profile.`
+        `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
       );
       return errorResponse(
         res,
@@ -200,15 +196,15 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
 
     // save the check out data to database
     const checkOutData = await recordCheckOut({
-      employee_id: employeeId,
-      session_id: attendanceSession.id,
+      employee_code: employeeCode,
+      session_code: attendanceSession.session_code,
       check_out_time: now,
       check_out_status: checkOutStatus,
     });
 
     if (!checkOutData) {
       appLogger.warn(
-        `Employee ${employeeId} attempted check-out, but no open record was found (Possible duplicate check-out).`
+        `Employee ${employeeCode} attempted check-out, but no open record was found (Possible duplicate check-out).`
       );
       return errorResponse(
         res,
@@ -239,6 +235,53 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 /**
+ * [GET] /attendances/:id - Fetch Attendance by id
+ */
+export const fetchAttendanceById = async (req: Request, res: Response) => {
+  try {
+    // Validate and cast the ID params
+    const id: number = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "ID Karyawan tidak valid.",
+        400
+      );
+    }
+
+    const attendances = await getAttendanceById(id);
+
+    if (!attendances) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data absensi tidak ditemukan",
+        404
+      );
+    }
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Abensi berhasil didapatkan",
+      attendances,
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYEES
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching employees:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
  * [GET] /attendances/ - Fetch current employee attendance
  */
 export const fetchEmployeeAttendance = async (
@@ -246,16 +289,14 @@ export const fetchEmployeeAttendance = async (
   res: Response
 ) => {
   try {
-    // FIX: Because the relation is changed from id to employee code
-    // We need to changed it too
-    const employeeId = 2;
-    const departments = await getEmployeeAttendances(employeeId);
+    const employeeCode = req.user!.employee_code;
+    const attendances = await getEmployeeAttendances(employeeCode);
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data Absensi berhasil didapatkan",
-      departments,
+      attendances,
       200,
       RESPONSE_DATA_KEYS.ATTENDANCES
     );

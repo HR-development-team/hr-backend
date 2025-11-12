@@ -184,6 +184,20 @@ export const createAttendanceSessions = async (
       }
     }
 
+    //  Check if the user code exist or not
+    if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
+      appLogger.warn(
+        "Attendance session creation failed: user does not exist."
+      );
+
+      return errorResponse(res, API_STATUS.BAD_REQUEST, "Validasi gagal", 400, [
+        {
+          field: "user_code",
+          message: "Kode user tidak ditemukan.",
+        },
+      ]);
+    }
+
     appLogger.error(`Error creating attendance session: ${dbError}`);
     return errorResponse(
       res,
