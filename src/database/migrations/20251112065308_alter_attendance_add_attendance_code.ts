@@ -25,7 +25,7 @@ export async function up(knex: Knex): Promise<void> {
       .string("session_code", 10)
       .references("session_code")
       .inTable(ATTENDANCE_SESSIONS_TABLE)
-      .onDelete("restrict")
+      .onDelete("cascade")
       .notNullable()
       .after("employee_code");
 
@@ -48,13 +48,13 @@ export async function down(knex: Knex): Promise<void> {
       .unsigned()
       .references("id")
       .inTable(EMPLOYEES_TABLE)
-      .onDelete("SET NULL");
+      .onDelete("restrict");
     table
       .integer("session_id")
       .unsigned()
       .references("id")
       .inTable(ATTENDANCE_SESSIONS_TABLE)
-      .onDelete("SET NULL");
+      .onDelete("cascade");
 
     table.unique(["employee_code", "session_code"]);
   });
