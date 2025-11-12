@@ -8,6 +8,7 @@ config();
  */
 export interface TokenPayload extends JWTPayload {
   id: number;
+  user_code: string;
   employee_code: string;
   role: "admin" | "employee";
 }
@@ -36,8 +37,6 @@ export const verifyToken = async (token: string): Promise<TokenPayload> => {
   const { payload } = await jwtVerify(token, secretKey, {
     algorithms: ["HS512"],
   });
-
-  console.log(payload);
 
   // Assert the decoded object matches the expected type
   return payload as TokenPayload;
