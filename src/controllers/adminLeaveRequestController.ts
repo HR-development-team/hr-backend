@@ -5,19 +5,35 @@ import { errorResponse, successResponse } from "@utils/response.js";
 import {
   editLeaveRequestStatus,
   getAllLeaveRequests,
-  getLeaveRequestById,
+  getLeaveRequestsById,
 } from "@models/leaveRequestModel.js";
 import { updateLeaveStatusSchema } from "@schemas/leaveRequestSchema.js";
-// import { deductLeaveBalance } from "@models/leaveBalanceModel.js";
+import {
+  deductLeaveBalance,
+  removeLeaveBalances,
+} from "@models/leaveBalanceModel.js";
 import { AuthenticatedRequest } from "@middleware/jwt.js";
 
 /**
- * [GET] /leave-requests - Fetch all Leave Requests (Monitoring)
+ * [GET] /leave-requests - Fetch all Leave Requests
+ * Accepts optional query parameter: ?type_code=TCT0000001&status=pending
  */
 export const fetchAllLeaveRequest = async (req: Request, res: Response) => {
   try {
-    const requests = await getAllLeaveRequests();
+    // parsing query parameter
+    const typeCode = req.query.type_code as string | undefined;
+    const employeeCode = req.query.employee_code as string | undefined;
+    const status = req.query.status as
+      | "pending"
+      | "approved"
+      | "rejected"
+      | undefined;
 
+    const requests = await getAllLeaveRequests({
+      typeCode,
+      employeeCode,
+      status,
+    });
     return successResponse(
       res,
       API_STATUS.SUCCESS,
@@ -38,26 +54,72 @@ export const fetchAllLeaveRequest = async (req: Request, res: Response) => {
 };
 
 /**
+ * [GET] /leave-request/:id - Fetch Leave Request by id
+ */
+export const fetchLeaveRequestById = async (req: Request, res: Response) => {
+  try {
+    // Validate and cast the ID params
+    const id: number = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "ID Permintaan Cuti tidak valid.",
+        400
+      );
+    }
+
+    const leaveRequest = await getLeaveRequestsById(id);
+
+    if (!leaveRequest) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data Permintaan Cuti tidak ditemukan",
+        404
+      );
+    }
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Perminataan Cuti berhasil didapatkan",
+      leaveRequest,
+      200,
+      RESPONSE_DATA_KEYS.LEAVE_REQUESTS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching leave balances:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
  * [PUT] /leave-requests/:id/status - Approve or Reject a Leave Request
  */
 export const updateLeaveRequestStatus = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
-  const userId = req.user!.id;
+  const employeeCode = req.user!.employee_code;
   const requestId = parseInt(req.params.id, 10);
 
-  if (isNaN(requestId)) {
-    return errorResponse(
-      res,
-      API_STATUS.BAD_REQUEST,
-      "ID Permintaan Cuti tidak valid.",
-      400
-    );
-  }
-
   try {
-    // 2. Validation
+    if (isNaN(requestId)) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "ID Permintaan Cuti tidak valid.",
+        400
+      );
+    }
+
     const validation = updateLeaveStatusSchema.safeParse(req.body);
     if (!validation.success) {
       return errorResponse(
@@ -71,10 +133,8 @@ export const updateLeaveRequestStatus = async (
         }))
       );
     }
-    const { status: newStatus } = validation.data;
-
-    // 3. Check if the request exists and is still pending
-    const existingRequest = await getLeaveRequestById(requestId);
+    // Check if the request exists and is still pending
+    const existingRequest = await getLeaveRequestsById(requestId);
     if (!existingRequest) {
       return errorResponse(
         res,
@@ -92,11 +152,11 @@ export const updateLeaveRequestStatus = async (
       );
     }
 
-    // update request status
+    const { status: newStatus } = validation.data;
     const updatedRequest = await editLeaveRequestStatus({
       id: existingRequest.id,
       new_status: newStatus,
-      approved_by_id: userId,
+      approved_by_code: employeeCode,
     });
     if (!updatedRequest) {
       return errorResponse(
@@ -107,13 +167,11 @@ export const updateLeaveRequestStatus = async (
       );
     }
 
-    // TODO: update the logic deduction of leave balance
     // Deduct the leave balance if request approved
-    // if (updatedRequest.status == "Approved") {
-    //   await deductLeaveBalance(updatedRequest);
-    // }
+    if (updatedRequest.status == "Approved") {
+      await deductLeaveBalance(updatedRequest);
+    }
 
-    // 5. Success Response
     return successResponse(
       res,
       API_STATUS.SUCCESS,
@@ -145,6 +203,54 @@ export const updateLeaveRequestStatus = async (
       res,
       API_STATUS.FAILED,
       "Terjadi kesalahan pada server saat memproses keputusan cuti.",
+      500
+    );
+  }
+};
+
+/**
+ * [DELETE] /leave-request/:id - Delete a leave request
+ */
+export const destroyLeaveRequest = async (req: Request, res: Response) => {
+  try {
+    // Validate and cast the ID params
+    const id: number = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "ID Permintaan Cuti tidak valid.",
+        400
+      );
+    }
+
+    const existing = await getLeaveRequestsById(id);
+
+    if (!existing) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data Permintaan Cuti tidak ditemukan",
+        404
+      );
+    }
+
+    await removeLeaveBalances(existing.id);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Permintaan Cuti berhasil dihapus",
+      null,
+      200
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching leave requests:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
       500
     );
   }

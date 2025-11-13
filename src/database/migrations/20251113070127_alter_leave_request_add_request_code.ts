@@ -38,7 +38,7 @@ export async function up(knex: Knex): Promise<void> {
       .references("employee_code")
       .inTable(EMPLOYEES_TABLE)
       .onDelete("restrict")
-      .notNullable()
+      .nullable()
       .after("status");
   });
 }
