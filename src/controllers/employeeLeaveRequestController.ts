@@ -3,25 +3,57 @@ import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { errorResponse, successResponse } from "@utils/response.js";
 import { appLogger } from "@utils/logger.js";
 import { AuthenticatedRequest } from "@middleware/jwt.js";
-import { addLeaveRequest } from "@models/leaveRequestModel.js";
+import {
+  addLeaveRequests,
+  getAllLeaveRequests,
+} from "@models/leaveRequestModel.js";
 import { DatabaseError } from "types/errorTypes.js";
-import { getAllEmployeeLeaveBalance } from "@models/leaveBalanceModel.js";
+import { getLeaveBalanceByEmployeeAndType } from "@models/leaveBalanceModel.js";
 import { calculateWorkdays } from "@utils/dateCalculations.js";
 import { addLeaveRequestSchema } from "@schemas/leaveRequestSchema.js";
+import { getMasterEmployeesByCode } from "@models/masterEmployeeModel.js";
 
 /**
- * [POST] /leave-requests - Submit a new leave application
+ * [GET] /leave-requests/me - Fetch all Leave Request belongs to one Employees
+ */
+export const fetchEmployeeLeaveRequest = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const employeeCode = req.user!.employee_code;
+    const leaveRequest = await getAllLeaveRequests({ employeeCode });
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Permintaan Cuti berhasil di dapatkan",
+      leaveRequest,
+      200,
+      RESPONSE_DATA_KEYS.LEAVE_REQUESTS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching leave request:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [POST] /leave-requests - Create a new leave request
  */
 export const createLeaveRequest = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
-  // FIX: Because the relation is changed from id to employee code
-  // We need to changed it too
-  const employeeId = 2;
+  const employee_code = req.user!.employee_code;
 
   try {
-    // 2. Validate Request Body
     const validation = addLeaveRequestSchema.safeParse(req.body);
     if (!validation.success) {
       return errorResponse(
@@ -36,12 +68,24 @@ export const createLeaveRequest = async (
       );
     }
 
-    const { leave_type_id, start_date, end_date, reason } = validation.data;
+    // check if the employee exist or not in database
+    const profile = await getMasterEmployeesByCode(employee_code);
+    if (!profile) {
+      appLogger.error(
+        `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
+      );
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Profil pegawai tidak ditemukan.",
+        404
+      );
+    }
 
-    // 3. Calculate Total Workdays (Business Logic)
+    const { type_code, start_date, end_date, reason } = validation.data;
+
+    // Calculate total work days
     const totalWorkDays = calculateWorkdays(start_date, end_date);
-
-    // Fail if the total days is 0 (e.g., requested only Sunday)
     if (totalWorkDays === 0) {
       return errorResponse(
         res,
@@ -51,10 +95,11 @@ export const createLeaveRequest = async (
       );
     }
 
-    // 4. Check Leave Balance (Crucial Integrity Check)
-    // Note: This model function needs to return the available balance for the given type/year
-    const availableBalance = await getAllEmployeeLeaveBalance("ea");
-
+    // Check Leave Balance (Crucial Integrity Check)
+    const availableBalance = await getLeaveBalanceByEmployeeAndType(
+      employee_code,
+      type_code
+    );
     if (!availableBalance) {
       return errorResponse(
         res,
@@ -64,59 +109,75 @@ export const createLeaveRequest = async (
       );
     }
 
-    // if (availableBalance.balance < totalWorkDays) {
-    //   return errorResponse(
-    //     res,
-    //     API_STATUS.CONFLICT,
-    //     `Sisa cuti Anda (${availableBalance.balance} hari) tidak mencukupi untuk ${totalWorkDays} hari yang diminta.`,
-    //     409
-    //   );
-    // }
+    if (availableBalance.balance < totalWorkDays) {
+      return errorResponse(
+        res,
+        API_STATUS.CONFLICT,
+        `Sisa cuti Anda (${availableBalance.balance} hari) tidak mencukupi untuk ${totalWorkDays} hari yang diminta.`,
+        409
+      );
+    }
 
-    // 5. Submit Request (Model)
-    const newRequest = await addLeaveRequest({
-      employee_id: employeeId,
-      leave_type_id,
+    const leaveRequestData = {
+      employee_code,
+      type_code,
       start_date,
-      end_date,
       total_days: totalWorkDays,
+      end_date,
       reason,
-    });
+    };
+    const newRequest = await addLeaveRequests(leaveRequestData);
 
-    // 6. Success Response
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Pengajuan cuti berhasil dikirim dan menunggu persetujuan Admin.",
       newRequest,
-      201, // 201 Created
-      RESPONSE_DATA_KEYS.LEAVE_REQUESTS // Assuming a key for leave requests
+      201,
+      RESPONSE_DATA_KEYS.LEAVE_REQUESTS
     );
   } catch (error) {
     const dbError = error as DatabaseError;
 
-    // Handle Foreign Key error if leave_type_id is invalid
-    if (
-      dbError.code === "ER_NO_REFERENCED_ROW" ||
-      dbError.errno === 1452 ||
-      dbError.message.includes("foreign key")
-    ) {
+    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
+      const errorMessage = dbError.sqlMessage || dbError.message;
+      const validationErrors = [];
+
+      // --- Duplicate Request CODE ---
+      if (
+        errorMessage &&
+        (errorMessage.includes("request_code") ||
+          errorMessage.includes("uni_request_code"))
+      ) {
+        validationErrors.push({
+          field: "request",
+          message: "Kode Permintaan cuti yang dimasukkan sudah ada.",
+        });
+
+        // --- Send Duplicate Entry Response if any unique field failed ---
+        if (validationErrors.length > 0) {
+          appLogger.warn(
+            "Employee creation failed: Duplicate entry detected for unique field(s)."
+          );
+          return errorResponse(
+            res,
+            API_STATUS.BAD_REQUEST,
+            "Validasi gagal",
+            400,
+            validationErrors
+          );
+        }
+      }
+
+      appLogger.error(
+        `Error submitting leave request for employee ${employee_code}:${error}`
+      );
       return errorResponse(
         res,
-        API_STATUS.BAD_REQUEST,
-        "ID Tipe Cuti tidak valid.",
-        400
+        API_STATUS.FAILED,
+        "Terjadi kesalahan pada server saat pengajuan cuti.",
+        500
       );
     }
-
-    appLogger.error(
-      `Error submitting leave request for employee ${employeeId}:${error}`
-    );
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server saat pengajuan cuti.",
-      500
-    );
   }
 };

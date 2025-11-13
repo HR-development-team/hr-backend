@@ -13,6 +13,7 @@ import {
   LEAVE_BALANCE_TABLE,
   LEAVE_TYPE_TABLE,
 } from "@constants/database.js";
+import { LeaveRequest } from "types/leaveRequestTypes.js";
 
 /**
  * Function for generating leave balance code
@@ -174,6 +175,24 @@ export const getLeaveBalanceByCode = async (
     .first();
 
 /**
+ * Get leave balance for a specific employee and type code
+ */
+export const getLeaveBalanceByEmployeeAndType = async (
+  employeeCode: string,
+  typeCode: string
+): Promise<{ balance: number }> => {
+  const currentYear = new Date().getFullYear();
+  return await db(LEAVE_BALANCE_TABLE)
+    .select(`${LEAVE_BALANCE_TABLE}.balance`)
+    .where({
+      employee_code: employeeCode,
+      type_code: typeCode,
+      year: currentYear,
+    })
+    .first();
+};
+
+/**
  * Creates new leave balance.
  */
 export const addLeaveBalances = async (
@@ -268,3 +287,26 @@ export async function removeBulkLeaveBalances(
 ): Promise<number> {
   return db(LEAVE_BALANCE_TABLE).where({ type_code, year }).del();
 }
+
+/**
+ * Deduct leave balance record
+ */
+export const deductLeaveBalance = async (
+  leaveRequest: LeaveRequest
+): Promise<LeaveBalance | null> => {
+  const currentYear = new Date().getFullYear();
+
+  const { employee_code, type_code, total_days } = leaveRequest;
+
+  await db(LEAVE_BALANCE_TABLE)
+    .where({
+      employee_code,
+      type_code,
+      year: currentYear,
+    })
+    .decrement("balance", total_days);
+
+  return db(LEAVE_BALANCE_TABLE)
+    .where({ employee_code, type_code, year: currentYear })
+    .first();
+};
