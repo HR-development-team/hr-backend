@@ -1,7 +1,8 @@
 export interface Attendance {
   id: number;
-  employee_id: number;
-  session_id: number;
+  attendance_code: string;
+  employee_code: string;
+  session_code: string;
   check_in_time: Date;
   check_out_time: Date | null;
   check_in_status: "in-time" | "late" | "absent";
@@ -10,16 +11,30 @@ export interface Attendance {
   updated_at?: Date;
 }
 
+export interface GetAllAttendance {
+  id: number;
+  attendance_code: string;
+  employee_code: string;
+  session_code: string;
+  check_in_time: Date;
+  check_out_time: Date | null;
+  check_in_status: "in-time" | "late" | "absent";
+  check_out_status: "in-time" | "early" | "overtime" | "missed";
+  employee_name: string;
+  session_status: string;
+  session_date: Date;
+}
+
 export interface CheckInPayload {
-  employee_id: number;
-  session_id: number;
+  employee_code: string;
+  session_code: string;
   check_in_time: Date;
   check_in_status: "in-time" | "late" | "absent";
 }
 
 export interface CheckOutPayload {
-  employee_id: number;
+  employee_code: string;
   check_out_time: Date;
-  session_id: number;
+  session_code: string;
   check_out_status: "in-time" | "early" | "overtime" | "missed";
 }

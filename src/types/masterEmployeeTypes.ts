@@ -104,3 +104,29 @@ export interface UpdateEmployee {
   npwp?: string | null;
   bank_account?: string | null;
 }
+
+export interface UpdateEmployeeByCode {
+  employee_code: string;
+  position_code?: string;
+  full_name?: string;
+  join_date?: string;
+
+  // optional fields
+  ktp_number?: string | null;
+  birth_place?: string | null;
+  birth_date?: string | null;
+  gender?: "laki-laki" | "perempuan" | null;
+  address?: string | null;
+  contact_phone?: string | null;
+  religion?: string | null;
+  maritial_status?: string | null;
+  resign_date?: string | null;
+  employment_status?: "aktif" | "inaktif" | null;
+  education?: string | null;
+  blood_type?: string | null;
+  profile_picture?: string | null;
+  bpjs_ketenagakerjaan?: string | null;
+  bpjs_kesehatan?: string | null;
+  npwp?: string | null;
+  bank_account?: string | null;
+}

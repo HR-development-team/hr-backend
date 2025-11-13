@@ -2,8 +2,8 @@ import { Response } from "express";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { AuthenticatedRequest } from "@middleware/jwt.js";
 import {
-  editMasterEmployees,
-  getMasterEmployeesById,
+  editMasterEmployeesByCode,
+  getMasterEmployeesByCode,
 } from "@models/masterEmployeeModel.js";
 import { appLogger } from "@utils/logger.js";
 import { errorResponse, successResponse } from "@utils/response.js";
@@ -16,10 +16,10 @@ export const fetchEmployeeProfile = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
-  const employeeId = req.user!.employee_id;
+  const employeeCode = req.user!.employee_code;
 
   try {
-    const profile = await getMasterEmployeesById(employeeId);
+    const profile = await getMasterEmployeesByCode(employeeCode);
 
     if (!profile) {
       appLogger.error(
@@ -43,7 +43,7 @@ export const fetchEmployeeProfile = async (
     );
   } catch (error) {
     appLogger.error(
-      `Error fetching profile for employee ${employeeId}: ${error}`
+      `Error fetching profile for employee ${employeeCode}: ${error}`
     );
 
     return errorResponse(
@@ -56,13 +56,13 @@ export const fetchEmployeeProfile = async (
 };
 
 /**
- * [PUT] /profile - UPdate employee profile
+ * [PUT] /profile - Update employee profile
  */
 export const updateEmployeeProfile = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
-  const employeeId = req.user!.employee_id;
+  const employeeCode = req.user!.employee_code;
 
   try {
     const validation = updateProfileSchema.safeParse(req.body);
@@ -81,8 +81,8 @@ export const updateEmployeeProfile = async (
     }
 
     const employeeData = validation.data;
-    const updatedProfile = await editMasterEmployees({
-      id: employeeId,
+    const updatedProfile = await editMasterEmployeesByCode({
+      employee_code: employeeCode,
       ...employeeData,
     });
 
@@ -106,7 +106,7 @@ export const updateEmployeeProfile = async (
   } catch (error) {
     // We use the general error handler since validation (uniqueness) is not expected here
     appLogger.error(
-      `Error fetching profile for employee ${employeeId}: ${error}`
+      `Error fetching profile for employee ${employeeCode}: ${error}`
     );
 
     return errorResponse(

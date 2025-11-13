@@ -1,5 +1,6 @@
 export interface User {
   id: number;
+  user_code: string;
   email: string;
   role: "admin" | "employee";
   password: string;
@@ -10,6 +11,7 @@ export interface User {
 
 export interface GetAllUser {
   id: number;
+  user_code: string;
   email: string;
   role: "admin" | "employee";
   employee_code: string;

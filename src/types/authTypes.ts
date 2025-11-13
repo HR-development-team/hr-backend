@@ -1,12 +1,4 @@
-export interface User {
-  id: number;
-  email: string;
-  password: string;
-  employee_id: number;
-  role: "admin" | "employee";
-  created_at?: Date;
-  updated_at?: Date;
-}
+import { User } from "./userTypes.js";
 
 export interface LoginRequest {
   email: string;

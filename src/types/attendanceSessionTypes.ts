@@ -1,16 +1,17 @@
 export interface AttendanceSession {
   id: number;
+  session_code: string;
   date: string;
   status: "open" | "closed";
   open_time: string;
   cutoff_time: string;
   close_time: string;
-  created_by: number;
+  created_by: string;
   created_at?: Date;
   updated_at?: Date;
 }
 
-export interface GetAttendanceById {
+export interface GetAllAttendanceSession {
   id: number;
   date: string;
   status: "open" | "closed";
@@ -18,23 +19,27 @@ export interface GetAttendanceById {
   cutoff_time: string;
   close_time: string;
   created_by: string;
-  created_at: string;
-  created_by_email: string;
   created_by_role: string;
-  created_by_first_name: string;
-  created_by_last_name: string;
+  created_by_employee_code: string;
+  created_by_full_name: string;
 }
 
-export interface CreateAttendanceSessionData {
+export interface GetAttendanceById extends AttendanceSession {
+  created_by_role: string;
+  created_by_employee_code: string;
+  created_by_full_name: string;
+}
+
+export interface CreateAttendanceSession {
   date: string;
   status: "open" | "closed";
   open_time: string;
   cutoff_time: string;
   close_time: string;
-  created_by: number;
+  created_by: string;
 }
 
-export interface UpdateAttendanceSessionData {
+export interface UpdateAttendanceSession {
   id: number;
   date?: string;
   status?: "open" | "closed";

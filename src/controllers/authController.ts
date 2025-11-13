@@ -55,7 +55,8 @@ export const loginUser = async (req: Request, res: Response) => {
     const userResponse = {
       id: user.id,
       email: user.email,
-      employee_id: user.employee_id,
+      user_code: user.user_code,
+      employee_code: user.employee_code,
       role: user.role,
     };
     const token = await generateToken(userResponse);
