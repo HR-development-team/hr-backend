@@ -26,19 +26,28 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.alterTable(USERS_TABLE, (table) => {
-    table.dropForeign(["employee_code"]);
-    table.dropColumn("employee_code");
-    table.dropColumn("user_code");
-  });
+  await knex.raw("SET FOREIGN_KEY_CHECKS = 0");
 
-  await knex.schema.alterTable(EMPLOYEES_TABLE, (table) => {
-    table
-      .integer("employee_id")
-      .unsigned()
-      .notNullable()
-      .references("id")
-      .inTable(EMPLOYEES_TABLE)
-      .onDelete("RESTRICT");
-  });
+  try {
+    await knex.schema.alterTable(USERS_TABLE, (table) => {
+      table.dropForeign(["employee_code"]);
+      table.dropColumn("employee_code");
+      table.dropColumn("user_code");
+    });
+
+    await knex.schema.alterTable(EMPLOYEES_TABLE, (table) => {
+      table
+        .integer("employee_id")
+        .unsigned()
+        .notNullable()
+        .references("id")
+        .inTable(EMPLOYEES_TABLE)
+        .onDelete("RESTRICT");
+    });
+  } catch (error) {
+    console.error(`Error during 'down' migration: ${error}`);
+    throw error;
+  } finally {
+    await knex.raw("SET FOREIGN_KEY_CHECKS = 1");
+  }
 }
