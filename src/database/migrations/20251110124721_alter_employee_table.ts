@@ -60,40 +60,49 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.alterTable(EMPLOYEES_TABLE, (table) => {
-    // Remove new fields
-    table.dropColumn("bank_account");
-    table.dropColumn("npwp");
-    table.dropColumn("bpjs_kesehatan");
-    table.dropColumn("bpjs_ketenagakerjaan");
-    table.dropColumn("profile_picture");
-    table.dropColumn("blood_type");
-    table.dropColumn("education");
-    table.dropColumn("employment_status");
-    table.dropColumn("resign_date");
-    table.dropColumn("maritial_status");
-    table.dropColumn("religion");
-    table.dropColumn("address");
-    table.dropColumn("gender");
-    table.dropColumn("birth_date");
-    table.dropColumn("birth_place");
-    table.dropColumn("ktp_number");
-    table.dropColumn("full_name");
-    table.dropForeign(["position_code"]);
-    table.dropColumn("position_code");
-    table.dropColumn("employee_code");
-  });
+  await knex.raw("SET FOREIGN_KEY_CHECKS = 0");
 
-  await knex.schema.alterTable(EMPLOYEES_TABLE, (table) => {
-    table.string("first_name", 100).notNullable();
-    table.string("last_name", 100).notNullable();
+  try {
+    await knex.schema.alterTable(EMPLOYEES_TABLE, (table) => {
+      // Remove new fields
+      table.dropColumn("bank_account");
+      table.dropColumn("npwp");
+      table.dropColumn("bpjs_kesehatan");
+      table.dropColumn("bpjs_ketenagakerjaan");
+      table.dropColumn("profile_picture");
+      table.dropColumn("blood_type");
+      table.dropColumn("education");
+      table.dropColumn("employment_status");
+      table.dropColumn("resign_date");
+      table.dropColumn("maritial_status");
+      table.dropColumn("religion");
+      table.dropColumn("address");
+      table.dropColumn("gender");
+      table.dropColumn("birth_date");
+      table.dropColumn("birth_place");
+      table.dropColumn("ktp_number");
+      table.dropColumn("full_name");
+      table.dropForeign(["position_code"]);
+      table.dropColumn("position_code");
+      table.dropColumn("employee_code");
+    });
 
-    table
-      .integer("position_id")
-      .unsigned()
-      .notNullable()
-      .references("id")
-      .inTable(POSITION_TABLE)
-      .onDelete("RESTRICT");
-  });
+    await knex.schema.alterTable(EMPLOYEES_TABLE, (table) => {
+      table.string("first_name", 100).notNullable();
+      table.string("last_name", 100).notNullable();
+
+      table
+        .integer("position_id")
+        .unsigned()
+        .notNullable()
+        .references("id")
+        .inTable(POSITION_TABLE)
+        .onDelete("RESTRICT");
+    });
+  } catch (error) {
+    console.error(`Error during 'down' migration (20251110124721): ${error}`);
+    throw error; // Re-throw to stop the migration
+  } finally {
+    await knex.raw("SET FOREIGN_KEY_CHECKS = 1");
+  }
 }

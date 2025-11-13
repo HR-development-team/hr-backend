@@ -38,7 +38,7 @@ export const getAllMasterPositions = async (): Promise<GetAllPosition[]> =>
     .select(
       "master_positions.id",
       "master_positions.position_code",
-      "master_positions.name as position_name",
+      "master_positions.name",
       "master_positions.base_salary",
       "master_positions.division_code",
 

@@ -30,29 +30,36 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.alterTable(POSITIONS_TABLE, (table) => {
-    table.dropForeign(
-      ["division_code"],
-      "master_positions_division_code_foreign"
-    );
-  });
+  await knex.raw("SET FOREIGN_KEY_CHECKS = 0");
+  try {
+    await knex.schema.alterTable(POSITIONS_TABLE, (table) => {
+      table.dropForeign(
+        ["division_code"],
+        "master_positions_division_code_foreign"
+      );
+    });
 
-  await knex.schema.alterTable(POSITIONS_TABLE, (table) => {
-    table.dropColumn("position_code");
-    table.dropColumn("division_code");
-    table.dropColumn("name");
-    table.dropColumn("description");
-  });
+    await knex.schema.alterTable(POSITIONS_TABLE, (table) => {
+      table.dropColumn("position_code");
+      table.dropColumn("division_code");
+      table.dropColumn("name");
+      table.dropColumn("description");
+    });
 
-  await knex.schema.alterTable(POSITIONS_TABLE, (table) => {
-    table.string("name", 100).notNullable().unique().after("id");
-    table.string("position_code", 100);
-    table
-      .integer("department_id")
-      .unsigned()
-      .references("id")
-      .inTable(DEPARTMENTS_TABLE)
-      .onDelete("RESTRICT")
-      .notNullable();
-  });
+    await knex.schema.alterTable(POSITIONS_TABLE, (table) => {
+      table.string("position_code", 100);
+      table
+        .integer("department_id")
+        .unsigned()
+        .references("id")
+        .inTable(DEPARTMENTS_TABLE)
+        .onDelete("RESTRICT")
+        .notNullable();
+    });
+  } catch (error) {
+    console.error(`Error during 'down' migration (20251110061946): ${error}`);
+    throw error;
+  } finally {
+    await knex.raw("SET FOREIGN_KEY_CHECKS = 1");
+  }
 }

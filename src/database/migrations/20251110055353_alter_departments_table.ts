@@ -17,13 +17,21 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.alterTable(DEPARTMENTS_TABLE, (table) => {
-    table.dropColumn("name");
-    table.dropColumn("department_code");
-  });
+  await knex.raw("SET FOREIGN_KEY_CHECKS = 0");
+  try {
+    await knex.schema.alterTable(DEPARTMENTS_TABLE, (table) => {
+      table.dropColumn("name");
+      table.dropColumn("department_code");
+    });
 
-  await knex.schema.alterTable(DEPARTMENTS_TABLE, (table) => {
-    table.string("name", 100).notNullable().unique().after("id");
-    table.string("department_code", 20).notNullable().unique().after("name");
-  });
+    await knex.schema.alterTable(DEPARTMENTS_TABLE, (table) => {
+      table.string("name", 100).notNullable().after("id");
+      table.string("department_code", 20).notNullable().after("name");
+    });
+  } catch (error) {
+    console.error(`Error during 'down' migration (20251110061946): ${error}`);
+    throw error;
+  } finally {
+    await knex.raw("SET FOREIGN_KEY_CHECKS = 1");
+  }
 }
