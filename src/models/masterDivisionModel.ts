@@ -12,7 +12,7 @@ import {
  * Function for generating division code
  */
 async function generateDivisionCode() {
-  const PREFIX = "DVS";
+  const PREFIX = "DIV";
   const PAD_LENGTH = 7;
 
   const lastRow = await db(DIVISION_TABLE)
