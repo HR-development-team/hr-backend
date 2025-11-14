@@ -65,8 +65,8 @@ export const getAllAttendanceSessions = async (): Promise<
     )
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
-      `${USER_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.employee_code`
+      `${USER_TABLE}.user_code`,
+      `${EMPLOYEE_TABLE}.user_code`
     );
 
 /**
@@ -137,8 +137,8 @@ export const getAttendanceSessionsById = async (
     )
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
-      `${USER_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.employee_code`
+      `${USER_TABLE}.user_code`,
+      `${EMPLOYEE_TABLE}.user_code`
     )
     .where(`${ATTENDANCE_SESSION_TABLE}.id`, id)
     .first();
@@ -174,8 +174,8 @@ export const getAttendanceSessionsByCode = async (
     )
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
-      `${USER_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.employee_code`
+      `${USER_TABLE}.user_code`,
+      `${EMPLOYEE_TABLE}.user_code`
     )
     .where(`${ATTENDANCE_SESSION_TABLE}.session_code`, code)
     .first();
