@@ -2,20 +2,20 @@ import type { Knex } from "knex";
 
 export async function seed(knex: Knex): Promise<void> {
   await knex("master_employees").insert([
-    // Data persis dari contoh JSON Anda
     {
       employee_code: "EMP0000001",
-      position_code: "POS0000001", // B. Santoso -> Backend Dev
+      user_code: "USR0000001",
+      position_code: "POS0000001",
       full_name: "Budi Santoso",
       ktp_number: "3512345678901234",
       birth_place: "Ponorogo",
-      birth_date: "1998-05-11", // Format YYYY-MM-DD
+      birth_date: "1998-05-11",
       gender: "laki-laki",
       address: "Jl. Kenangan No. 42, Ponorogo",
       contact_phone: "081234567890",
       religion: "Islam",
       maritial_status: "belum menikah",
-      join_date: "2024-11-30", // Format YYYY-MM-DD
+      join_date: "2024-11-30",
       resign_date: null,
       employment_status: "Full-time",
       education: "S1 Informatika",
@@ -26,10 +26,10 @@ export async function seed(knex: Knex): Promise<void> {
       npwp: "123456789012345",
       bank_account: "098765432109876",
     },
-    // Data dummy untuk Citra Lestari (disesuaikan dengan skema baru)
     {
       employee_code: "EMP0000002",
-      position_code: "POS0000002", // C. Lestari -> Frontend Dev
+      user_code: "USR0000002",
+      position_code: "POS0000002",
       full_name: "Citra Lestari",
       ktp_number: "3201112223330002",
       birth_place: "Jakarta",
@@ -50,10 +50,10 @@ export async function seed(knex: Knex): Promise<void> {
       npwp: "123456789012346",
       bank_account: "098765432109877",
     },
-    // Data dummy untuk Admin Perusahaan (disesuaikan dengan skema baru)
     {
       employee_code: "EMP0000003",
-      position_code: "POS0000003", // Admin -> HR Staff
+      user_code: "USR0000003",
+      position_code: "POS0000003",
       full_name: "Admin Perusahaan",
       ktp_number: "3201112223330003",
       birth_place: "Bandung",
@@ -74,10 +74,10 @@ export async function seed(knex: Knex): Promise<void> {
       npwp: "123456789012347",
       bank_account: "098765432109878",
     },
-    // Data tambahan 4-20
     {
       employee_code: "EMP0000004",
-      position_code: "POS0000004", // UI/UX Designer
+      user_code: "USR0000004",
+      position_code: "POS0000004",
       full_name: "Dewi Anggraini",
       ktp_number: "3512345678901235",
       birth_place: "Surabaya",
@@ -100,7 +100,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000005",
-      position_code: "POS0000001", // Backend Dev
+      user_code: "USR0000005",
+      position_code: "POS0000001",
       full_name: "Eko Prasetyo",
       ktp_number: "3512345678901236",
       birth_place: "Malang",
@@ -123,7 +124,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000006",
-      position_code: "POS0000002", // Frontend Dev
+      user_code: "USR0000006",
+      position_code: "POS0000002",
       full_name: "Fitri Handayani",
       ktp_number: "3512345678901237",
       birth_place: "Yogyakarta",
@@ -146,7 +148,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000007",
-      position_code: "POS0000005", // Mobile Developer
+      user_code: "USR0000007",
+      position_code: "POS0000005",
       full_name: "Gunawan Wijaya",
       ktp_number: "3512345678901238",
       birth_place: "Semarang",
@@ -169,7 +172,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000008",
-      position_code: "POS0000006", // Data Analyst
+      user_code: "USR0000008",
+      position_code: "POS0000006",
       full_name: "Hana Sari",
       ktp_number: "3512345678901239",
       birth_place: "Medan",
@@ -192,7 +196,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000009",
-      position_code: "POS0000007", // Project Manager
+      user_code: "USR0000009",
+      position_code: "POS0000007",
       full_name: "Irfan Maulana",
       ktp_number: "3512345678901240",
       birth_place: "Bekasi",
@@ -215,7 +220,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000010",
-      position_code: "POS0000008", // QA Engineer
+      user_code: "USR0000010",
+      position_code: "POS0000008",
       full_name: "Jihan Aulia",
       ktp_number: "3512345678901241",
       birth_place: "Depok",
@@ -238,7 +244,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000011",
-      position_code: "POS0000001", // Backend Dev
+      user_code: "USR0000011",
+      position_code: "POS0000001",
       full_name: "Kurniawan Adi",
       ktp_number: "3512345678901242",
       birth_place: "Solo",
@@ -261,7 +268,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000012",
-      position_code: "POS0000003", // HR Staff
+      user_code: "USR0000012",
+      position_code: "POS0000003",
       full_name: "Lestari Wulandari",
       ktp_number: "3512345678901243",
       birth_place: "Bogor",
@@ -284,7 +292,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000013",
-      position_code: "POS0000009", // DevOps Engineer
+      user_code: "USR0000013",
+      position_code: "POS0000009",
       full_name: "Mulyono Siregar",
       ktp_number: "3512345678901244",
       birth_place: "Palembang",
@@ -307,7 +316,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000014",
-      position_code: "POS0000010", // Finance Staff
+      user_code: "USR0000014",
+      position_code: "POS0000010",
       full_name: "Nadia Putri",
       ktp_number: "3512345678901245",
       birth_place: "Tangerang",
@@ -330,7 +340,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000015",
-      position_code: "POS0000002", // Frontend Dev
+      user_code: "USR0000015",
+      position_code: "POS0000002",
       full_name: "Oki Pratama",
       ktp_number: "3512345678901246",
       birth_place: "Lampung",
@@ -353,7 +364,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000016",
-      position_code: "POS0000004", // UI/UX Designer
+      user_code: "USR0000016",
+      position_code: "POS0000004",
       full_name: "Putri Maharani",
       ktp_number: "3512345678901247",
       birth_place: "Denpasar",
@@ -376,7 +388,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000017",
-      position_code: "POS0000005", // Mobile Developer
+      user_code: "USR0000017",
+      position_code: "POS0000005",
       full_name: "Rizki Ramadhan",
       ktp_number: "3512345678901248",
       birth_place: "Makassar",
@@ -399,7 +412,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000018",
-      position_code: "POS0000006", // Data Analyst
+      user_code: "USR0000018",
+      position_code: "POS0000006",
       full_name: "Sari Indah",
       ktp_number: "3512345678901249",
       birth_place: "Balikpapan",
@@ -422,7 +436,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000019",
-      position_code: "POS0000007", // Project Manager
+      user_code: "USR0000019",
+      position_code: "POS0000007",
       full_name: "Teguh Santoso",
       ktp_number: "3512345678901250",
       birth_place: "Manado",
@@ -445,7 +460,8 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       employee_code: "EMP0000020",
-      position_code: "POS0000008", // QA Engineer
+      user_code: "USR0000020",
+      position_code: "POS0000008",
       full_name: "Umi Kulsum",
       ktp_number: "3512345678901251",
       birth_place: "Cirebon",
