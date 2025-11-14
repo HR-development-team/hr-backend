@@ -21,6 +21,15 @@ import { getAttendanceSessionsByDate } from "@models/attendanceSessionModel.js";
 export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
   const employeeCode = req.user!.employee_code;
 
+  if (!employeeCode) {
+    return errorResponse(
+      res,
+      API_STATUS.UNAUTHORIZED,
+      "Akun ini tidak terhubung dengan data pegawai.",
+      401
+    );
+  }
+
   try {
     // validate the request first
     const validation = checkInSchema.safeParse(req.body);
@@ -65,7 +74,9 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
 
     // Compare current time with session open time
     const now = new Date();
-    const openTime = new Date(`${dateNow}T${attendanceSession.open_time}`);
+    const openTime = new Date(
+      `${dateNow}T${attendanceSession.open_time}+07:00`
+    );
     if (now < openTime) {
       return errorResponse(
         res,
@@ -132,6 +143,16 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
  * [PUT] /attendances/check-out - Record Employee Check-Out
  */
 export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
+  const employeeCode = req.user!.employee_code;
+
+  if (!employeeCode) {
+    return errorResponse(
+      res,
+      API_STATUS.UNAUTHORIZED,
+      "Akun ini tidak terhubung dengan data pegawai.",
+      401
+    );
+  }
   try {
     // validate the request first
     const validation = checkOutSchema.safeParse(req.body);
@@ -148,7 +169,6 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
       );
     }
 
-    const employeeCode = req.user!.employee_code;
     const profile = await getMasterEmployeesByCode(employeeCode);
     if (!profile) {
       appLogger.error(
@@ -288,8 +308,18 @@ export const fetchEmployeeAttendance = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
+  const employeeCode = req.user!.employee_code;
+
+  if (!employeeCode) {
+    return errorResponse(
+      res,
+      API_STATUS.UNAUTHORIZED,
+      "Akun ini tidak terhubung dengan data pegawai.",
+      401
+    );
+  }
+
   try {
-    const employeeCode = req.user!.employee_code;
     const attendances = await getEmployeeAttendances(employeeCode);
 
     return successResponse(

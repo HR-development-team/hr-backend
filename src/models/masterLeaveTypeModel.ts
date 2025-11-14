@@ -12,7 +12,7 @@ import {
  * Function for generating leave type code
  */
 async function generateLeaveTypeCode() {
-  const PREFIX = "TCI";
+  const PREFIX = "TCT";
   const PAD_LENGTH = 7;
 
   const lastRow = await db(LEAVE_TYPE_TABLE)
