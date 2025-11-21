@@ -218,8 +218,21 @@ export const updateUsers = async (req: Request, res: Response) => {
       );
     }
 
-    const userData = validation.data;
-    const users = await editUsers({ id, ...userData });
+    const { role, password, email } = validation.data;
+
+    let hashedPassword: string | undefined = undefined;
+
+    // Assign only if password is provided
+    if (password) {
+      hashedPassword = await hashPassword(password);
+    }
+
+    const users = await editUsers({
+      id,
+      password: hashedPassword,
+      email,
+      role,
+    });
 
     // Validate employee not found
     if (!users) {

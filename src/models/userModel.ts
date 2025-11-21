@@ -53,7 +53,10 @@ export const getAllUsers = async (): Promise<GetAllUser[]> =>
 export const getUsersById = async (
   id: number
 ): Promise<Omit<User, "password">> =>
-  await db(USER_TABLE).where({ id }).select("*").first();
+  await db(USER_TABLE)
+    .where({ id })
+    .select("id", "user_code", "email", "role")
+    .first();
 
 /**
  * Creates new user.
@@ -69,7 +72,10 @@ export const addUsers = async (
     user_code,
   };
   const [id] = await db(USER_TABLE).insert(userToInsert);
-  return db(USER_TABLE).where({ id }).select("*").first();
+  return db(USER_TABLE)
+    .where({ id })
+    .select("id", "user_code", "email", "role")
+    .first();
 };
 
 /**
@@ -86,7 +92,10 @@ export const editUsers = async (
   };
 
   await db(USER_TABLE).where({ id }).update(userToUpdate);
-  return db(USER_TABLE).where({ id }).select("*").first();
+  return db(USER_TABLE)
+    .where({ id })
+    .select("id", "user_code", "email", "role")
+    .first();
 };
 
 /**
