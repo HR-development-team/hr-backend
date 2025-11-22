@@ -1,0 +1,76 @@
+import { Response } from "express";
+import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
+import { errorResponse, successResponse } from "@utils/response.js";
+import { appLogger } from "src/common/utils/logger.js";
+import { DatabaseError } from "@apptypes/error.types.js";
+import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { getMasterEmployeesByCode } from "@modules/employees/employee.model.js";
+import { calculateTotalAttendancesAndAbsences } from "./dashboard.model.js";
+
+/**
+ * [GET] /metrics - Fetch employees data metrics
+ */
+export const getMetrics = async (req: AuthenticatedRequest, res: Response) => {
+  const employeeCode = req.user!.employee_code;
+
+  if (!employeeCode) {
+    return errorResponse(
+      res,
+      API_STATUS.UNAUTHORIZED,
+      "Akun ini tidak terhubung dengan data pegawai.",
+      401
+    );
+  }
+
+  try {
+    // check if the employee exist or not in database
+    const profile = await getMasterEmployeesByCode(employeeCode);
+    if (!profile) {
+      appLogger.error(
+        `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
+      );
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Profil pegawai tidak ditemukan.",
+        404
+      );
+    }
+
+    //  Date Handling, allow query params for month and year
+    const now = new Date();
+    const month = parseInt(req.query.month as string) || now.getMonth() + 1;
+    const year = parseInt(req.query.year as string) || now.getFullYear();
+
+    const attendanceMetrics = await calculateTotalAttendancesAndAbsences(
+      employeeCode,
+      month,
+      year
+    );
+
+    // TODO: Implement employee leave balance report
+    // const annualLeaveResult = await findEmployeeBalance(employeeId);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Berhasil mendapatkan data dashboard karyawan",
+      {
+        ...attendanceMetrics,
+        // annualLeaveBalance: annualLeaveResult || 0,
+      },
+      201,
+      RESPONSE_DATA_KEYS.EMPLOYEES
+    );
+  } catch (error) {
+    const dbError = error as DatabaseError;
+
+    appLogger.error(`Error fetch employee dashboard:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
