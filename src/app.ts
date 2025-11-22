@@ -1,93 +1,27 @@
-import cors, { CorsOptions } from "cors";
+import cors from "cors";
 import express, { Application, Request, Response } from "express";
 import { httpLogger } from "@utils/logger.js";
-
 import { setResponseHeader } from "@middleware/set-headers.js";
-
-import masterDepartmentRoutes from "@routes/masterDepartmentRoutes.js";
-import masterDivisionRoutes from "@routes/masterDivisionRoutes.js";
-import masterPositionRoutes from "@routes/masterPositionRoutes.js";
-import masterEmployeeRoutes from "@routes/masterEmployeeRoutes.js";
-import userRoutes from "@routes/userRoutes.js";
-import profileRoutes from "@routes/profileRoutes.js";
-import employeeAttendanceRoutes from "@routes/employeeAttendanceRoutes.js";
-import adminAttendanceRoutes from "@routes/adminAttendanceRoutes.js";
-import authRoutes from "@routes/authRoutes.js";
-import masterLeaveTypeRoutes from "@routes/masterLeaveTypeRoutes.js";
-import adminLeaveBalanceRoutes from "@routes/adminLeaveBalanceRoutes.js";
-import employeeLeaveRequestRoutes from "@routes/employeeLeaveRequestRoutes.js";
-import adminLeaveRequestRoutes from "@routes/adminLeaveRequestRoute.js";
-import payrollPeriodRoutes from "@routes/payrollPeriodRoutes.js";
-import payrollRoutes from "@routes/payrollRoutes.js";
-import attendanceSessionRoutes from "@routes/attendanceSessionRoutes.js";
-import employeeLeaveBalanceRoutes from "@routes/employeeLeaveBalanceRoutes.js";
-import employeeDashboardRoutes from "@routes/employeeDashboardRoutes.js";
-import adminDashboardRoutes from "@routes/adminDashboardRoutes.js";
+import { corsOptions } from "@config/cors.js";
+import router from "./app.routes.js";
 
 const app: Application = express();
 
-// ====================================================================
-// ||                 CORS CONFIGURATION SECTION                     ||
-// ====================================================================
-const allowedOrigins: string[] = ["http://localhost:3000"];
-
-const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl) or from allowed origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Timestamp",
-    "X-Signature",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-};
-
-// ====================================================================
-// ||                     GLOBAL MIDDLEWARE                          ||
-// ====================================================================
 app.use(cors(corsOptions));
-app.use(httpLogger); // HTTP Request Logger
-app.use(express.json()); // Body Parser for JSON payloads
-app.use(express.urlencoded({ extended: false })); // Body Parser for URL-encoded payloads
+app.use(httpLogger);
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-// ====================================================================
-// ||                        ROOT ROUTE                              ||
-// ====================================================================
+// Health Check (Root)
 app.get("/", setResponseHeader, (req: Request, res: Response) => {
-  return res
-    .status(200)
-    .json(`Welcome to the server! ${new Date().toLocaleString()}`);
+  return res.status(200).json({
+    message: "Server is running",
+    timestamp: new Date().toLocaleString(),
+  });
 });
 
-// ====================================================================
-// ||                    ROUTE REGISTERING GOES HERE                 ||
-// ====================================================================
-app.use("/api/v1/master-departments", masterDepartmentRoutes);
-app.use("/api/v1/master-divisions", masterDivisionRoutes);
-app.use("/api/v1/master-positions", masterPositionRoutes);
-app.use("/api/v1/master-employees", masterEmployeeRoutes);
-app.use("/api/v1/users", userRoutes);
-app.use("/api/v1/profiles", profileRoutes);
-app.use("/api/v1/attendances", employeeAttendanceRoutes);
-app.use("/api/v1/admin/attendances", adminAttendanceRoutes);
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/master-leave-types", masterLeaveTypeRoutes);
-app.use("/api/v1/leave-balances", adminLeaveBalanceRoutes);
-app.use("/api/v1/leave-requests", employeeLeaveRequestRoutes);
-app.use("/api/v1/leave-requests", adminLeaveRequestRoutes);
-app.use("/api/v1/payroll-periods", payrollPeriodRoutes);
-app.use("/api/v1/payrolls", payrollRoutes);
-app.use("/api/v1/attendance-sessions", attendanceSessionRoutes);
-app.use("/api/v1/leave-balances", employeeLeaveBalanceRoutes);
-app.use("/api/v1/employees/dashboard", employeeDashboardRoutes);
-app.use("/api/v1/admin/dashboard", adminDashboardRoutes);
+// 3. Load Routes
+// If you ever need v2, you just create app.routes.v2.ts and mount it line below.
+app.use("/api/v1", router);
 
 export default app;

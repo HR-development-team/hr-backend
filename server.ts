@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { appLogger } from "./src/utils/logger.js";
+import { appLogger } from "./src/common/utils/logger.js";
 import app from "./src/app.js";
 
 config();

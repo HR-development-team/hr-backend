@@ -17,18 +17,14 @@
 
     "baseUrl": "./",
     "paths": {
-      "core/*": ["src/core/*"],
-      "types/*": ["src/types/*"],
-      "@controllers/*": ["src/controllers/*"],
-      "@core/*": ["src/core/*"],
-      "@keys/*": ["src/keys/*"],
-      "@middleware/*": ["src/middleware/*"],
-      "@migrations/*": ["src/migrations/*"],
-      "@models/*": ["src/models/*"],
-      "@routes/*": ["src/routes/*"],
-      "@schemas/*": ["src/schemas/*"],
-      "@utils/*": ["src/utils/*"],
-      "@constants/*": ["src/constants/*"]
+      "@common/*": ["src/common/*"],
+      "@constants/*": ["src/common/constants/*"],
+      "@utils/*": ["src/common/utils/*"],
+      "@middleware/*": ["src/common/middleware/*"],
+      "@apptypes/*": ["src/common/types/*"],
+      "@modules/*": ["src/modules/*"],
+      "@database/*": ["src/database/*"],
+      "@config/*": ["src/common/config/*"]
     }
   }
 }
