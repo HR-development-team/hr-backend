@@ -14,6 +14,7 @@ export const RESPONSE_DATA_KEYS = {
   DIVISIONS: "master_divisions",
   POSITIONS: "master_positions",
   EMPLOYEES: "master_employees",
+  OFFICES: "master_offices",
   LEAVE_TYPES: "leave_types",
   USERS: "users",
   AUTH: "auth",

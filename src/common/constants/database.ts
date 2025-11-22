@@ -10,6 +10,7 @@ export const EMPLOYEE_TABLE = "master_employees";
 export const POSITION_TABLE = "master_positions";
 export const DIVISION_TABLE = "master_divisions";
 export const DEPARTMENT_TABLE = "master_departments";
+export const OFFICE_TABLE = "master_offices";
 
 // Attendance Tables
 export const ATTENDANCE_SESSION_TABLE = "attendance_sessions";
