@@ -10,8 +10,7 @@ export async function up(knex: Knex): Promise<void> {
     table.decimal("latitude", 10, 8).notNullable();
     table.decimal("longitude", 11, 8).notNullable();
     table.integer("radius_meters").unsigned().notNullable().defaultTo(50);
-    table.timestamp("created_at").defaultTo(knex.fn.now());
-    table.timestamp("updated_at").defaultTo(knex.fn.now());
+    table.timestamps(true, true);
   });
 }
 
