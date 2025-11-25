@@ -4,6 +4,7 @@ import masterDepartmentRoutes from "@modules/departments/department.routes.js";
 import masterDivisionRoutes from "@modules/divisions/division.routes.js";
 import masterPositionRoutes from "@modules/positions/position.routes.js";
 import masterOfficeRoutes from "@modules/offices/office.routes.js";
+import masterShiftRoutes from "@modules/shifts/shift.routes.js";
 import masterEmployeeRoutes from "@modules/employees/employee.routes.js";
 import userRoutes from "@modules/users/user.routes.js";
 import profileRoutes from "@modules/profiles/profile.routes.js";
@@ -36,6 +37,7 @@ router.use("/master-positions", masterPositionRoutes);
 router.use("/master-employees", masterEmployeeRoutes);
 router.use("/master-leave-types", masterLeaveTypeRoutes);
 router.use("/master-offices", masterOfficeRoutes);
+router.use("/master-shifts", masterShiftRoutes);
 
 // ==========================
 // ||    Core Features     ||
