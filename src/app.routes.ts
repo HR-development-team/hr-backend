@@ -55,7 +55,7 @@ router.use("/payrolls", payrollRoutes);
 router.use("/employee/attendances", employeeAttendanceRoutes);
 router.use("/employee/leave-requests", employeeLeaveRequestRoutes);
 router.use("/employee/leave-balances", employeeLeaveBalanceRoutes);
-router.use("/employee/dashboards", employeeDashboardRoutes);
+router.use("/employee/dashboard", employeeDashboardRoutes);
 
 // ==========================
 // ||    Admin Portal      ||
