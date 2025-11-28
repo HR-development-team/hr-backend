@@ -139,6 +139,18 @@ export const createMasterEmployees = async (req: Request, res: Response) => {
         });
       }
 
+      // --- Duplicate User CODE ---
+      if (
+        errorMessage &&
+        (errorMessage.includes("user_code") ||
+          errorMessage.includes("uni_user_code"))
+      ) {
+        validationErrors.push({
+          field: "user_code",
+          message: "Kode user yang dimasukkan sudah ada.",
+        });
+      }
+
       // --- Duplicate KTP Number ---
       if (errorMessage && errorMessage.includes("ktp_number")) {
         validationErrors.push({
