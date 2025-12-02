@@ -238,7 +238,7 @@ GET /offices/{office_code}
     "status": "00",
     "message": "Data Kantor Berhasil Didapatkan",
     "datetime": "20251103101550"
-    "office": {
+    "offices": {
         "office_code": "OFC0000002",
         "parent_office_code": "OFC0000001",
         "name": "Kantor Cabang Bandung",
@@ -327,7 +327,7 @@ POST /offices
     "status": "00",
     "message": "Data Kantor Berhasil Diperbarui",
     "datetime": "20251103101550",
-    "office": {
+    "offices": {
         "office_code": "OFC0000002",
         "parent_office_code": "OFC0000001",
         "name": "Kantor Cabang Bandung Raya",
@@ -417,14 +417,18 @@ PUT /offices/{office_code}
 ```json
 {
     "status": "00",
-    "message": "Data Organisasi Kantor Pusat Berhasil Diperbarui",
+    "message": "Data Kantor Berhasil Diperbarui",
     "datetime": "20251103101550"
-    "organization": {
-        "position_code": "JBT0000003",
-        "name": "HR Staff",
-        "parent_position_code": "JBT0000002",
+    "offices": {
+        "office_code": "OFC0000002",
+        "parent_office_code": "OFC0000001",
+        "name": "Kantor Cabang Bandung Raya",
+        "address": "Jl. Asia Afrika No. 100A, Bandung",
+        "latitude": -6.917464,
+        "longitude": 107.619125,
+        "radius_meters": 80,
         "sort_order": 2,
-        "level": 2
+        "description": "Kantor cabang regional untuk wilayah Jawa Barat."
     }
 }
 ```
