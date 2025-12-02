@@ -9,13 +9,14 @@ Manage organizational hierarchies offices. This API allows you to create, retrie
 ## Table of Contents
 
 - [Authentication](#-authentication)
-- [Common Response Formats](#common)
-- [Endpoints](#endpoints)
-  - [Get Organization Tree](#get-organization-tree)
-  - [Get Office List](#get-flat-organization-list)
-  - [Create Office](#add-position-organization)
-  - [Update Office](#update-position-organization)
-  - [Delete Office](#delete-position-organization)
+- [Common Response Formats](#common-response-formats)
+- [Endpoints](#-endpoints)
+  - [Get Organization Tree](#1-get-organization-tree)
+  - [Get Office List](#2-get-office-list)
+  - [Get Office By Id](#3-get-office-by-id)
+  - [Create Office](#4-create-office)
+  - [Update Office](#5-update-office)
+  - [Delete Office](#6-delete-office)
 - [Error Handling](#error-handling)
 - [Rate Limiting](#rate-limiting)
 
@@ -465,7 +466,7 @@ curl -X PUT "https://api.example.com/v1/offices/OFC0000002" \
     }'
 ```
 
-### 5. DELETE Office
+### 6. DELETE Office
 
 Remove an existing office record from the system using its unique identifier.
 
