@@ -21,6 +21,7 @@ export const ATTENDANCE_TABLE = "attendances";
 export const LEAVE_TYPE_TABLE = "master_leave_types";
 export const LEAVE_BALANCE_TABLE = "leave_balances";
 export const LEAVE_REQUEST_TABLE = "leave_requests";
+export const OVERTIME_REQUEST_TABLE = "overtime_requests";
 
 // Payroll Tables
 export const PAYROLL_PERIODS_TABLE = "payroll_periods";

@@ -27,4 +27,6 @@ export const RESPONSE_DATA_KEYS = {
   LEAVE_BALANCES: "leave_balances",
   PAYROLL_PERIODS: "payroll_periods",
   PAYROLLS: "payrolls",
+
+  OVERTIME_REQUESTS: "overtime_requests",
 };
