@@ -9,7 +9,7 @@ Manage organizational hierarchies offices. This API allows you to create, retrie
 ## Table of Contents
 
 - [Authentication](#-authentication)
-- [Common Response Formats](#common-response-formats)
+- [Common Response Formats](#-common-response-formats)
 - [Endpoints](#-endpoints)
   - [Get Organization Tree](#1-get-organization-tree)
   - [Get Office List](#2-get-office-list)
@@ -17,8 +17,6 @@ Manage organizational hierarchies offices. This API allows you to create, retrie
   - [Create Office](#4-create-office)
   - [Update Office](#5-update-office)
   - [Delete Office](#6-delete-office)
-- [Error Handling](#error-handling)
-- [Rate Limiting](#rate-limiting)
 
 ## 🔐 Authentication
 
