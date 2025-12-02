@@ -1,0 +1,226 @@
+//////////////////////////////////////////////////////
+// USERS
+//////////////////////////////////////////////////////
+
+Table users {
+  id int [pk, increment]
+  user_code varchar(10) [unique, not null]
+  email varchar(255) [unique, not null]
+  password varchar(255) [not null]
+  role enum('admin', 'employee') [default: 'employee']
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+//////////////////////////////////////////////////////
+// MASTER DATA
+//////////////////////////////////////////////////////
+
+Table master_departments {
+  id int [pk, increment]
+  department_code varchar(10) [unique, not null]
+  name varchar(100) [not null]
+  description text
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table master_divisions {
+  id int [pk, increment]
+  division_code varchar(10) [unique, not null]
+  department_code varchar(10) [not null] // FK → master_departments.department_code
+  name varchar(100) [not null]
+  description text
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table master_positions {
+  id int [pk, increment]
+  position_code varchar(10) [unique, not null]
+  division_code varchar(10) [not null] // FK → master_divisions.division_code
+  name varchar(100) [not null]
+  base_salary decimal(12,2) [default: 0.00]
+  description text
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table master_offices {
+  id int [pk, increment]
+  office_code varchar(10) [unique, not null]
+  name varchar(100) [not null]
+  address text [not null]
+  latitude decimal(10,8) [not null]
+  longitude decimal(11,8) [not null]
+  radius_meters int [not null, default: 50]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table master_leave_types {
+  id int [pk, increment]
+  type_code varchar(10) [unique, not null]
+  name varchar(100) [not null]
+  deduction decimal(12,2) [default: 0.00]
+  description varchar(255)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table master_shifts {
+  id int [pk, increment]
+  shift_code varchar(10) [unique, not null]
+  name varchar(100) [not null]
+  start_time time [not null]
+  end_time time [not null]
+  is_overnight boolean [not null, default: 0]
+  late_tolerance_minutes int [not null, default: 15]
+  check_in_limit_minutes int [not null, default: 240]
+  check_out_limit_minutes int [not null, default: 120]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table master_employees {
+  id int [pk, increment]
+  employee_code varchar(10) [unique, not null]
+  user_code varchar(10) [unique]                // FK → users.user_code
+  position_code varchar(10) [not null]          // FK → master_positions.position_code
+  office_code varchar(10)                       // FK → master_offices.office_code
+  full_name varchar(100) [not null]
+  ktp_number varchar(16) [unique]
+  birth_place varchar(100)
+  birth_date date
+  gender enum('laki-laki', 'perempuan')
+  address text
+  contact_phone varchar(20)
+  religion varchar(50)
+  maritial_status varchar(50)
+  join_date date [not null]
+  resign_date varchar(50)
+  employment_status varchar(50) [default: 'aktif']
+  education varchar(50)
+  blood_type varchar(5)
+  profile_picture varchar(255)
+  bpjs_ketenagakerjaan varchar(50) [unique]
+  bpjs_kesehatan varchar(50) [unique]
+  npwp varchar(50) [unique]
+  bank_account varchar(50)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+//////////////////////////////////////////////////////
+// ATTENDANCE
+//////////////////////////////////////////////////////
+
+Table attendance_sessions {
+  id int [pk, increment]
+  session_code varchar(10) [unique, not null]
+  date date [unique, not null]
+  status enum('open', 'closed') [default: 'closed']
+  open_time time [not null]
+  cutoff_time time [not null]
+  close_time time [not null]
+  created_by varchar(10) [not null]          // FK → users.user_code
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table attendances {
+  id int [pk, increment]
+  attendance_code varchar(10) [unique, not null]
+  employee_code varchar(10) [not null]       // FK → master_employees.employee_code
+  session_code varchar(10) [not null]        // FK → attendance_sessions.session_code
+  check_in_time datetime [not null]
+  check_out_time datetime
+  check_in_status enum('in-time', 'late', 'absent') [not null]
+  check_out_status enum('in-time', 'early', 'overtime', 'missed')
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+//////////////////////////////////////////////////////
+// LEAVE MANAGEMENT
+//////////////////////////////////////////////////////
+
+Table leave_balances {
+  id int [pk, increment]
+  balance_code varchar(10) [unique, not null]
+  employee_code varchar(10) [not null]       // FK → master_employees.employee_code
+  type_code varchar(10) [not null]           // FK → master_leave_types.type_code
+  balance int [not null, default: 0]
+  year int [not null]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table leave_requests {
+  id int [pk, increment]
+  request_code varchar(10) [unique, not null]
+  employee_code varchar(10) [not null]           // FK → master_employees.employee_code
+  type_code varchar(10) [not null]               // FK → master_leave_types.type_code
+  start_date date [not null]
+  end_date date [not null]
+  total_days decimal(8,2) [not null]
+  reason text [not null]
+  status enum('Pending', 'Approved', 'Rejected') [default: 'Pending']
+  approved_by_user_code varchar(10)              // FK → users.user_code
+  approval_date timestamp
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+//////////////////////////////////////////////////////
+// PAYROLL
+//////////////////////////////////////////////////////
+
+Table payroll_periods {
+  id int [pk, increment]
+  period_code varchar(20) [unique, not null]
+  start_date date [not null]
+  end_date date [not null]
+  status enum('open','processing','finalized','paid','canceled') [default: 'open']
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table payrolls {
+  id int [pk, increment]
+  payroll_period_id int [not null]   // FK → payroll_periods.id
+  employee_id int [not null]         // FK → master_employees.id
+  base_salary int [not null]
+  total_work_days int [not null]
+  total_leave_days int [not null]
+  total_deductions int [default: 0, not null]
+  net_salary int [not null]
+  generated_at datetime [not null]
+  status enum('draft','finalized','paid') [default: 'draft']
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+//////////////////////////////////////////////////////
+// REFERENCES
+//////////////////////////////////////////////////////
+
+Ref: master_divisions.department_code > master_departments.department_code
+Ref: master_positions.division_code > master_divisions.division_code
+
+Ref: master_employees.user_code > users.user_code
+Ref: master_employees.position_code > master_positions.position_code
+Ref: master_employees.office_code > master_offices.office_code
+
+Ref: attendance_sessions.created_by > users.user_code
+Ref: attendances.employee_code > master_employees.employee_code
+Ref: attendances.session_code > attendance_sessions.session_code
+
+Ref: leave_balances.employee_code > master_employees.employee_code
+Ref: leave_balances.type_code > master_leave_types.type_code
+Ref: leave_requests.employee_code > master_employees.employee_code
+Ref: leave_requests.type_code > master_leave_types.type_code
+Ref: leave_requests.approved_by_user_code > users.user_code
+
+Ref: payrolls.payroll_period_id > payroll_periods.id
+Ref: payrolls.employee_id > master_employees.id
