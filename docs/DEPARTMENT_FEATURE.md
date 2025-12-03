@@ -12,11 +12,11 @@ The Department Management API provides standard CRUD capabilities to manage, ret
 - [Common Response Formats](#-common-response-formats)
 - [Endpoints](#-endpoints)
   - [Get Department List](#1-get-department-list)
-  - [Get Department By Id](#2-get-office-by-id)
-  - [Get Department By code](#3-get-office-by-code)
-  - [Create Department](#4-create-office)
-  - [Update Department](#5-update-office)
-  - [Delete Department](#6-delete-office)
+  - [Get Department By Id](#2-get-department-by-id)
+  - [Get Department By code](#3-get-department-by-code)
+  - [Create Department](#4-create-department)
+  - [Update Department](#5-update-department)
+  - [Delete Department](#6-delete-department)
 
 ## 🔐 Authentication
 
