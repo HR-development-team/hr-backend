@@ -1,23 +1,23 @@
 # 🏢 Position (Jabatan) Organization API
 
 - version: 1.0
-- Base URL: https://api.example.com/v1
-- Last Updated: November 2025
+- Base URL: https://hr-backend-production-1ce0.up.railway.app
+- Last Updated: Desember 2025
 
 Manage organizational hierarchies and position structures within offices. This API allows you to create, retrieve, update, and delete positions in a hierarchical tree structure.
 
 ## Table of Contents
 
-- [Authentication](#authentication)
-- [Common Response Formats](#common)
-- [Endpoints](#endpoints)
-  - [Get Organization Tree](#get-organization-tree)
-  - [Get Flat Organization List](#get-flat-organization-list)
-  - [Add Position to Organization](#add-position-organization)
-  - [Update Position Organization](#update-position-organization)
-  - [Delete Position Organization](#delete-position-organization)
-- [Error Handling](#error-handling)
-- [Rate Limiting](#rate-limiting)
+- [Authentication](#-authentication)
+- [Common Response Formats](#-common-response-formats)
+- [Endpoints](#-endpoints)
+  - [Get Organization Tree](#1-get-organization-tree)
+  - [Get Position List](#2-get-position-list)
+  - [Get Position By Id](#3-get-position-by-id)
+  - [Get Position By Code](#4-get-position-by-code)
+  - [Create Position](#5-create-position)
+  - [Update Position](#6-update-position)
+  - [Delete Position](#7-delete-position)
 
 ## 🔐 Authentication
 
@@ -78,13 +78,13 @@ Get the complete organization structure as a nested hierarchical tree, perfect f
 **Endpoints:**
 
 ```json
-GET /positions/:office_code/organization
+GET /positions/organization/:office_id
 ```
 
 **Path Parameters:**
 | Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
-| office_code | string | Yes | Unique identifier for the office (e.g., "OFC0000001") |
+| office_id | string | Yes | Unique identifier for the office |
 
 **Response:**
 
@@ -116,6 +116,13 @@ GET /positions/:office_code/organization
                             "employee_name": "Spongebob Squarepants",
                             "children": []
                         },
+                        {
+                            "position_code": "JBT0000003",
+                            "name": "Staff HR",
+                            "employee_code": "EMP0000004",
+                            "employee_name": "Gary The Snail",
+                            "children": []
+                        },
                     ]
                 },
             ]
@@ -123,8 +130,8 @@ GET /positions/:office_code/organization
         {
             "position_code": "JBT0000004",
             "name": "Manajer IT",
-            "employee_code": "EMP0000004",
-            "employee_name": "Squidward Tentacles",
+            "employee_code": null,
+            "employee_name": null,
             "children": []
         }
     ]
@@ -152,31 +159,25 @@ GET /positions/:office_code/organization
 **cURL Example:**
 
 ```json
-curl -X GET "https://api.example.com/v1/positions/OFC0000001/organization" \
+curl -X GET "https://api.example.com/v1/positions/organization/1" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json"
 ```
 
-### 2. GET Flat Organization List
+### 2. GET Position List
 
-Get a flat list of all positions with their direct parent relationships. Ideal for table displays and data processing.
+Get a  list of all positions (Jabatan). The list can be filtered to include only positions associated with a specific office using an optional query parameter. This endpoint is ideal for general selection menus, dropdowns, and basic data tables.
 
 **Endpoints:**
 
 ```json
-GET /positions/:office_code/organization/flat
+GET /positions
 ```
-
-**Path Parameters:**
-| Parameter | Type | Required | Description |
-|----------|----------|----------|---------- |
-| office_code | string | Yes | Unique identifier for the office (e.g., "OFC0000001") |
 
 **Query Parameters:**
 | Parameter | Type | Required | Default | Description |
-|----------|----------|----------|----------|----------
-| page | integer | No | 1 | Page number for pagination |
-| limit | integer | No | 100 | Items per page (max: 500) |
+|----------|----------|----------|---------- | ---------- |
+| office_code | string | No | N/A | Unique identifier for the office (e.g., OFC0000001) to filter the positions by. |
 
 **Response:**
 
@@ -185,43 +186,53 @@ GET /positions/:office_code/organization/flat
 ```json
 {
     "status": "00",
-    "message": "Data Organisasi Kantor Pusat Berhasil Didapatkan",
-    "datetime": "20251103101550"
-    "organizations": [
+    "message": "Data Jabatan Berhasil Didapatkan",
+    "datetime": "20251203102605",
+    "positions": [
         {
+            "id": 1,
             "position_code": "JBT0000001",
-            "name": "Direktur Perusahaan",
+            "division_code": "DIV0000001",
             "parent_position_code": null,
+            "name": "Direktur Perusahaan",
+            "base_salary": 50000000.00,
             "sort_order": 1,
+            "description": "Posisi tertinggi, bertanggung jawab atas arah strategis perusahaan."
         },
         {
+            "id": 2,
             "position_code": "JBT0000002",
+            "division_code": "DIV0000001",
+            "parent_position_code": "JBT0000001",
             "name": "Manajer HR",
-            "parent_position_code": "JBT0000001",
+            "base_salary": 15000000.00,
             "sort_order": 1,
+            "description": "Mengelola semua fungsi sumber daya manusia."
         },
         {
+            "id": 3,
             "position_code": "JBT0000003",
-            "name": "HR Staff",
-            "parent_position_code": "JBT0000002",
-            "sort_order": 1,
-        },
-        {
-            "position_code": "JBT0000004",
-            "name": "Manajer Keuangan",
+            "division_code": "DIV0000002",
             "parent_position_code": "JBT0000001",
+            "name": "Manajer Keuangan",
+            "base_salary": 18000000.00,
             "sort_order": 2,
+            "description": "Bertanggung jawab atas manajemen kas dan pelaporan keuangan."
         }
-   ]
-
+    ]
 }
 ```
 
 `Field Descriptions:`
 
-- parent_position_code: Code of the direct supervisor position (null for root positions)
-- sort_order: Display order among siblings (lower numbers appear first)
-- level: Depth in the hierarchy (0 = root, 1 = first level, etc.)
+- id: The internal database primary key.
+- position_code: The unique external identifier for the position.
+- division_code: The code pointing to the parent Division (master_divisions.division_code).
+- parent_position_code: The code of the direct superior position. null for root/top-level positions.
+- name: The official name of the position.
+- base_salary: The standard base salary amount for this position.
+- sort_order: A number defining the display order among positions sharing the same parent. Lower numbers appear first.
+- description: A brief explanation of the position's main role.
 
 **404 Not Found:**
 
@@ -236,118 +247,25 @@ GET /positions/:office_code/organization/flat
 **cURL Example:**
 
 ```json
-curl -X GET "https://api.example.com/v1/positions/OFC0000001/organization/flat?page=1&limit=50" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json"
+curl -X GET "https://api.example.com/v1/positions?office_code=OFC0000001" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json"
 ```
 
-### 3. ADD Position to Organization
+### 3. GET Position By ID
 
-Add a new position to the office organizational structure.
+Retrieve the detailed data for a single Position (Jabatan) using its unique internal database ID. The response includes all schema fields and the name of the parent division and reporting position for context.
 
 **Endpoints:**
 
 ```json
-POST /positions/:office_code/organization
+GET /positions/{id}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required | Description |
+| Parameter | Type | Required  | Description |
 |----------|----------|----------|---------- |
-| office_code | string | Yes | Unique identifier for the office (e.g., "OFC0000001") |
-
-**Request Body:**
-
-```json
-{
-  "position_code": "JBT0000002",
-  "parent_position_code": "JBT0000001",
-  "sort_order": 1
-}
-```
-
-**Body Parameters**:
-| Parameter | Type | Required | Description | |
-|----------|----------|----------|----------|----------|
-| position_code | string | Yes | Code of the position to add | Must exist in positions master table |
-| parent_position_code | string | No | Code of parent position | null for root positions; must exist if provided |
-| sort_order | integer | No | Display order among siblings | Positive integer, default: 999 |
-
-**Response:**
-
-**201 Created:**
-
-```json
-{
-    "status": "00",
-    "message": "Data Organisasi Kantor Pusat Berhasil Ditambahkan",
-    "datetime": "20251103101550"
-    "organizations": {
-        "position_code": "JBT0000002",
-        "name": "Manajer HR",
-        "parent_position_code": "JBT0000001",
-        "sort_order": 1,
-    },
-}
-```
-
-**404 Not Found:**
-
-```json
-{
-  "error": true,
-  "message": "Parent jabatan tidak ditemukan",
-  "datetime": "20251103101550"
-}
-```
-
-**cURL Example:**
-
-```json
-curl -X POST "https://api.example.com/v1/positions/OFC0000001/organization" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "position_code": "JBT0000005",
-    "parent_position_code": "JBT0000001",
-    "sort_order": 3
-  }'
-```
-
-### 4. Update Position Organization
-
-Update an existing position's placement in the organizational hierarchy.
-
-**Endpoints:**
-
-```json
-PUT /positions/:office_code/organization/:position_code
-```
-
-**Request Body:**
-
-```json
-{
-  "parent_position_code": "JBT0000002",
-  "sort_order": 2
-}
-```
-
-**Body Parameters**:
-| Parameter | Type | Required | Description | Validation |
-|----------|----------|----------|----------|----------|
-| parent_position_code | string | No | New parent position | Cannot create circular references |
-| sort_order | integer | No | New display order | Positive integer |
-
-**Request Body:**
-
-```json
-{
-  "position_code": "JBT0000002",
-  "parent_position_code": "JBT0000001",
-  "sort_order": 1
-}
-```
+| id | integer | Yes | The unique database ID of the office to retrieve (e.g., 2). |
 
 **Response:**
 
@@ -356,65 +274,58 @@ PUT /positions/:office_code/organization/:position_code
 ```json
 {
     "status": "00",
-    "message": "Data Organisasi Kantor Pusat Berhasil Diperbarui",
-    "datetime": "20251103101550"
-    "organization": {
-        "position_code": "JBT0000003",
-        "name": "HR Staff",
-        "parent_position_code": "JBT0000002",
-        "sort_order": 2,
-        "level": 2
+    "message": "Data Posisi Berhasil Didapatkan",
+    "datetime": "20251203102605",
+    "positions": {
+        "id": 2,
+        "position_code": "JBT0000002",
+        "division_code": "DIV0000001",
+        "department_code": "DPT0000001",
+        "division_name": "Recruitment & Staffing",
+        "parent_position_code": "JBT0000001",
+        "parent_position_name": "Direktur Perusahaan",
+        "name": "Manajer HR",
+        "base_salary": 15000000.00,
+        "sort_order": 1,
+        "description": "Mengelola semua fungsi sumber daya manusia.",
+        "created_at": "2025-11-01T09:00:00Z",
+        "updated_at": "2025-12-01T10:30:00Z"
     }
 }
 ```
 
-**400 Bad Request:** Circular reference detected
-
-```json
-{
-  "error": true,
-  "message": "Tidak dapat membuat referensi melingkar dalam organisasi",
-  "datetime": "20251103101550"
-}
-```
-
 **404 Not Found:**
 
 ```json
 {
-  "error": true,
-  "message": "Position tidak ditemukan dalam organisasi",
-  "datetime": "20251103101550"
+    "status": "03",
+    "message": "Posisi tidak ditemukan",
+    "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
 
 ```json
-curl -X PUT "https://api.example.com/v1/positions/OFC0000001/organization/JBT0000003" \
+curl -X POST "https://api.example.com/v1/positions/2" \
   -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "parent_position_code": "JBT0000002",
-    "sort_order": 2
-  }'
+  -H "Content-Type: application/json" 
 ```
 
-### 5. Delete Position Organization
+### 4. GET Position By Code
 
-Remove a position from the organizational structure.
+Retrieve the detailed data for a single Position (Jabatan) using its unique position code identifier. This endpoint is useful for systems that rely on external identifiers rather than the internal database ID.
 
 **Endpoints:**
 
 ```json
-DELETE /positions/:office_code/organization/:position_code
+GET /positions/code/{position_code}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required | Description |
+| Parameter | Type | Required  | Description |
 |----------|----------|----------|---------- |
-| office_code | string | Yes | Unique identifier for the office |
-| position_code | string | Yes | Code of the position to delete |
+| position_code | string | Yes | The unique code of the position to retrieve (e.g., JBT0000002). |
 
 **Response:**
 
@@ -422,19 +333,25 @@ DELETE /positions/:office_code/organization/:position_code
 
 ```json
 {
-  "status": "00",
-  "message": "Data Organisasi Berhasil Dihapus",
-  "datetime": "20251103101550"
-}
-```
-
-**400 Bad Request:** Position has children
-
-```json
-{
-  "error": true,
-  "message": "Tidak dapat menghapus position yang memiliki anak.",
-  "datetime": "20251103101550"
+    "status": "00",
+    "message": "Data Posisi Berhasil Didapatkan",
+    "datetime": "20251203102605",
+    "positions": {
+        "id": 2,
+        "position_code": "JBT0000002",        
+        "department_code": "DPT0000001",
+        "department_name": "Human Resources",
+        "division_code": "DIV0000001",
+        "division_name": "Recruitment & Staffing",
+        "parent_position_code": "JBT0000001",
+        "parent_position_name": "Direktur Perusahaan",
+        "name": "Manajer HR",
+        "base_salary": 15000000.00,
+        "sort_order": 1,
+        "description": "Mengelola semua fungsi sumber daya manusia.",
+        "created_at": "2025-11-01T09:00:00Z",
+        "updated_at": "2025-12-01T10:30:00Z"
+    }
 }
 ```
 
@@ -442,57 +359,235 @@ DELETE /positions/:office_code/organization/:position_code
 
 ```json
 {
-  "error": true,
-  "message": "Position tidak ditemukan dalam organisasi",
-  "datetime": "20251103101550"
+    "status": "03",
+    "message": "Posisi tidak ditemukan",
+    "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
 
 ```json
-curl -X DELETE "https://api.example.com/v1/positions/OFC0000001/organization/JBT0000005" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json"
+curl -X GET "https://api.example.com/v1/positions/code/JBT0000002" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json"
 ```
 
-## ⚠️ Error Handling
+### 5. CREATE Position
 
-**Common Error Codes:**
-| Code | HTTP Status | Description |
-|----------|----------|----------|
-| OFFICE_NOT_FOUND | 404 | The specified office does not exist |
-| POSITION_NOT_FOUND | 404 | The position is not in the organization structure |
-| PARENT_NOT_FOUND | 404 | The specified parent position does not exist |
-| POSITION_ALREADY_EXISTS | 400 | Position is already in the organization |
-| CIRCULAR_REFERENCE | 400 | Operation would create a circular reference |
-| HAS_CHILDREN | 400 | Cannot delete position with children (use cascade) |
-| INVALID_SORT_ORDER | 400 | Sort order must be a positive integer |
-| UNAUTHORIZED | 401 | Missing or invalid authentication token |
-| FORBIDDEN | 403 | Insufficient permissions for this operation |
-| RATE_LIMIT_EXCEEDED | 429 | Too many requests, please slow down |
+Add a new Position (Jabatan) record to the system, associating it with a parent Division and defining its place in the organizational hierarchy.
 
-## 🚦 Rate Limiting
+**Endpoints:**
+```json
+POST /positions
+```
 
-- Rate Limit: 1000 requests per hour per API key
-- Burst Limit: 100 requests per minute
+**Request Body:**
+```json
+{
+    "division_code": "DIV0000001",
+    "parent_position_code": "JBT0000002",
+    "name": "Staff HR Generalist",
+    "base_salary": 8000000.00,
+    "sort_order": 5,
+    "description": "Melaksanakan tugas administrasi umum dan spesialisasi HR."
+}
+```
 
-**Rate Limit Headers:**
+**Body Parameters**:
+| Parameter | Type | Required | Description | Constraints |
+|----------|----------|----------|----------|----------|
+| division_code | string | Yes | Code of the mandatory parent Division this position belongs to. | Must exist in master_divisions. |
+| parent_position_code | string | No | Code of the direct superior position. | Must exist if provided; null for root positions (e.g., CEO, Directors). |
+| name | string | Yes | The official name of the position. | Max 100 characters. |
+| base_salary | number | Yes | The standard base salary amount for this position. | Decimal (12, 2). |
+| sort_order | integer | No | Display order among sibling positions (sharing the same parent). | Positive integer, Default: auto increment. |
+| description | string | No | Brief explanation of the position's function. | Max 1000 characters. |
+
+**Response:**
+
+**201 Created:**
+```json
+{
+    "status": "00",
+    "message": "Data Posisi Berhasil Ditambahkan",
+    "datetime": "20251203104200",
+    "positions": {
+        "id": 10,
+        "position_code": "JBT0000010",
+        "division_code": "DIV0000001",
+        "parent_position_code": "JBT0000002",
+        "name": "Staff HR Generalist",
+        "base_salary": 8000000.00,
+        "sort_order": 5,
+        "description": "Melaksanakan tugas administrasi umum dan spesialisasi HR."
+    }
+}
+```
+
+**400 Bad Request:**
+```json
+{
+    "status": "99",
+    "message": "Tidak dapat membuat referensi melingkar dalam organisasi posisi.",
+    "datetime": "20251203104200"
+}
+```
+
+**cURL Example:**
 
 ```json
-X-RateLimit-Limit: 1000
-X-RateLimit-Remaining: 850
-X-RateLimit-Reset: 1699012800
+curl -X POST "https://api.example.com/v1/positions" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "division_code": "DIV0000001",
+        "parent_position_code": "JBT0000002",
+        "name": "Staff HR Generalist",
+        "base_salary": 8000000.00,
+        "sort_order": 5,
+        "description": "Melaksanakan tugas administrasi umum dan spesialisasi HR."
+    }'
 ```
 
-**When rate limit is exceeded:**
+
+### 6. Update Position
+
+Update the details of an existing Position (Jabatan) using its unique database ID. This endpoint supports partial updates, allowing modifications to any field, including its divisional assignment or reporting structure.
+
+**Endpoints:**
 
 ```json
-    "error": true,
-    "message": "Rate limit exceeded. Please retry after 300 seconds",
-    "datetime": "20251103101550",
+PUT /positions/{id}
 ```
 
-## 📚 Additional Resources
+**Path Parameters:**
+| Parameter | Type | Required  | Description |
+|----------|----------|----------|---------- |
+| id | integer | Yes | The unique database ID of the office to retrieve (e.g., 2). |
 
-- Postman Collection — Import ready-to-use API requests
+**Request Body:**
+
+```json
+{
+    "name": "Manajer HR & Talent Acquisition",
+    "base_salary": 16500000.00,
+    "sort_order": 1
+}
+```
+
+**Body Parameters**:
+| Parameter | Type | Required | Description | Constraints |
+|----------|----------|----------|----------|----------|
+| division_code | string | No | Code of the mandatory parent Division this position belongs to. | Must exist in master_divisions. |
+| parent_position_code | string | No | Code of the direct superior position. | Must exist if provided; null for root positions (e.g., CEO, Directors). |
+| name | string | No | The official name of the position. | Max 100 characters. |
+| base_salary | number | No | The standard base salary amount for this position. | Decimal (12, 2). |
+| sort_order | integer | No | Display order among sibling positions (sharing the same parent). | Positive integer, Default: auto increment. |
+| description | string | No | Brief explanation of the position's function. | Max 1000 characters. |
+
+
+**Response:**
+
+**200 OK:**
+
+```json
+{
+    "status": "00",
+    "message": "Data Posisi Berhasil Diperbarui",
+    "datetime": "20251203104831",
+    "positions": {
+        "id": 2,
+        "position_code": "JBT0000002",
+        "division_code": "DIV0000001",
+        "parent_position_code": "JBT0000001",
+        "name": "Manajer HR & Talent Acquisition",
+        "base_salary": 16500000.00,
+        "sort_order": 1,
+        "description": "Mengelola semua fungsi sumber daya manusia.",
+        "updated_at": "2025-12-03T10:48:31Z"
+    }
+}
+```
+
+**400 Bad Request:**
+
+```json
+{
+    "status": "99",
+    "message": "Tidak dapat membuat referensi melingkar dalam organisasi posisi.",
+    "datetime": "20251203104200"
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+    "status": "03",
+    "message": "Posisi tidak ditemukan",
+    "datetime": "20251103101551"
+}
+```
+
+**cURL Example:**
+
+```json
+curl -X PUT "https://api.example.com/v1/positions/2" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "Manajer HR & Talent Acquisition",
+        "base_salary": 16500000.00
+    }'
+```
+
+### 7. DELETE Position
+
+Remove an existing Position (Jabatan) record from the system using its unique database ID. This operation will fail if the position is occupied or if other positions report to it.
+
+**Endpoints:**
+```json
+DELETE /positions/{id}
+```
+
+**Path Parameters:**
+| Parameter | Type | Required | Description |
+|----------|----------|----------|---------- |
+| id | integer | Yes | The unique database ID of the office to retrieve (e.g., 2). |
+
+**Response:**
+
+**200 OK:**
+```json
+{
+    "status": "00",
+    "message": "Data Posisi Berhasil Dihapus",
+    "datetime": "20251103101550"
+}
+```
+
+**409 Conflict:**
+```json
+{
+    "status": "05",
+    "message": "Tidak dapat menghapus posisi yang memiliki karyawan terasosiasi atau posisi bawahan.",
+    "datetime": "20251103101551"
+}
+```
+
+**404 Not Found:**
+```json
+{
+    "status": "04",
+    "message": "Posisi tidak ditemukan",
+    "datetime": "20251103101551"
+}
+```
+
+**cURL Example:**
+```json
+curl -X DELETE "https://api.example.com/v1/positions/10" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json"
+```
