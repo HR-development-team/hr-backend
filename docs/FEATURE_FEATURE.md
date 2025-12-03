@@ -73,7 +73,7 @@ Get a complete, non-paginated list of all defined application Features.
 
 **Endpoints:**
 ```json
-GET /features
+GET /role/features
 ```
 
 **Response:**
@@ -110,7 +110,7 @@ GET /features
 
 **cURL Example:**
 ```json
-curl -X GET "https://api.example.com/v1/features" \
+curl -X GET "https://api.example.com/v1/role/features" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json"
 ```
@@ -121,7 +121,7 @@ Retrieve the detailed data for a single Feature using its unique internal databa
 
 **Endpoints:**
 ```json
-GET /features/{id}
+GET /role/features/{id}
 ```
 
 **Path Parameters:**
@@ -166,7 +166,7 @@ GET /features/{id}
 
 **cURL Example:**
 ```json
-curl -X GET "https://api.example.com/v1/features/2" \
+curl -X GET "https://api.example.com/v1/role/features/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ```
@@ -177,7 +177,7 @@ Retrieve the detailed data for a single Feature using its unique feature code id
 
 **Endpoints:**
 ```json
-GET /features/code/{feature_code}
+GET /role/features/code/{feature_code}
 ```
 
 **Path Parameters:**
@@ -222,7 +222,7 @@ GET /features/code/{feature_code}
 
 **cURL Example:**
 ```json
-curl -X GET "https://api.example.com/v1/features/code/ROL0000002" \
+curl -X GET "https://api.example.com/v1/role/features/code/ROL0000002" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ``` 
@@ -233,7 +233,7 @@ Add a new application feature. The provided permission flags (can_create, etc.) 
 
 **Endpoints:**
 ```json
-POST /features
+POST /role/features
 ```
 
 **Request Body:**
@@ -283,7 +283,7 @@ POST /features
 **cURL Example:**
 
 ```json
-curl -X POST "https://api.example.com/v1/features" \
+curl -X POST "https://api.example.com/v1/role/features" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
@@ -299,7 +299,7 @@ Update the details of an existing Feature using its unique database ID. This end
 **Endpoints:**
 
 ```json
-PUT /features/{id}
+PUT /role/features/{id}
 ```
 
 **Path Parameters:**
@@ -334,7 +334,7 @@ PUT /features/{id}
         "id": 1,
         "feature_code": "FCR0000001",
         "feature_name": "Employee Detail Management",
-        "description": "Modul utama untuk mengelola semua data detail dan riwayat karyawan.", // Updated
+        "description": "Modul utama untuk mengelola semua data detail dan riwayat karyawan.",
         "updated_at": "2025-12-04T01:37:00Z"
     }
 }
@@ -353,7 +353,7 @@ PUT /features/{id}
 **cURL Example:**
 
 ```json
-curl -X PUT "https://api.example.com/v1/features/2" \
+curl -X PUT "https://api.example.com/v1/role/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
@@ -367,7 +367,7 @@ Remove an existing Feature from the system using its unique feature code. This o
 
 **Endpoints:**
 ```json
-DELETE /features/{feature_code}
+DELETE /role/features/{feature_code}
 ```
 
 **Path Parameters:**
@@ -406,7 +406,7 @@ DELETE /features/{feature_code}
 
 **cURL Example:**
 ```json
-curl -X DELETE "https://api.example.com/v1/features/FCR0000002" \
+curl -X DELETE "https://api.example.com/v1/role/features/FCR0000002" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ```
