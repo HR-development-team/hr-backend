@@ -1,8 +1,8 @@
 # 🏢 Office Organization API
 
 - version: 1.0
-- Base URL: https://api.example.com/v1
-- Last Updated: November 2025
+- Base URL: https://hr-backend-production-1ce0.up.railway.app
+- Last Updated: December 2025
 
 Manage organizational hierarchies offices. This API allows you to create, retrieve, update, and delete offices in a hierarchical tree structure.
 
@@ -11,12 +11,13 @@ Manage organizational hierarchies offices. This API allows you to create, retrie
 - [Authentication](#-authentication)
 - [Common Response Formats](#-common-response-formats)
 - [Endpoints](#-endpoints)
-  - [Get Organization Tree](#1-get-organization-tree)
+  - [Get Organization Tree](#1-get-office-organization-tree)
   - [Get Office List](#2-get-office-list)
   - [Get Office By Id](#3-get-office-by-id)
-  - [Create Office](#4-create-office)
-  - [Update Office](#5-update-office)
-  - [Delete Office](#6-delete-office)
+  - [Get Office By Code](#4-get-office-by-code)
+  - [Create Office](#5-create-office)
+  - [Update Office](#6-update-office)
+  - [Delete Office](#7-delete-office)
 
 ## 🔐 Authentication
 
@@ -84,33 +85,37 @@ GET /offices/organization
 {
     "status": "00",
     "message": "Data Organisasi Kantor Berhasil Didapatkan",
-    "datetime": "20251103101550"
+    "datetime": "20251103101550",
     "offices": [
         {
+            "id": 1,
             "office_code": "OFC0000001",
             "name": "Kantor Pusat Jakarta",
             "address": "Jl. Pahlawan no. 31 Jakarta Pusat",
             "description": "Kantor Pusat yang berada di Jakarta",
             "children": [
                 {
-                   "office_code": "OFC0000002",
-                   "name": "Kantor Cabang Jawa Timur",
-                   "address": "Jl. Pahlawan no. 22 Surabaya",
-                   "description": "Kantor Cabang yang berada di Surabaya",
+                    "id": 2,
+                    "office_code": "OFC0000002",
+                    "name": "Kantor Cabang Jawa Timur",
+                    "address": "Jl. Pahlawan no. 22 Surabaya",
+                    "description": "Kantor Cabang yang berada di Surabaya",
                     "children": [
                         {
-                            "office_code": "OFC0000002",
-                            "name": "Kantor Cabang Madiun",
+                            "id": 3,
+                            "office_code": "OFC0000003", // Corrected code for uniqueness
+                            "name": "Kantor Unit Madiun", // Changed name slightly to fit 'Unit'
                             "address": "Jl. Pahlawan no. 11 Madiun",
                             "description": "Kantor Unit yang berada di Madiun",
                             "children": []
-                        },
+                        }
                     ]
-                },
+                }
             ]
         },
         {
-            "office_code": "OFC0000002",
+            "id": 4,
+            "office_code": "OFC0000004", // Corrected code for uniqueness
             "name": "Kantor Cabang Jawa Tengah",
             "address": "Jl. Pahlawan no. 10 Semarang",
             "description": "Kantor Cabang yang berada di Semarang",
@@ -122,6 +127,7 @@ GET /offices/organization
 
 `Field Descriptions:`
 
+- id: The internal database primary key (integer) for the office.
 - office_code: Unique identifier for the office
 - name: Display name of the office
 - address: Display address of the office
@@ -154,12 +160,12 @@ GET /offices
 
 **200 OK:**
 ```json
-{
-    "status": "00",
+"status": "00",
     "message": "Data Kantor Berhasil Didapatkan",
-    "datetime": "20251103101550"
+    "datetime": "20251103101550",
     "offices": [
         {
+            "id": 1,
             "office_code": "OFC0000001",
             "parent_office_code": null,
             "name": "Kantor Pusat Jakarta",
@@ -171,6 +177,7 @@ GET /offices
             "description": "Kantor pusat dan administrasi utama."
         },
         {
+            "id": 2,
             "office_code": "OFC0000002",
             "parent_office_code": "OFC0000001",
             "name": "Kantor Cabang Bandung",
@@ -182,6 +189,7 @@ GET /offices
             "description": "Kantor cabang regional untuk wilayah Jawa Barat."
         },
         {
+            "id": 3,
             "office_code": "OFC0000003",
             "parent_office_code": "OFC0000001",
             "name": "Kantor Operasional Surabaya",
@@ -198,6 +206,7 @@ GET /offices
 
 `Field Descriptions:`
 
+- id: The internal database primary key (auto-incremented integer).
 - office_code: A unique code that serves as the primary identifier for each office.
 - parent_office_code: The code pointing to the direct supervising office in the hierarchy. This field allows for the creation of a parent-child organizational structure.  Null value just for the Head Office.
 - name: The official name or designation of the office (e.g., "Jakarta Headquarters," "Medan Branch Office").
@@ -221,13 +230,13 @@ Retrieve the detailed data for a single office using its unique identifier (offi
 
 **Endpoints:**
 ```json
-GET /offices/{office_code}
+GET /offices/{id}
 ```
 
 **Path Parameters:**
 | Parameter | Type | Required  | Description |
 |----------|----------|----------|---------- |
-| office_code | string | Yes | The unique code of the office to retrieve. |
+| id | integer | Yes | The unique database ID of the office to retrieve (e.g., 2). |
 
 **Response:**
 
@@ -238,6 +247,7 @@ GET /offices/{office_code}
     "message": "Data Kantor Berhasil Didapatkan",
     "datetime": "20251103101550"
     "offices": {
+        "id": 2,
         "office_code": "OFC0000002",
         "parent_office_code": "OFC0000001",
         "name": "Kantor Cabang Bandung",
@@ -254,6 +264,7 @@ GET /offices/{office_code}
 
 `Field Descriptions:`
 
+- id: The internal database primary key (auto-incremented integer).
 - office_code: A unique code that serves as the primary identifier for each office.
 - parent_office_code: The code pointing to the direct supervising office in the hierarchy. This field allows for the creation of a parent-child organizational structure.  Null value just for the Head Office.
 - name: The official name or designation of the office (e.g., "Jakarta Headquarters," "Medan Branch Office").
@@ -276,12 +287,80 @@ GET /offices/{office_code}
 
 **cURL Example:**
 ```json
-curl -X GET "https://api.example.com/v1/offices/OFC0000002" \
+curl -X GET "https://api.example.com/v1/offices/2" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json"
+```
+
+### 4. GET Office By Code
+
+Retrieve the detailed data for a single office using its unique office code identifier. This endpoint is provided for systems that rely on the external code rather than the internal ID.
+
+**Endpoints:**
+```json
+GET /offices/code/{office_code}
+```
+
+**Path Parameters:**
+| Parameter | Type | Required  | Description |
+|----------|----------|----------|---------- |
+| office_code | string | Yes | The unique code of the office to retrieve (e.g., OFC0000002). |
+
+**Response:**
+
+**200 OK:**
+```json
+{
+    "status": "00",
+    "message": "Data Kantor Berhasil Didapatkan",
+    "datetime": "20251103101550"
+    "offices": {
+        "id": 2,
+        "office_code": "OFC0000002",
+        "parent_office_code": "OFC0000001",
+        "name": "Kantor Cabang Bandung",
+        "parent_office_name": "Kantor Pusat Jakarta",
+        "address": "Jl. Asia Afrika No. 100, Bandung",
+        "latitude": -6.917464,
+        "longitude": 107.619125,
+        "radius_meters": 75,
+        "sort_order": 2,
+        "description": "Kantor cabang regional untuk wilayah Jawa Barat."
+    }
+}
+```
+
+`Field Descriptions:`
+
+- id: The internal database primary key (auto-incremented integer).
+- office_code: A unique code that serves as the primary identifier for each office.
+- parent_office_code: The code pointing to the direct supervising office in the hierarchy. This field allows for the creation of a parent-child organizational structure.  Null value just for the Head Office.
+- name: The official name or designation of the office (e.g., "Jakarta Headquarters," "Medan Branch Office").
+- parent_office_name: The official name of the parent office.
+- address: The complete physical location address of the office.
+- latitude: The latitude coordinate of the office location, used along with longitude to define the geographic point.
+- longitude: The longitude coordinate of the office location.
+- radius_meters: The distance radius (in meters) from the office's latitude/longitude point. This is used to define the boundary for geofencing purposes (e.g., attendance check-in).
+- sort_order: A number that determines the display order of the office. This order only applies to offices that share the same parent_office_code (sibling offices). Lower numbers will appear earlier in the list.
+- description: A brief explanation or note regarding the main function, duties, or coverage area of the office.
+
+**404 Not Found:**
+```json
+{
+    "status": "03",
+    "message": "Kantor tidak ditemukan",
+    "datetime": "20251103101551"
+}
+```
+
+**cURL Example:**
+```json
+curl -X GET "https://api.example.com/v1/offices/code/OFC0000002" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ``` 
 
-### 4. CREATE Office
+### 5. CREATE Office
 
 Add a new physical office location record to the system.
 
@@ -293,7 +372,6 @@ POST /offices
 **Request Body:**
 ```json
 {
-    "office_code": "OFC0000004",
     "parent_office_code": "OFC0000001",
     "name": "Kantor Cabang Semarang",
     "address": "Jl. Pemuda No. 1, Semarang",
@@ -308,7 +386,6 @@ POST /offices
 **Body Parameters**:
 | Parameter | Type | Required | Description | Constraints |
 |----------|----------|----------|----------|----------|
-| office_code | string | Yes | Unique identifier for the new office. | Must be unique; follows a sequence. |
 | parent_office_code | string | No | Code of the parent/supervising office. | null for the Head Office; must exist if provided. |
 | name | string | Yes | The official name of the office. | Max 100 characters.|
 | address | string | Yes | Complete physical location address. | Max 500 characters. |
@@ -320,22 +397,23 @@ POST /offices
 
 **Response:**
 
-**200 Created:**
+**201 Created:**
 ```json
 {
     "status": "00",
     "message": "Data Kantor Berhasil Diperbarui",
     "datetime": "20251103101550",
     "offices": {
+        "id": 2,
         "office_code": "OFC0000002",
         "parent_office_code": "OFC0000001",
-        "name": "Kantor Cabang Bandung Raya",
-        "address": "Jl. Asia Afrika No. 100A, Bandung",
-        "latitude": -6.917464,
-        "longitude": 107.619125,
-        "radius_meters": 80,
-        "sort_order": 2,
-        "description": "Kantor cabang regional untuk wilayah Jawa Barat."
+        "name": "Kantor Cabang Semarang",
+        "address": "Jl. Pemuda No. 1, Semarang",
+        "latitude": -6.985694,
+        "longitude": 110.409393,
+        "radius_meters": 70,
+        "sort_order": 4,
+        "description": "Kantor cabang di wilayah Jawa Tengah."
     }
 }
 ```
@@ -356,32 +434,31 @@ curl -X POST "https://api.example.com/v1/offices" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
-        "office_code": "OFC0000004",
-        "parent_office_code": "OFC0000001",
-        "name": "Kantor Cabang Semarang",
-        "address": "Jl. Pemuda No. 1, Semarang",
-        "latitude": -6.985694,
-        "longitude": 110.409393,
-        "radius_meters": 70,
-        "sort_order": 4,
-        "description": "Kantor cabang di wilayah Jawa Tengah."
+          "parent_office_code": "OFC0000001",
+          "name": "Kantor Cabang Semarang",
+          "address": "Jl. Pemuda No. 1, Semarang",
+          "latitude": -6.985694,
+          "longitude": 110.409393,
+          "radius_meters": 70,
+          "sort_order": 4,
+          "description": "Kantor cabang di wilayah Jawa Tengah."
     }'
 ```
 
-### 5. Update Office
+### 6. Update Office
 
 Update the details of an existing office location, including its geographic boundaries and position within the office hierarchy.
 
 **Endpoints:**
 
 ```json
-PUT /offices/{office_code}
+PUT /offices/{id}
 ```
 
 **Path Parameters:**
 | Parameter | Type | Required  | Description |
 |----------|----------|----------|---------- |
-| office_code | string | Yes | The unique code of the office to retrieve. |
+| id | integer | Yes | The unique database ID of the office to retrieve (e.g., 2). |
 
 **Request Body:**
 
@@ -398,7 +475,6 @@ PUT /offices/{office_code}
 **Body Parameters**:
 | Parameter | Type | Required | Description | Constraints |
 |----------|----------|----------|----------|----------|
-| office_code | string | Yes | Unique identifier for the new office. | Must be unique; follows a sequence. |
 | parent_office_code | string | No | Code of the parent/supervising office. | null for the Head Office; must exist if provided. |
 | name | string | Yes | The official name of the office. | Max 100 characters.|
 | address | string | Yes | Complete physical location address. | Max 500 characters. |
@@ -419,6 +495,7 @@ PUT /offices/{office_code}
     "message": "Data Kantor Berhasil Diperbarui",
     "datetime": "20251103101550"
     "offices": {
+        "id": 2,
         "office_code": "OFC0000002",
         "parent_office_code": "OFC0000001",
         "name": "Kantor Cabang Bandung Raya",
@@ -455,28 +532,31 @@ PUT /offices/{office_code}
 **cURL Example:**
 
 ```json
-curl -X PUT "https://api.example.com/v1/offices/OFC0000002" \
+curl -X PUT "https://api.example.com/v1/offices/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
+        "parent_office_code": "OFC0000001",
         "name": "Kantor Cabang Bandung Raya",
-        "radius_meters": 80
+        "address": "Jl. Asia Afrika No. 100A, Bandung",
+        "radius_meters": 80,
+        "sort_order": 2
     }'
 ```
 
-### 6. DELETE Office
+### 7. DELETE Office
 
 Remove an existing office record from the system using its unique identifier.
 
 **Endpoints:**
 ```json
-DELETE /offices/{office_code}
+DELETE /offices/{id}
 ```
 
 **Path Parameters:**
 | Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
-| office_code | string | Yes | Unique identifier for the office |
+| id | integer | Yes | The unique database ID of the office to retrieve (e.g., 2). |
 
 **Response:**
 
@@ -509,7 +589,7 @@ DELETE /offices/{office_code}
 
 **cURL Example:**
 ```json
-curl -X DELETE "https://api.example.com/v1/offices/OFC0000004" \
+curl -X DELETE "https://api.example.com/v1/offices/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ```
