@@ -19,6 +19,7 @@ export async function seed(knex: Knex): Promise<void> {
       latitude: -6.2088,
       longitude: 106.8456,
       radius_meters: 100,
+      sort_order: 1,
     },
     {
       // ANAK 1: OFC0000002 (Anaknya OFC0000001)
@@ -30,6 +31,7 @@ export async function seed(knex: Knex): Promise<void> {
       latitude: -7.2575,
       longitude: 112.7521,
       radius_meters: 50,
+      sort_order: 2,
     },
     {
       // CUCU 1: OFC0000003 (Anaknya OFC0000002)
@@ -41,6 +43,7 @@ export async function seed(knex: Knex): Promise<void> {
       latitude: -7.6298,
       longitude: 111.5177,
       radius_meters: 30,
+      sort_order: 3,
     },
     {
       // ANAK 2: OFC0000004 (Anaknya OFC0000001)
@@ -52,6 +55,7 @@ export async function seed(knex: Knex): Promise<void> {
       latitude: -6.9932,
       longitude: 110.4203,
       radius_meters: 50,
+      sort_order: 4,
     },
   ]);
   await knex.raw("SET FOREIGN_KEY_CHECKS = 1");

@@ -2,7 +2,8 @@ import { Router } from "express";
 import {
   createMasterOffice,
   destroyMasterOffice,
-  fetchAllMasterOffices,
+  // fetchAllMasterOffices,
+  fetchOfficeList,
   fetchMasterOfficeById,
   updateMasterOffice,
   fetchOrganizationTree,
@@ -12,12 +13,13 @@ import { verifyToken } from "@middleware/jwt.js";
 const router = Router();
 router.use(verifyToken);
 
-router.get("/", fetchAllMasterOffices);
-router.get("/:id(\\d+)", fetchMasterOfficeById);
 router.get("/organization", fetchOrganizationTree);
-router.get("/:id", fetchMasterOfficeById);
-router.post("/", createMasterOffice);
-router.put("/:id", updateMasterOffice);
-router.delete("/:id", destroyMasterOffice);
 
+router.get("/", fetchOfficeList);
+
+router.get("/:id(\\d+)", fetchMasterOfficeById);
+router.put("/:id(\\d+)", updateMasterOffice);
+router.delete("/:id(\\d+)", destroyMasterOffice);
+
+router.post("/", createMasterOffice);
 export default router;
