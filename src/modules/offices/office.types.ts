@@ -36,3 +36,12 @@ export interface UpdateOffice {
   longitude?: number;
   radius_meters?: number;
 }
+
+export interface OfficeRawWithParent extends Office {
+  parent_office_code?: string | null;
+  description?: string;
+}
+
+export interface OfficeTree extends OfficeRawWithParent {
+  children: OfficeTree[];
+}

@@ -84,3 +84,14 @@ export const editMasterOffice = async (
  */
 export const removeMasterOffice = async (id: number): Promise<number> =>
   await db(OFFICE_TABLE).where({ id }).delete();
+
+export const getAllOfficesOrganization = async (): Promise<any[]> => {
+  return await db(OFFICE_TABLE).select(
+    "id",
+    "office_code",
+    "name",
+    "address",
+    "description",
+    "parent_office_code"
+  );
+};

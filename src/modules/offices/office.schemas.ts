@@ -78,7 +78,14 @@ export const updateMasterOfficeSchema = z
       .min(10, "Radius minimal 10 meter")
       .max(5000, "Radius maksimal 5000 meter (5km)")
       .optional(),
+
+    parent_office_code: z
+      .string()
+      .length(10, "Kode parent harus 10 karakter")
+      .optional()
+      .nullable(),
   })
+
   .strict()
   .refine((data) => Object.keys(data).length > 0, {
     message:

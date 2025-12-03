@@ -9,12 +9,13 @@ import {
   getAllMasterOffices,
   getMasterOfficeById,
   removeMasterOffice,
+  getAllOfficesOrganization,
 } from "./office.model.js";
 import {
   addMasterOfficeSchema,
   updateMasterOfficeSchema,
 } from "./office.schemas.js";
-
+import { OfficeRawWithParent, OfficeTree } from "./office.types.js";
 /**
  * [GET] /master-offices - Fetch all Offices
  */
@@ -303,5 +304,71 @@ export const destroyMasterOffice = async (req: Request, res: Response) => {
       "Terjadi kesalahan pada server",
       500
     );
+  }
+};
+
+const buildTreeRecursive = (
+  items: OfficeRawWithParent[],
+  parentCode: string | null = null
+): OfficeTree[] => {
+  return items
+    .filter((item) => {
+      const itemParentCode = item.parent_office_code || null;
+      return itemParentCode === parentCode;
+    })
+    .map((item) => {
+      // --- LOGIC PENGHAPUSAN ---
+      // Kita pisahkan 'parent_office_code' dari sisa data lainnya (officeData)
+      // Variabel 'parent_office_code' ini kita ambil tapi TIDAK kita pakai/return.
+      const { parent_office_code, ...officeData } = item;
+
+      return {
+        ...officeData, // Kembalikan data sisa (id, name, dll) TANPA parent_office_code
+        children: buildTreeRecursive(items, item.office_code),
+      };
+    }) as unknown as OfficeTree[];
+  // "as unknown as..." digunakan untuk memaksa TS menerima tipe data baru
+  // yang sudah tidak punya parent_office_code lagi.
+};
+
+// --- CONTROLLER BARU ---
+export const fetchOrganizationTree = async (req: Request, res: Response) => {
+  try {
+    // 1. Panggil function model yang SUDAH BENAR namanya
+    const rawOffices = await getAllOfficesOrganization();
+
+    // 2. Susun jadi Tree
+    const officeTree = buildTreeRecursive(rawOffices, null);
+
+    // 3. Helper timestamp (Menggunakan Double Quotes agar ESLint tidak error)
+    const now = new Date();
+    const datetime = now
+      .toISOString()
+      .replace(/[-T:Z.]/g, "")
+      .slice(0, 14);
+
+    // 4. Return Response format "00"
+    res.status(200).json({
+      status: "00",
+      message: "Data Organisasi Kantor Berhasil Didapatkan",
+      datetime: datetime,
+      offices: officeTree,
+    });
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching organization tree: ${dbError}`);
+
+    // Format tanggal untuk error
+    const now = new Date();
+    const datetime = now
+      .toISOString()
+      .replace(/[-T:Z.]/g, "")
+      .slice(0, 14);
+
+    res.status(500).json({
+      status: "03",
+      message: "Terjadi kesalahan pada server",
+      datetime: datetime,
+    });
   }
 };
