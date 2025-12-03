@@ -1,8 +1,8 @@
 # 🏢 CRUD Department API
 
 - version: 1.0
-- Base URL: https://api.example.com/v1
-- Last Updated: November 2025
+- Base URL: https://hr-backend-production-1ce0.up.railway.app
+- Last Updated: December 2025
 
 The Department Management API provides standard CRUD capabilities to manage, retrieve, and modify organizational Department records. It serves as the primary interface for department data.
 
