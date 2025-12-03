@@ -4,6 +4,7 @@ import { httpLogger } from "@utils/logger.js";
 import { setResponseHeader } from "@middleware/set-headers.js";
 import { corsOptions } from "@config/cors.js";
 import router from "./app.routes.js";
+//import officeRoutes from "./modules/offices/office.routes.js"; // <--- Pastikan di-import
 
 const app: Application = express();
 
@@ -23,5 +24,5 @@ app.get("/", setResponseHeader, (req: Request, res: Response) => {
 // 3. Load Routes
 // If you ever need v2, you just create app.routes.v2.ts and mount it line below.
 app.use("/api/v1", router);
-
+// app.use("/master-offices", officeRoutes);
 export default app;
