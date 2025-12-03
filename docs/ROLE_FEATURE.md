@@ -11,12 +11,12 @@ The Role Management API provides standard CRUD capabilities for defining and man
 - [Authentication](#-authentication)
 - [Common Response Formats](#-common-response-formats)
 - [Endpoints](#-endpoints)
-  - [Get Role List](#1-get-office-list)
-  - [Get Role By Id](#2-get-office-by-id)
-  - [Get Office By Code](#3-get-office-by-code)
-  - [Create Role](#4-create-office)
-  - [Update Role](#5-update-office)
-  - [Delete Delete](#6-delete-office)
+  - [Get Role List](#1-get-role-list)
+  - [Get Role By Id](#2-get-role-by-id)
+  - [Get Role By Code](#3-get-role-by-code)
+  - [Create Role](#4-create-role)
+  - [Update Role](#5-update-role)
+  - [Delete Role](#6-delete-role)
 
 ## 🔐 Authentication
 
