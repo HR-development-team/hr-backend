@@ -103,8 +103,8 @@ GET /offices/organization
                     "children": [
                         {
                             "id": 3,
-                            "office_code": "OFC0000003", // Corrected code for uniqueness
-                            "name": "Kantor Unit Madiun", // Changed name slightly to fit 'Unit'
+                            "office_code": "OFC0000003",
+                            "name": "Kantor Unit Madiun",
                             "address": "Jl. Pahlawan no. 11 Madiun",
                             "description": "Kantor Unit yang berada di Madiun",
                             "children": []
@@ -115,7 +115,7 @@ GET /offices/organization
         },
         {
             "id": 4,
-            "office_code": "OFC0000004", // Corrected code for uniqueness
+            "office_code": "OFC0000004",
             "name": "Kantor Cabang Jawa Tengah",
             "address": "Jl. Pahlawan no. 10 Semarang",
             "description": "Kantor Cabang yang berada di Semarang",
