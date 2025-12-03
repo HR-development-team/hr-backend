@@ -179,7 +179,7 @@ curl -X GET "https://api.example.com/v1/roles/2" \
     -H "Content-Type: application/json"
 ```
 
-### 3. GET Office By Code
+### 3. GET Role By Code
 
 Retrieve the detailed data for a single Role using its unique role code identifier. This endpoint is provided for systems that rely on external identifiers rather than the internal ID.
 
@@ -380,7 +380,7 @@ DELETE /roles/{id}
 **Path Parameters:**
 | Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
-| id | integer | Yes | The unique database ID of the office to retrieve (e.g., 2). |
+| id | integer | Yes | The unique database ID of the role to retrieve (e.g., 2). |
 
 **Response:**
 
