@@ -15,7 +15,8 @@ The Feature Management API provides standard CRUD capabilities for defining and 
   - [Get Feature By Id](#2-get-feature-by-id)
   - [Get Feature By Code](#3-get-feature-by-code)
   - [Create Feature](#4-create-feature)
-  - [Delete Feature](#5-delete-feature)
+  - [Update Feature](#5-update-feature)
+  - [Delete Feature](#6-delete-feature)
 
 ## 🔐 Authentication
 
@@ -291,7 +292,76 @@ curl -X POST "https://api.example.com/v1/features" \
     }'
 ```
 
-### 5. DELETE Feature
+### 5. Update Feature
+
+Update the details of an existing Feature using its unique database ID. This endpoint is restricted to updating the non-key metadata, specifically the description, to preserve system integrity and avoid complex cascading updates in the permission matrix.
+
+**Endpoints:**
+
+```json
+PUT /features/{id}
+```
+
+**Path Parameters:**
+| Parameter | Type | Required  | Description |
+|----------|----------|----------|---------- |
+| id | integer | Yes | The unique database ID of the feature to retrieve (e.g., 2). |
+
+**Request Body:**
+
+```json
+{
+    "description": "Modul utama untuk mengelola semua data detail dan riwayat karyawan."
+}
+```
+
+**Body Parameters**:
+| Parameter | Type | Required | Description | Constraints |
+|----------|----------|----------|----------|----------|
+| description | string | No | The updated brief description of the feature's function. | Max 1000 characters. |
+
+
+**Response:**
+
+**200 OK:**
+
+```json
+{
+    "status": "00",
+    "message": "Feature Berhasil Diperbarui",
+    "datetime": "20251204013700",
+    "features": {
+        "id": 1,
+        "feature_code": "FCR0000001",
+        "feature_name": "Employee Detail Management",
+        "description": "Modul utama untuk mengelola semua data detail dan riwayat karyawan.", // Updated
+        "updated_at": "2025-12-04T01:37:00Z"
+    }
+}
+```
+
+**404 Not Found:**
+
+```json
+{
+    "status": "03",
+    "message": "Feature tidak ditemukan",
+    "datetime": "20251204013701"
+}
+```
+
+**cURL Example:**
+
+```json
+curl -X PUT "https://api.example.com/v1/features/2" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "description": "Modul utama untuk mengelola semua data detail dan riwayat karyawan."
+    }'
+```
+
+### 6. DELETE Feature
 
 Remove an existing Feature from the system using its unique feature code. This operation will automatically delete all associated permission records (role_permissions) defined for this feature across all roles.
 
