@@ -2,16 +2,28 @@ import { db } from "@database/connection.js";
 import { OFFICE_TABLE } from "@constants/database.js";
 import {
   CreateOffice,
-  GetAllOffices,
+  // GetAllOffices, // Hapus ini karena tidak dipakai (Fix error unused var)
   GetOfficeById,
   Office,
   UpdateOffice,
 } from "./office.types.js";
 
-/**
- * Function for generating office code
- * Format: OFC + 7 digit angka
- */
+// ==========================================================================
+// 1. HELPER FUNCTION
+// ==========================================================================
+const formatOfficeLocation = (item: any) => {
+  if (!item) return null;
+  return {
+    ...item,
+    // Konversi string ke float, atau null jika datanya kosong
+    latitude: item.latitude ? parseFloat(item.latitude) : null,
+    longitude: item.longitude ? parseFloat(item.longitude) : null,
+  };
+};
+
+// ==========================================================================
+// 2. INTERNAL HELPER
+// ==========================================================================
 async function generateOfficeCode() {
   const PREFIX = "OFC";
   const PAD_LENGTH = 7;
@@ -29,7 +41,6 @@ async function generateOfficeCode() {
   const lastNumberString = lastCode.replace(PREFIX, "");
   const lastNumber = parseInt(lastNumberString, 10);
 
-  // Fallback jika parsing gagal
   if (isNaN(lastNumber)) {
     return PREFIX + String(1).padStart(PAD_LENGTH, "0");
   }
@@ -38,17 +49,43 @@ async function generateOfficeCode() {
   return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
 }
 
+// ==========================================================================
+// 3. MAIN EXPORTED FUNCTIONS
+// ==========================================================================
+
 /**
  * Get office by ID.
  */
-export const getMasterOfficeById = async (
-  id: number
-): Promise<GetOfficeById | null> =>
-  await db(OFFICE_TABLE).select("*").where({ id }).first();
+export const getMasterOfficeById = async (id: number): Promise<any | null> => {
+  // Ubah return type jadi any sementara agar kompatibel dengan helper
+  const result = await db(`${OFFICE_TABLE} as child`)
+    .select(
+      "child.id",
+      "child.office_code",
+      "child.parent_office_code",
+      "child.name",
+      "parent.name as parent_office_name",
+      "child.address",
+      "child.latitude",
+      "child.longitude",
+      "child.radius_meters",
+      "child.sort_order",
+      "child.description"
+    )
+    .leftJoin(
+      `${OFFICE_TABLE} as parent`,
+      "child.parent_office_code",
+      "parent.office_code"
+    )
+    .where("child.id", id)
+    .first();
+
+  // FIX: Masukkan result ke helper function
+  return formatOfficeLocation(result);
+};
 
 /**
- * [BARU] Mengambil list kantor dengan PAGINATION (Limit & Offset)
- * Menggantikan getAllMasterOffices yang lama untuk endpoint List
+ * [BARU] Mengambil list kantor dengan PAGINATION
  */
 export const getPaginatedOffices = async (
   page: number,
@@ -56,7 +93,8 @@ export const getPaginatedOffices = async (
 ): Promise<any[]> => {
   const offset = (page - 1) * limit;
 
-  return await db(OFFICE_TABLE)
+  // FIX: Simpan dulu ke variabel 'results', JANGAN langsung di-return
+  const results = await db(OFFICE_TABLE)
     .select(
       "id",
       "office_code",
@@ -73,21 +111,29 @@ export const getPaginatedOffices = async (
     .offset(offset)
     .orderBy("sort_order", "asc")
     .orderBy("id", "asc");
+
+  // FIX: Baru di-map di sini
+  return results.map(formatOfficeLocation);
 };
 
 /**
  * [BARU] Mengambil SEMUA data untuk struktur ORGANIZATION (Tree)
- * Hanya mengambil kolom yang diperlukan untuk visualisasi pohon
  */
 export const getAllOfficesOrganization = async (): Promise<any[]> => {
-  return await db(OFFICE_TABLE).select(
+  // FIX: Simpan dulu ke variabel 'results'
+  const results = await db(OFFICE_TABLE).select(
     "id",
     "office_code",
     "name",
     "address",
     "description",
-    "parent_office_code" // Wajib ada untuk logic pohon
+    "parent_office_code",
+    "latitude",
+    "longitude"
   );
+
+  // FIX: Baru di-map di sini
+  return results.map(formatOfficeLocation);
 };
 
 /**
@@ -95,13 +141,10 @@ export const getAllOfficesOrganization = async (): Promise<any[]> => {
  */
 export const addMasterOffice = async (data: CreateOffice): Promise<Office> => {
   const office_code = await generateOfficeCode();
-  const officeToInsert = {
-    ...data,
-    office_code,
-  };
+  const [id] = await db(OFFICE_TABLE).insert({ ...data, office_code });
+  const result = await db(OFFICE_TABLE).where({ id }).first();
 
-  const [id] = await db(OFFICE_TABLE).insert(officeToInsert);
-  return db(OFFICE_TABLE).where({ id }).first();
+  return formatOfficeLocation(result);
 };
 
 /**
@@ -113,7 +156,9 @@ export const editMasterOffice = async (
   const { id, ...updateData } = data;
 
   await db(OFFICE_TABLE).where({ id }).update(updateData);
-  return db(OFFICE_TABLE).where({ id }).first();
+  const result = await db(OFFICE_TABLE).where({ id }).first();
+
+  return formatOfficeLocation(result);
 };
 
 /**
@@ -121,7 +166,3 @@ export const editMasterOffice = async (
  */
 export const removeMasterOffice = async (id: number): Promise<number> =>
   await db(OFFICE_TABLE).where({ id }).delete();
-
-// Legacy Function (Opsional, boleh dihapus jika tidak ada modul lain yang pakai)
-// Saya matikan export-nya agar Anda dipaksa pakai getPaginatedOffices :)
-// export const getAllMasterOffices = async (): Promise<GetAllOffices[]> => await db(OFFICE_TABLE).select("*");
