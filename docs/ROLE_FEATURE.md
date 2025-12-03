@@ -1,4 +1,4 @@
-# 👤 CRUD Role API Documentation
+# 👤 CRUD Role API
 
 - version: 1.0
 - Base URL: https://hr-backend-production-1ce0.up.railway.app
@@ -15,8 +15,7 @@ The Role Management API provides standard CRUD capabilities for defining and man
   - [Get Role By Id](#2-get-role-by-id)
   - [Get Role By Code](#3-get-role-by-code)
   - [Create Role](#4-create-role)
-  - [Update Role](#5-update-role)
-  - [Delete Role](#6-delete-role)
+  - [Delete Role](#5-delete-role)
 
 ## 🔐 Authentication
 
@@ -73,7 +72,7 @@ Get a list of all defined system Roles. This endpoint is ideal for table display
 
 **Endpoints:**
 ```json
-GET /roles
+GET /role/roles
 ```
 
 **Response:**
@@ -116,7 +115,7 @@ GET /roles
 
 **cURL Example:**
 ```json
-curl -X GET "https://api.example.com/v1/roles" \
+curl -X GET "https://api.example.com/v1/role/roles" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json"
 ```
@@ -127,7 +126,7 @@ Retrieve the detailed data for a single Role using its unique internal database 
 
 **Endpoints:**
 ```json
-GET /roles/{id}
+GET /role/roles/{id}
 ```
 
 **Path Parameters:**
@@ -174,7 +173,7 @@ GET /roles/{id}
 
 **cURL Example:**
 ```json
-curl -X GET "https://api.example.com/v1/roles/2" \
+curl -X GET "https://api.example.com/v1/role/roles/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ```
@@ -185,7 +184,7 @@ Retrieve the detailed data for a single Role using its unique role code identifi
 
 **Endpoints:**
 ```json
-GET /roles/code/{role_code}
+GET /role/roles/code/{role_code}
 ```
 
 **Path Parameters:**
@@ -232,7 +231,7 @@ GET /roles/code/{role_code}
 
 **cURL Example:**
 ```json
-curl -X GET "https://api.example.com/v1/roles/code/ROL0000002" \
+curl -X GET "https://api.example.com/v1/role/roles/code/ROL0000002" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ``` 
@@ -243,7 +242,7 @@ Add a new system role (e.g., 'Administrator', 'HR Manager'). The id and unique r
 
 **Endpoints:**
 ```json
-POST /roles
+POST /role/roles
 ```
 
 **Request Body:**
@@ -289,7 +288,7 @@ POST /roles
 **cURL Example:**
 
 ```json
-curl -X POST "https://api.example.com/v1/roles" \
+curl -X POST "https://api.example.com/v1/role/roles" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
@@ -298,34 +297,35 @@ curl -X POST "https://api.example.com/v1/roles" \
     }'
 ```
 
-### 5. Update Role
+### 5. Update Feature
 
-Update the details of an existing Role using its unique database ID. This endpoint supports partial updates, typically for the role's description.
+Update the details of an existing Feature using its unique database ID. The name and description are typically mutable.
 
 **Endpoints:**
 
 ```json
-PUT /roles/{id}
+PUT /features/{id}
 ```
 
 **Path Parameters:**
 | Parameter | Type | Required  | Description |
 |----------|----------|----------|---------- |
-| id | integer | Yes | The unique database ID of the role to retrieve (e.g., 2). |
+| id | integer | Yes | The unique database ID of the feature to retrieve (e.g., 2). |
 
 **Request Body:**
 
 ```json
 {
-    "description": "Dapat mengelola data karyawan, posisi, dan melakukan otorisasi cuti."
+    "feature_name": "Employee Detail Management",
+    "description": "Modul untuk mengelola dan melihat semua data detail karyawan."
 }
 ```
 
 **Body Parameters**:
 | Parameter | Type | Required | Description | Constraints |
 |----------|----------|----------|----------|----------|
-| role_name | string | No | The unique name of the new role. | PK, Max 20 characters. |
-| description | string | No | A brief description of the role's responsibilities or scope. | Max 1000 characters.|
+| feature_name | string | No | The unique name of the feature. | PK, Max 50 characters. |
+| description | string | No | A brief description of the feature's responsibilities or scope. | Max 1000 characters.|
 
 
 **Response:**
@@ -335,14 +335,14 @@ PUT /roles/{id}
 ```json
 {
     "status": "00",
-    "message": "Role Berhasil Diperbarui",
-    "datetime": "20251203114000",
-    "roles": {
-        "id": 2,
-        "role_code": "ROL0000002",
-        "role_name": "HR Manager",
-        "description": "Dapat mengelola data karyawan, posisi, dan melakukan otorisasi cuti.",
-        "updated_at": "2025-12-03T11:40:00Z"
+    "message": "Feature Berhasil Diperbarui",
+    "datetime": "20251203120300",
+    "features": {
+        "id": 1,
+        "feature_code": "FTR0000001",
+        "feature_name": "Employee Detail Management",
+        "description": "Modul untuk mengelola dan melihat semua data detail karyawan.",
+        "updated_at": "2025-12-03T12:03:00Z"
     }
 }
 ```
@@ -352,15 +352,15 @@ PUT /roles/{id}
 ```json
 {
     "status": "03",
-    "message": "Role tidak ditemukan",
-    "datetime": "20251203114001"
+    "message": "Feature tidak ditemukan",
+    "datetime": "20251203120302"
 }
 ```
 
 **cURL Example:**
 
 ```json
-curl -X PUT "https://api.example.com/v1/roles/2" \
+curl -X PUT "https://api.example.com/v1/features/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{
@@ -368,13 +368,13 @@ curl -X PUT "https://api.example.com/v1/roles/2" \
     }'
 ```
 
-### 6. DELETE Role
+### 5. DELETE Role
 
-Remove an existing Role from the system using its unique database ID. This operation will fail if the role is currently assigned to any users or if any permissions are defined against it.
+Remove an existing Role from the system using its unique database ID. This operation will fail if any users are currently assigned to this role. If successful, all associated permission records will be automatically deleted.
 
 **Endpoints:**
 ```json
-DELETE /roles/{id}
+DELETE /role/roles/{id}
 ```
 
 **Path Parameters:**
@@ -413,7 +413,7 @@ DELETE /roles/{id}
 
 **cURL Example:**
 ```json
-curl -X DELETE "https://api.example.com/v1/roles/2" \
+curl -X DELETE "https://api.example.com/v1/role/roles/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
 ```
