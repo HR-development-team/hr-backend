@@ -2,24 +2,34 @@ import { Router } from "express";
 import {
   createMasterOffice,
   destroyMasterOffice,
-  // fetchAllMasterOffices,
   fetchOfficeList,
   fetchMasterOfficeById,
   updateMasterOffice,
   fetchOrganizationTree,
+  fetchMasterOfficeByCode,
 } from "./office.controller.js";
 import { verifyToken } from "@middleware/jwt.js";
 
 const router = Router();
 router.use(verifyToken);
 
+// 1. Organization Tree (WAJIB PALING ATAS)
+// Agar tidak tertangkap oleh /:id
 router.get("/organization", fetchOrganizationTree);
 
+// 2. Pagination List
 router.get("/", fetchOfficeList);
 
+// 3. Get By Code
+router.get("/code/:office_code", fetchMasterOfficeByCode);
+
+// 4. Get By ID, Update, Delete (Parameter Dinamis)
+// Menggunakan Regex (\\d+) agar hanya menangkap angka
 router.get("/:id(\\d+)", fetchMasterOfficeById);
 router.put("/:id(\\d+)", updateMasterOffice);
 router.delete("/:id(\\d+)", destroyMasterOffice);
 
+// 5. Create
 router.post("/", createMasterOffice);
+
 export default router;
