@@ -2,7 +2,6 @@ import { db } from "@database/connection.js";
 import { OFFICE_TABLE } from "@constants/database.js";
 import {
   CreateOffice,
-  // GetAllOffices, // Hapus ini karena tidak dipakai (Fix error unused var)
   GetOfficeById,
   Office,
   UpdateOffice,
@@ -57,7 +56,6 @@ async function generateOfficeCode() {
  * Get office by ID.
  */
 export const getMasterOfficeById = async (id: number): Promise<any | null> => {
-  // Ubah return type jadi any sementara agar kompatibel dengan helper
   const result = await db(`${OFFICE_TABLE} as child`)
     .select(
       "child.id",
@@ -80,7 +78,6 @@ export const getMasterOfficeById = async (id: number): Promise<any | null> => {
     .where("child.id", id)
     .first();
 
-  // FIX: Masukkan result ke helper function
   return formatOfficeLocation(result);
 };
 
@@ -93,7 +90,6 @@ export const getPaginatedOffices = async (
 ): Promise<any[]> => {
   const offset = (page - 1) * limit;
 
-  // FIX: Simpan dulu ke variabel 'results', JANGAN langsung di-return
   const results = await db(OFFICE_TABLE)
     .select(
       "id",
@@ -112,7 +108,6 @@ export const getPaginatedOffices = async (
     .orderBy("sort_order", "asc")
     .orderBy("id", "asc");
 
-  // FIX: Baru di-map di sini
   return results.map(formatOfficeLocation);
 };
 
@@ -120,7 +115,6 @@ export const getPaginatedOffices = async (
  * [BARU] Mengambil SEMUA data untuk struktur ORGANIZATION (Tree)
  */
 export const getAllOfficesOrganization = async (): Promise<any[]> => {
-  // FIX: Simpan dulu ke variabel 'results'
   const results = await db(OFFICE_TABLE).select(
     "id",
     "office_code",
@@ -132,7 +126,6 @@ export const getAllOfficesOrganization = async (): Promise<any[]> => {
     "longitude"
   );
 
-  // FIX: Baru di-map di sini
   return results.map(formatOfficeLocation);
 };
 
@@ -141,29 +134,48 @@ export const getAllOfficesOrganization = async (): Promise<any[]> => {
  */
 export const addMasterOffice = async (data: CreateOffice): Promise<Office> => {
   const office_code = await generateOfficeCode();
-  const [id] = await db(OFFICE_TABLE).insert({ ...data, office_code });
-  const result = await db(OFFICE_TABLE).where({ id }).first();
 
+  // Auto Increment Sort Order jika kosong
+  let finalSortOrder = data.sort_order;
+  if (!finalSortOrder) {
+    // FIX PRETTIER: Break line untuk .max dan .first
+    const maxResult = await db(OFFICE_TABLE)
+      .max("sort_order as maxVal")
+      .first();
+    const maxVal = maxResult?.maxVal as number | null;
+    finalSortOrder = (maxVal || 0) + 1;
+  }
+
+  const officeToInsert = {
+    parent_office_code: data.parent_office_code || null,
+    office_code,
+    name: data.name,
+    address: data.address,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    radius_meters: data.radius_meters,
+    sort_order: finalSortOrder,
+    description: data.description || null,
+  };
+
+  const [id] = await db(OFFICE_TABLE).insert(officeToInsert);
+  const result = await db(OFFICE_TABLE).where({ id }).first();
   return formatOfficeLocation(result);
 };
 
 /**
  * Edit an existing office record.
  */
+// FIX PRETTIER: Parameter diturunkan ke bawah
 export const editMasterOffice = async (
   data: UpdateOffice
 ): Promise<Office | null> => {
   const { id, ...updateData } = data;
-
   await db(OFFICE_TABLE).where({ id }).update(updateData);
   const result = await db(OFFICE_TABLE).where({ id }).first();
-
   return formatOfficeLocation(result);
 };
 
-/**
- * Remove existing office.
- */
 export const removeMasterOffice = async (id: number): Promise<number> =>
   await db(OFFICE_TABLE).where({ id }).delete();
 
@@ -189,9 +201,8 @@ export const getMasterOfficeByCode = async (
       "child.parent_office_code",
       "parent.office_code"
     )
-    .where("child.office_code", officeCode) // <--- Bedanya di sini
+    .where("child.office_code", officeCode)
     .first();
 
-  // Gunakan helper yang sudah kita buat sebelumnya
   return formatOfficeLocation(result);
 };
