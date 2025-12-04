@@ -166,3 +166,32 @@ export const editMasterOffice = async (
  */
 export const removeMasterOffice = async (id: number): Promise<number> =>
   await db(OFFICE_TABLE).where({ id }).delete();
+
+export const getMasterOfficeByCode = async (
+  officeCode: string
+): Promise<any | null> => {
+  const result = await db(`${OFFICE_TABLE} as child`)
+    .select(
+      "child.id",
+      "child.office_code",
+      "child.parent_office_code",
+      "child.name",
+      "parent.name as parent_office_name", // Ambil nama parent
+      "child.address",
+      "child.latitude",
+      "child.longitude",
+      "child.radius_meters",
+      "child.sort_order",
+      "child.description"
+    )
+    .leftJoin(
+      `${OFFICE_TABLE} as parent`,
+      "child.parent_office_code",
+      "parent.office_code"
+    )
+    .where("child.office_code", officeCode) // <--- Bedanya di sini
+    .first();
+
+  // Gunakan helper yang sudah kita buat sebelumnya
+  return formatOfficeLocation(result);
+};
