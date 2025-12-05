@@ -21,6 +21,7 @@ The Department Management API provides standard CRUD capabilities to manage, ret
 ## 🔐 Authentication
 
 All endpoints require authentication using a Bearer Token in the Authorization header.
+
 ```json
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
@@ -39,6 +40,7 @@ Content-Type: application/json
 ## 📦 Common Response Formats
 
 **Success Response Structure**
+
 ```json
 {
   "status": "00",
@@ -51,6 +53,7 @@ Content-Type: application/json
 ```
 
 **Error Response Structure**
+
 ```json
 {
   "status": "03",
@@ -72,6 +75,7 @@ Content-Type: application/json
 Get a list of all departments, including their associated parent office code. This endpoint is ideal for table displays and data processing.
 
 **Endpoints:**
+
 ```json
 GET /departments
 ```
@@ -79,37 +83,38 @@ GET /departments
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Departemen Berhasil Didapatkan",
-    "datetime": "20251103101550",
-    "departments": [
-        {
-            "id": 1,
-            "department_code": "DPT0000001",
-            "office_code": "OFC0000001",
-            "office_name": "Kantor Pusat Jakarta",
-            "name": "Human Resources",
-            "description": "Mengelola perekrutan, kompensasi, dan hubungan karyawan."
-        },
-        {
-            "id": 2,
-            "department_code": "DPT0000002",
-            "office_code": "OFC0000001",
-            "office_name": "Kantor Pusat Jakarta",
-            "name": "Finance and Accounting",
-            "description": "Bertanggung jawab atas pembukuan, penganggaran, dan pelaporan keuangan."
-        },
-        {
-            "id": 3,
-            "department_code": "DPT0000003",
-            "office_code": "OFC0000002",
-            "office_name": "Kantor Cabang Bandung",
-            "name": "Sales Regional West",
-            "description": "Tim penjualan yang beroperasi di wilayah Jawa Barat."
-        }
-    ]
+  "status": "00",
+  "message": "Data Departemen Berhasil Didapatkan",
+  "datetime": "20251103101550",
+  "departments": [
+    {
+      "id": 1,
+      "department_code": "DPT0000001",
+      "office_code": "OFC0000001",
+      "office_name": "Kantor Pusat Jakarta",
+      "name": "Human Resources",
+      "description": "Mengelola perekrutan, kompensasi, dan hubungan karyawan."
+    },
+    {
+      "id": 2,
+      "department_code": "DPT0000002",
+      "office_code": "OFC0000001",
+      "office_name": "Kantor Pusat Jakarta",
+      "name": "Finance and Accounting",
+      "description": "Bertanggung jawab atas pembukuan, penganggaran, dan pelaporan keuangan."
+    },
+    {
+      "id": 3,
+      "department_code": "DPT0000003",
+      "office_code": "OFC0000002",
+      "office_name": "Kantor Cabang Bandung",
+      "name": "Sales Regional West",
+      "description": "Tim penjualan yang beroperasi di wilayah Jawa Barat."
+    }
+  ]
 }
 ```
 
@@ -123,6 +128,7 @@ GET /departments
 - description: A brief explanation or note regarding the main function or duties of the department.
 
 **cURL Example:**
+
 ```json
 curl -X GET "https://api.example.com/v1/departments" \
   -H "Authorization: Bearer YOUR_API_KEY" \
@@ -134,33 +140,35 @@ curl -X GET "https://api.example.com/v1/departments" \
 Retrieve the detailed data for a single department using its unique internal database ID (primary key).
 
 **Endpoints:**
+
 ```json
 GET /departments/{id}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required  | Description |
+| Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
 | id | string | Yes | The unique database ID of the department to retrieve (e.g., 2). |
 
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Departemen Berhasil Didapatkan",
-    "datetime": "20251103101550",
-    "departments": {
-        "id": 2,
-        "department_code": "DPT0000002",
-        "office_code": "OFC0000001",
-        "office_name": "Kantor Pusat Jakarta",
-        "name": "Finance and Accounting",
-        "description": "Bertanggung jawab atas pembukuan, penganggaran, dan pelaporan keuangan.",
-        "created_at": "2025-11-01T09:00:00Z",
-        "updated_at": "2025-11-01T09:00:00Z"
-    }
+  "status": "00",
+  "message": "Data Departemen Berhasil Didapatkan",
+  "datetime": "20251103101550",
+  "departments": {
+    "id": 2,
+    "department_code": "DPT0000002",
+    "office_code": "OFC0000001",
+    "office_name": "Kantor Pusat Jakarta",
+    "name": "Finance and Accounting",
+    "description": "Bertanggung jawab atas pembukuan, penganggaran, dan pelaporan keuangan.",
+    "created_at": "2025-11-01T09:00:00Z",
+    "updated_at": "2025-11-01T09:00:00Z"
+  }
 }
 ```
 
@@ -176,15 +184,17 @@ GET /departments/{id}
 - updated_at: The timestamp (ISO 8601 format) when the department record was last updated.
 
 **404 Not Found:**
+
 ```json
 {
-    "status": "03",
-    "message": "Departemen tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "03",
+  "message": "Departemen tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
+
 ```json
 curl -X GET "https://api.example.com/v1/departments/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
@@ -196,33 +206,35 @@ curl -X GET "https://api.example.com/v1/departments/2" \
 Retrieve the detailed data for a single department using its unique department code identifier. The response includes all associated department and office details.
 
 **Endpoints:**
+
 ```json
 GET /departments/code/{department_code}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required  | Description |
+| Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
 | department_code | string | Yes | The unique code of the department to retrieve (e.g., DPT0000002). |
 
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Departemen Berhasil Didapatkan",
-    "datetime": "20251103101550",
-    "departments": {
-        "id": 2,
-        "department_code": "DPT0000002",
-        "office_code": "OFC0000001",
-        "office_name": "Kantor Pusat Jakarta",
-        "name": "Finance and Accounting",
-        "description": "Bertanggung jawab atas pembukuan, penganggaran, dan pelaporan keuangan.",
-        "created_at": "2025-11-01T09:00:00Z",
-        "updated_at": "2025-11-01T09:00:00Z"
-    }
+  "status": "00",
+  "message": "Data Departemen Berhasil Didapatkan",
+  "datetime": "20251103101550",
+  "departments": {
+    "id": 2,
+    "department_code": "DPT0000002",
+    "office_code": "OFC0000001",
+    "office_name": "Kantor Pusat Jakarta",
+    "name": "Finance and Accounting",
+    "description": "Bertanggung jawab atas pembukuan, penganggaran, dan pelaporan keuangan.",
+    "created_at": "2025-11-01T09:00:00Z",
+    "updated_at": "2025-11-01T09:00:00Z"
+  }
 }
 ```
 
@@ -238,36 +250,40 @@ GET /departments/code/{department_code}
 - updated_at: The timestamp (ISO 8601 format) when the department record was last updated.
 
 **404 Not Found:**
+
 ```json
 {
-    "status": "03",
-    "message": "Departemen tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "03",
+  "message": "Departemen tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
+
 ```json
 curl -X GET "https://api.example.com/v1/departments/code/DPT0000002" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
-``` 
+```
 
 ### 4. CREATE Department
 
 Add a new department record to the system, associating it with a parent office.
 
 **Endpoints:**
+
 ```json
 POST /departments
 ```
 
 **Request Body:**
+
 ```json
 {
-    "office_code": "OFC0000003",
-    "name": "Warehouse Management",
-    "description": "Bertanggung jawab atas pengelolaan stok dan inventaris di gudang Surabaya."
+  "office_code": "OFC0000003",
+  "name": "Warehouse Management",
+  "description": "Bertanggung jawab atas pengelolaan stok dan inventaris di gudang Surabaya."
 }
 ```
 
@@ -281,27 +297,29 @@ POST /departments
 **Response:**
 
 **201 Created:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Departemen Berhasil Ditambahkan",
-    "datetime": "20251103101550",
-    "id": 4,
-    "departments": {
-        "department_code": "DPT0000003",
-        "office_code": "OFC0000003",
-        "name": "Warehouse Management",
-        "description": "Bertanggung jawab atas pengelolaan stok dan inventaris di gudang Surabaya."
-    }
+  "status": "00",
+  "message": "Data Departemen Berhasil Ditambahkan",
+  "datetime": "20251103101550",
+  "id": 4,
+  "departments": {
+    "department_code": "DPT0000003",
+    "office_code": "OFC0000003",
+    "name": "Warehouse Management",
+    "description": "Bertanggung jawab atas pengelolaan stok dan inventaris di gudang Surabaya."
+  }
 }
 ```
 
 **400 Bad Request:**
+
 ```json
 {
-    "status": "99",
-    "message": "Kantor tidak ditemukan.",
-    "datetime": "20251103101551"
+  "status": "99",
+  "message": "Kantor tidak ditemukan.",
+  "datetime": "20251103101551"
 }
 ```
 
@@ -329,7 +347,7 @@ PUT /departments/{id}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required  | Description |
+| Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
 | id | integer | Yes | The unique database ID of the department to update (e.g., 1). |
 
@@ -337,9 +355,9 @@ PUT /departments/{id}
 
 ```json
 {
-    "office_code": "OFC0000001",
-    "name": "Human Resources & Talent Acquisition",
-    "description": "Mengelola perekrutan, kompensasi, dan hubungan karyawan pusat."
+  "office_code": "OFC0000001",
+  "name": "Human Resources & Talent Acquisition",
+  "description": "Mengelola perekrutan, kompensasi, dan hubungan karyawan pusat."
 }
 ```
 
@@ -349,7 +367,6 @@ PUT /departments/{id}
 | office_code | string | No | Code of the mandatory parent office this department belongs to. | Must exist in master_offices. |
 | name | string | Yes | No official name of the department. | Max 100 characters.|
 | description | string | No | Brief explanation of the department's function. | Max 500 characters. |
-
 
 **Response:**
 
@@ -384,9 +401,9 @@ PUT /departments/{id}
 
 ```json
 {
-    "status": "03",
-    "message": "Departemen tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "03",
+  "message": "Departemen tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
@@ -407,6 +424,7 @@ curl -X PUT "https://api.example.com/v1/departments/1" \
 Remove an existing department record from the system using its unique identifier.
 
 **Endpoints:**
+
 ```json
 DELETE /departments/{id}
 ```
@@ -419,33 +437,37 @@ DELETE /departments/{id}
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Departemen Berhasil Dihapus",
-    "datetime": "20251103101550"
+  "status": "00",
+  "message": "Data Departemen Berhasil Dihapus",
+  "datetime": "20251103101550"
 }
 ```
 
 **409 Conflict:**
+
 ```json
 {
-    "status": "05",
-    "message": "Tidak dapat menghapus departemen yang masih memiliki karyawan terasosiasi.",
-    "datetime": "20251103101551"
+  "status": "05",
+  "message": "Tidak dapat menghapus departemen yang masih memiliki karyawan terasosiasi.",
+  "datetime": "20251103101551"
 }
 ```
 
 **404 Not Found:**
+
 ```json
 {
-    "status": "04",
-    "message": "Departemen tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "04",
+  "message": "Departemen tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
+
 ```json
 curl -X DELETE "https://api.example.com/v1/departments/1" \
     -H "Authorization: Bearer YOUR_API_KEY" \
