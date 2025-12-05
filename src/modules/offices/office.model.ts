@@ -135,10 +135,8 @@ export const getAllOfficesOrganization = async (): Promise<any[]> => {
 export const addMasterOffice = async (data: CreateOffice): Promise<Office> => {
   const office_code = await generateOfficeCode();
 
-  // Auto Increment Sort Order jika kosong
   let finalSortOrder = data.sort_order;
   if (!finalSortOrder) {
-    // FIX PRETTIER: Break line untuk .max dan .first
     const maxResult = await db(OFFICE_TABLE)
       .max("sort_order as maxVal")
       .first();
@@ -159,7 +157,24 @@ export const addMasterOffice = async (data: CreateOffice): Promise<Office> => {
   };
 
   const [id] = await db(OFFICE_TABLE).insert(officeToInsert);
-  const result = await db(OFFICE_TABLE).where({ id }).first();
+
+  // SELECT EKSPLISIT (Agar urutan rapi & tanpa created_at/updated_at)
+  const result = await db(OFFICE_TABLE)
+    .select(
+      "id",
+      "office_code",
+      "parent_office_code",
+      "name",
+      "address",
+      "latitude",
+      "longitude",
+      "radius_meters",
+      "sort_order", // <--- Posisi di atas description
+      "description"
+    )
+    .where({ id })
+    .first();
+
   return formatOfficeLocation(result);
 };
 
@@ -171,8 +186,26 @@ export const editMasterOffice = async (
   data: UpdateOffice
 ): Promise<Office | null> => {
   const { id, ...updateData } = data;
+
   await db(OFFICE_TABLE).where({ id }).update(updateData);
-  const result = await db(OFFICE_TABLE).where({ id }).first();
+
+  // SELECT EKSPLISIT (Agar urutan rapi & tanpa created_at/updated_at)
+  const result = await db(OFFICE_TABLE)
+    .select(
+      "id",
+      "office_code",
+      "parent_office_code",
+      "name",
+      "address",
+      "latitude",
+      "longitude",
+      "radius_meters",
+      "sort_order", // <--- Posisi di atas description
+      "description"
+    )
+    .where({ id })
+    .first();
+
   return formatOfficeLocation(result);
 };
 
@@ -205,4 +238,11 @@ export const getMasterOfficeByCode = async (
     .first();
 
   return formatOfficeLocation(result);
+};
+
+export const hasChildOffices = async (officeCode: string): Promise<boolean> => {
+  const result = await db(OFFICE_TABLE)
+    .where("parent_office_code", officeCode)
+    .first();
+  return !!result; // Return true jika ada anak, false jika tidak
 };
