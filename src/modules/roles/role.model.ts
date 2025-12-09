@@ -3,7 +3,7 @@ import {
   ROLE_TABLE,
   FEATURE_TABLE,
   ROLE_PERMISSION_TABLE,
-} from "src/common/constants/database.js"; // Assuming you define these constants
+} from "src/common/constants/database.js";
 import {
   CreateRole,
   Role,
