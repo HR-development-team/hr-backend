@@ -4,33 +4,33 @@ import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "src/common/utils/logger.js";
 import { DatabaseError } from "@common/types/error.types.js";
 import {
-  addRole,
-  editRole,
-  getAllRoles,
-  getRoleByCode,
-  getRoleById,
-  removeRole,
-} from "./role.model.js";
-import { addRolesSchema, UpdateRoleSchema } from "./role.schemas.js";
+  addFeature,
+  editFeature,
+  getAllFeatures,
+  getFeatureByCode,
+  getFeatureById,
+  removeFeature,
+} from "./feature.model.js";
+import { addFeaturesSchema, UpdateFeaturesSchema } from "./feature.schemas.js";
 
 /**
- * [GET] /roles - Fetch all roles
+ * [GET] /features - Fetch all features
  */
-export const fetchAllRoles = async (req: Request, res: Response) => {
+export const fetchAllFeatures = async (req: Request, res: Response) => {
   try {
-    const roles = await getAllRoles();
+    const features = await getAllFeatures();
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Role berhasil di dapatkan",
-      roles,
+      "Data Feature berhasil di dapatkan",
+      features,
       200,
-      RESPONSE_DATA_KEYS.ROLES
+      RESPONSE_DATA_KEYS.FEATURES
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching roles:${dbError}`);
+    appLogger.error(`Error fetching features:${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -41,9 +41,9 @@ export const fetchAllRoles = async (req: Request, res: Response) => {
 };
 
 /**
- * [GET] /roles/:id - Fetch Role by Id
+ * [GET] /features/:id - Fetch Feature by Id
  */
-export const fetchRolesById = async (req: Request, res: Response) => {
+export const fetchFeaturesById = async (req: Request, res: Response) => {
   try {
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
@@ -51,18 +51,18 @@ export const fetchRolesById = async (req: Request, res: Response) => {
       return errorResponse(
         res,
         API_STATUS.BAD_REQUEST,
-        "ID role tidak valid.",
+        "ID feature tidak valid.",
         400
       );
     }
 
-    const roles = await getRoleById(id);
+    const features = await getFeatureById(id);
 
-    if (!roles) {
+    if (!features) {
       return errorResponse(
         res,
         API_STATUS.NOT_FOUND,
-        "Data Role tidak ditemukan",
+        "Data Feature tidak ditemukan",
         404
       );
     }
@@ -70,14 +70,14 @@ export const fetchRolesById = async (req: Request, res: Response) => {
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Role berhasil didapatkan",
-      roles,
+      "Data Feature berhasil didapatkan",
+      features,
       200,
-      RESPONSE_DATA_KEYS.ROLES
+      RESPONSE_DATA_KEYS.FEATURES
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching roles:${dbError}`);
+    appLogger.error(`Error fetching features:${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -88,20 +88,20 @@ export const fetchRolesById = async (req: Request, res: Response) => {
 };
 
 /**
- * [GET] /roles/code/:code - Fetch Role by code
+ * [GET] /features/code/:code - Fetch Feature by code
  */
-export const fetchRolesByCode = async (req: Request, res: Response) => {
+export const fetchFeaturesByCode = async (req: Request, res: Response) => {
   try {
     // Validate and cast the code params
     const code: string = req.params.code;
 
-    const roles = await getRoleByCode(code);
+    const features = await getFeatureByCode(code);
 
-    if (!roles) {
+    if (!features) {
       return errorResponse(
         res,
         API_STATUS.NOT_FOUND,
-        "Data Role tidak ditemukan",
+        "Data Feature tidak ditemukan",
         404
       );
     }
@@ -109,14 +109,14 @@ export const fetchRolesByCode = async (req: Request, res: Response) => {
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Role berhasil didapatkan",
-      roles,
+      "Data Feature berhasil didapatkan",
+      features,
       200,
-      RESPONSE_DATA_KEYS.ROLES
+      RESPONSE_DATA_KEYS.FEATURES
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching roles:${dbError}`);
+    appLogger.error(`Error fetching features:${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -127,11 +127,11 @@ export const fetchRolesByCode = async (req: Request, res: Response) => {
 };
 
 /**
- * [POST] /roles - Create a new Role
+ * [POST] /features - Create a new Feature
  */
-export const createRoles = async (req: Request, res: Response) => {
+export const createFeatures = async (req: Request, res: Response) => {
   try {
-    const validation = addRolesSchema.safeParse(req.body);
+    const validation = addFeaturesSchema.safeParse(req.body);
 
     if (!validation.success) {
       return errorResponse(
@@ -147,7 +147,7 @@ export const createRoles = async (req: Request, res: Response) => {
     }
 
     const { name, description } = validation.data;
-    const roles = await addRole({
+    const features = await addFeature({
       name,
       description,
     });
@@ -155,10 +155,10 @@ export const createRoles = async (req: Request, res: Response) => {
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data role berhasil dibuat",
-      roles,
+      "Data feature berhasil dibuat",
+      features,
       201,
-      RESPONSE_DATA_KEYS.ROLES
+      RESPONSE_DATA_KEYS.FEATURES
     );
   } catch (error) {
     const dbError = error as DatabaseError;
@@ -166,13 +166,15 @@ export const createRoles = async (req: Request, res: Response) => {
     if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
       const errorMessage = dbError.sqlMessage || dbError.message;
 
-      // 1. Check for Duplicate Role CODE
+      // 1. Check for Duplicate Feature CODE
       if (
         errorMessage &&
-        (errorMessage.includes("role_code") ||
-          errorMessage.includes("uni_role_code"))
+        (errorMessage.includes("feature_code") ||
+          errorMessage.includes("uni_feature_code"))
       ) {
-        appLogger.warn("Role creation failed: Duplicate role code entry.");
+        appLogger.warn(
+          "Feature creation failed: Duplicate feature code entry."
+        );
         return errorResponse(
           res,
           API_STATUS.BAD_REQUEST,
@@ -180,8 +182,8 @@ export const createRoles = async (req: Request, res: Response) => {
           400,
           [
             {
-              field: "role_code",
-              message: "Kode role yang dimasukkan sudah ada.",
+              field: "feature_code",
+              message: "Kode feature yang dimasukkan sudah ada.",
             },
           ]
         );
@@ -191,7 +193,7 @@ export const createRoles = async (req: Request, res: Response) => {
         errorMessage &&
         (errorMessage.includes("name") || errorMessage.includes("uni_name"))
       ) {
-        appLogger.warn("Role creation failed: Duplicate name entry.");
+        appLogger.warn("Feature creation failed: Duplicate name entry.");
         return errorResponse(
           res,
           API_STATUS.BAD_REQUEST,
@@ -200,14 +202,14 @@ export const createRoles = async (req: Request, res: Response) => {
           [
             {
               field: "name",
-              message: "Nama role yang dimasukkan sudah ada.",
+              message: "Nama feature yang dimasukkan sudah ada.",
             },
           ]
         );
       }
     }
 
-    appLogger.error(`Error creating roles:${dbError}`);
+    appLogger.error(`Error creating features:${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -218,9 +220,9 @@ export const createRoles = async (req: Request, res: Response) => {
 };
 
 /**
- * [PUT] /roles/:id - Edit a Role
+ * [PUT] /features/:id - Edit a Feature
  */
-export const updateRoles = async (req: Request, res: Response) => {
+export const updateFeatures = async (req: Request, res: Response) => {
   try {
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
@@ -228,13 +230,13 @@ export const updateRoles = async (req: Request, res: Response) => {
       return errorResponse(
         res,
         API_STATUS.BAD_REQUEST,
-        "ID role tidak valid.",
+        "ID feature tidak valid.",
         400
       );
     }
 
     // Validate request body
-    const validation = UpdateRoleSchema.safeParse(req.body);
+    const validation = UpdateFeaturesSchema.safeParse(req.body);
     if (!validation.success) {
       return errorResponse(
         res,
@@ -251,18 +253,18 @@ export const updateRoles = async (req: Request, res: Response) => {
     const validatedData = validation.data;
     const { name, description } = validatedData;
 
-    const roles = await editRole({
+    const features = await editFeature({
       id,
       name,
       description,
     });
 
-    // Validate role not found
-    if (!roles) {
+    // Validate feature not found
+    if (!features) {
       return errorResponse(
         res,
         API_STATUS.NOT_FOUND,
-        "Data Role tidak ditemukan",
+        "Data Feature tidak ditemukan",
         404
       );
     }
@@ -270,13 +272,13 @@ export const updateRoles = async (req: Request, res: Response) => {
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data role berhasil diperbarui",
-      roles,
+      "Data feature berhasil diperbarui",
+      features,
       200,
-      RESPONSE_DATA_KEYS.ROLES
+      RESPONSE_DATA_KEYS.FEATURES
     );
   } catch (error) {
-    appLogger.error(`Error editing roles:${error}`);
+    appLogger.error(`Error editing features:${error}`);
 
     return errorResponse(
       res,
@@ -288,9 +290,9 @@ export const updateRoles = async (req: Request, res: Response) => {
 };
 
 /**
- * [DELETE] /roles/:id - Delete a Role
+ * [DELETE] /features/:id - Delete a Feature
  */
-export const destroyRole = async (req: Request, res: Response) => {
+export const destroyFeature = async (req: Request, res: Response) => {
   try {
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
@@ -298,28 +300,28 @@ export const destroyRole = async (req: Request, res: Response) => {
       return errorResponse(
         res,
         API_STATUS.BAD_REQUEST,
-        "ID Role tidak valid.",
+        "ID Feature tidak valid.",
         400
       );
     }
 
-    const existing = await getRoleById(id);
+    const existing = await getFeatureById(id);
 
     if (!existing) {
       return errorResponse(
         res,
         API_STATUS.NOT_FOUND,
-        "Data Role tidak ditemukan",
+        "Data Feature tidak ditemukan",
         404
       );
     }
 
-    await removeRole(existing.id);
+    await removeFeature(existing.id);
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Role berhasil dihapus",
+      "Data Feature berhasil dihapus",
       null,
       200
     );
@@ -333,12 +335,12 @@ export const destroyRole = async (req: Request, res: Response) => {
         dbError.message.includes("foreign key constraint fails"))
     ) {
       appLogger.warn(
-        `Failed to delete role ID ${req.params.id} due to constraint.`
+        `Failed to delete feature ID ${req.params.id} due to constraint.`
       );
       return errorResponse(
         res,
         API_STATUS.CONFLICT,
-        "Tidak dapat menghapus Role karena masih digunakan oleh pegawai lain.",
+        "Tidak dapat menghapus Feature karena masih digunakan oleh pegawai lain.",
         409
       );
     }
@@ -346,24 +348,26 @@ export const destroyRole = async (req: Request, res: Response) => {
     if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
       const errorMessage = dbError.sqlMessage || dbError.message;
 
-      // 1. Check for Duplicate Role CODE
+      // 1. Check for Duplicate Feature CODE
       if (
         errorMessage &&
-        (errorMessage.includes("role_code") ||
-          errorMessage.includes("uni_role_code"))
+        (errorMessage.includes("feature_code") ||
+          errorMessage.includes("uni_feature_code"))
       ) {
-        appLogger.warn("Role creation failed: Duplicate role code entry.");
+        appLogger.warn(
+          "Feature creation failed: Duplicate feature code entry."
+        );
         return errorResponse(
           res,
           API_STATUS.BAD_REQUEST,
-          "Kode Role yang dimasukkan sudah ada. Gunakan kode lain.",
+          "Kode Feature yang dimasukkan sudah ada. Gunakan kode lain.",
           400
         );
       }
     }
 
     // Catch-all for other server errors
-    appLogger.error(`Error editing roles:${error}`);
+    appLogger.error(`Error editing features:${error}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

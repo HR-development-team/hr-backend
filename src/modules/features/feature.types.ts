@@ -8,30 +8,30 @@ export interface RolePermission {
   can_print: boolean;
 }
 
-export interface Role {
+export interface Feature {
   id: number;
-  role_code: string;
+  feature_code: string;
   name: string;
   description?: string;
   created_at?: Date;
   updated_at?: Date;
 }
 
-export interface GetRoleById extends Role {}
+export interface GetFeatureById extends Feature {}
 
-export interface GetAllRole {
+export interface GetAllFeature {
   id: number;
-  role_code: string;
+  feature_code: string;
   name: string;
   description?: string;
 }
 
-export interface CreateRole {
+export interface CreateFeature {
   name: string;
   description?: string;
 }
 
-export interface UpdateRole {
+export interface UpdateFeature {
   id: number;
   name?: string;
   description?: string;
