@@ -13,6 +13,7 @@ import masterLeaveTypeRoutes from "@modules/leave-types/leave-type.routes.js";
 import payrollPeriodRoutes from "@modules/payroll-periods/payroll-period.routes.js";
 import payrollRoutes from "@modules/payroll/payroll.routes.js";
 import attendanceSessionRoutes from "@modules/attendance-sessions/session.routes.js";
+import roleRoutes from "@modules/roles/role.routes.js";
 
 // Employee Specific Routes
 import employeeAttendanceRoutes from "@modules/attendances/employee-attendance.routes.js";
@@ -44,6 +45,7 @@ router.use("/master-shifts", masterShiftRoutes);
 // ==========================
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+router.use("/roles", roleRoutes);
 router.use("/profiles", profileRoutes);
 router.use("/attendance-sessions", attendanceSessionRoutes);
 router.use("/payroll-periods", payrollPeriodRoutes);

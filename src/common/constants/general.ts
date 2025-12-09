@@ -18,6 +18,8 @@ export const RESPONSE_DATA_KEYS = {
   SHIFTS: "master_shifts",
   LEAVE_TYPES: "leave_types",
   USERS: "users",
+  ROLES: "roles",
+  FEATURES: "features",
   AUTH: "auth",
 
   // transaction Data

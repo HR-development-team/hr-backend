@@ -6,6 +6,9 @@
 
 // Core Tables
 export const USER_TABLE = "users";
+export const ROLE_TABLE = "roles";
+export const FEATURE_TABLE = "features";
+export const ROLE_PERMISSION_TABLE = "role_permissions";
 export const EMPLOYEE_TABLE = "master_employees";
 export const POSITION_TABLE = "master_positions";
 export const DIVISION_TABLE = "master_divisions";
