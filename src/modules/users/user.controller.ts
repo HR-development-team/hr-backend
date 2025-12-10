@@ -107,9 +107,13 @@ export const createUsers = async (req: Request, res: Response) => {
       );
     }
 
-    const { role, password, email } = validation.data;
+    const { role_code, password, email } = validation.data;
     const hashedPassword = await hashPassword(password);
-    const users = await addUsers({ password: hashedPassword, email, role });
+    const users = await addUsers({
+      password: hashedPassword,
+      email,
+      role_code,
+    });
 
     return successResponse(
       res,
@@ -218,7 +222,7 @@ export const updateUsers = async (req: Request, res: Response) => {
       );
     }
 
-    const { role, password, email } = validation.data;
+    const { role_code, password, email } = validation.data;
 
     let hashedPassword: string | undefined = undefined;
 
@@ -231,7 +235,7 @@ export const updateUsers = async (req: Request, res: Response) => {
       id,
       password: hashedPassword,
       email,
-      role,
+      role_code,
     });
 
     // Validate employee not found

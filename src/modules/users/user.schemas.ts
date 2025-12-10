@@ -9,9 +9,9 @@ export const addUsersSchema = z.object({
     .string({ required_error: "Password wajib diisi" })
     .min(6, "Password minimal 6 karakter")
     .max(50, "Password maksimal 50 karakter"),
-  role: z.enum(["admin", "employee"], {
-    required_error: "Peran (Role) wajib diisi.",
-  }),
+  role_code: z
+    .string({ required_error: "Peran (Role) wajib diisi." })
+    .length(10, "Kode Role harus tepat 10 karakter"),
 });
 
 export const updateUsersSchema = z
@@ -26,16 +26,14 @@ export const updateUsersSchema = z
       .min(6, "Password minimal 6 karakter")
       .max(50, "Password maksimal 50 karakter")
       .optional(),
-    role: z
-      .enum(["admin", "employee"], {
-        invalid_type_error:
-          "Peran (Role) tidak valid. Hanya boleh 'admin' atau 'employee'.",
-      })
+    role_code: z
+      .string()
+      .length(10, "Kode Role harus tepat 10 karakter")
       .optional(),
   })
   .strict("Terdapat field yang tidak diperbolehkan.")
   .refine((data) => Object.keys(data).length > 0, {
     message:
-      "Setidaknya satu field (email, password, atau role) harus diisi untuk pembaruan.",
+      "Setidaknya satu field (email, password, atau role_code) harus diisi untuk pembaruan.",
     path: ["body"],
   });

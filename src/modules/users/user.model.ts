@@ -39,13 +39,19 @@ export const getAllUsers = async (): Promise<GetAllUser[]> =>
       `${USER_TABLE}.id`,
       `${USER_TABLE}.user_code`,
       `${USER_TABLE}.email`,
-      `${USER_TABLE}.role`,
+      `${USER_TABLE}.role_code`,
+      `${ROLE_TABLE}.name as role_name`,
       `${EMPLOYEE_TABLE}.full_name as employee_name`
     )
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
       `${EMPLOYEE_TABLE}.user_code`,
       `${USER_TABLE}.user_code`
+    )
+    .leftJoin(
+      `${ROLE_TABLE}`,
+      `${ROLE_TABLE}.role_code`,
+      `${USER_TABLE}.role_code`
     );
 
 /**
@@ -74,13 +80,13 @@ export const addUsers = async (
   const userToInsert = {
     email: data.email,
     password: data.password,
-    role: data.role,
+    role_code: data.role_code,
     user_code,
   };
   const [id] = await db(USER_TABLE).insert(userToInsert);
   return db(USER_TABLE)
     .where({ id })
-    .select("id", "user_code", "email", "role")
+    .select("id", "user_code", "email", "role_code")
     .first();
 };
 
@@ -94,13 +100,13 @@ export const editUsers = async (
   const userToUpdate = {
     email: data.email,
     password: data.password,
-    role: data.role,
+    role_code: data.role_code,
   };
 
   await db(USER_TABLE).where({ id }).update(userToUpdate);
   return db(USER_TABLE)
     .where({ id })
-    .select("id", "user_code", "email", "role")
+    .select("id", "user_code", "email", "role_code")
     .first();
 };
 

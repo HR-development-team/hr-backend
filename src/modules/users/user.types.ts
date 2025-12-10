@@ -22,19 +22,20 @@ export interface GetAllUser {
   id: number;
   user_code: string;
   email: string;
-  role: "admin" | "employee";
+  role_code: string;
+  role_name: string;
   employee_name: string;
 }
 
 export interface CreateUserData {
   email: string;
   password: string;
-  role: "admin" | "employee";
+  role_code: string;
 }
 
 export interface UpdateUserData {
   id: number;
   email?: string;
   password?: string;
-  role?: "admin" | "employee";
+  role_code?: string;
 }
