@@ -15,6 +15,7 @@ import payrollRoutes from "@modules/payroll/payroll.routes.js";
 import attendanceSessionRoutes from "@modules/attendance-sessions/session.routes.js";
 import roleRoutes from "@modules/roles/role.routes.js";
 import featureRoutes from "@modules/features/feature.routes.js";
+import permissionRoutes from "@modules/permissions/permission.routes.js";
 
 // Employee Specific Routes
 import employeeAttendanceRoutes from "@modules/attendances/employee-attendance.routes.js";
@@ -48,6 +49,7 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/roles", roleRoutes);
 router.use("/features", featureRoutes);
+router.use("/permissions", permissionRoutes);
 router.use("/profiles", profileRoutes);
 router.use("/attendance-sessions", attendanceSessionRoutes);
 router.use("/payroll-periods", payrollPeriodRoutes);

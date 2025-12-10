@@ -1,8 +1,9 @@
 import { db } from "@database/connection.js";
-import { EMPLOYEE_TABLE, USER_TABLE } from "@constants/database.js";
+import { EMPLOYEE_TABLE, ROLE_TABLE, USER_TABLE } from "@constants/database.js";
 import {
   CreateUserData,
   GetAllUser,
+  GetUserById,
   UpdateUserData,
   User,
 } from "./user.types.js";
@@ -50,12 +51,17 @@ export const getAllUsers = async (): Promise<GetAllUser[]> =>
 /**
  * Get user by ID.
  */
-export const getUsersById = async (
-  id: number
-): Promise<Omit<User, "password">> =>
+export const getUsersById = async (id: number): Promise<GetUserById> =>
   await db(USER_TABLE)
-    .where({ id })
-    .select("id", "user_code", "email", "role")
+    .select(
+      `${USER_TABLE}.id`,
+      `${USER_TABLE}.user_code`,
+      `${USER_TABLE}.email`,
+      `${USER_TABLE}.role_code`,
+      `${ROLE_TABLE}.name as role_name`
+    )
+    .leftJoin(ROLE_TABLE, `${ROLE_TABLE}.role_code`, `${USER_TABLE}.role_code`)
+    .where({ [`${USER_TABLE}.id`]: id })
     .first();
 
 /**

@@ -2,8 +2,18 @@ export interface User {
   id: number;
   user_code: string;
   email: string;
-  role: "admin" | "employee";
+  role_code: string;
   password: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GetUserById {
+  id: number;
+  user_code: string;
+  email: string;
+  role_code: string;
+  role_name: string;
   created_at: string;
   updated_at: string;
 }

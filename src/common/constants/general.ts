@@ -20,6 +20,7 @@ export const RESPONSE_DATA_KEYS = {
   USERS: "users",
   ROLES: "roles",
   FEATURES: "features",
+  PERMISSIONS: "role_permissions",
   AUTH: "auth",
 
   // transaction Data
