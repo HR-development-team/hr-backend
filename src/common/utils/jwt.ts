@@ -10,7 +10,7 @@ export interface TokenPayload extends JWTPayload {
   id: number;
   user_code: string;
   employee_code?: string | null;
-  role: "admin" | "employee";
+  role_code: string;
 }
 
 const JWT_SECRET = process.env.JWT_SECRET;

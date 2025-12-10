@@ -1,11 +1,6 @@
 import { db } from "@database/connection.js";
 import { OFFICE_TABLE } from "@constants/database.js";
-import {
-  CreateOffice,
-  GetOfficeById,
-  Office,
-  UpdateOffice,
-} from "./office.types.js";
+import { CreateOffice, Office, UpdateOffice } from "./office.types.js";
 
 // ==========================================================================
 // 1. HELPER FUNCTION
