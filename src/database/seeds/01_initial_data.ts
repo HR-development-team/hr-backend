@@ -5,6 +5,7 @@ type Knex = knex.Knex;
 
 const TABLE_KEYS = {
   USERS: "users",
+  ROLES: "roles",
   EMPLOYEES: "master_employees",
   POSITIONS: "master_positions",
   DIVISIONS: "master_divisions",
@@ -26,6 +27,7 @@ export async function seed(knex: Knex): Promise<void> {
   await knex(TABLE_KEYS.LEAVE_REQUEST).del();
   await knex(TABLE_KEYS.EMPLOYEES).del();
   await knex(TABLE_KEYS.OFFICES).del();
+  await knex(TABLE_KEYS.ROLES).del();
   await knex(TABLE_KEYS.USERS).del();
   await knex(TABLE_KEYS.POSITIONS).del();
   await knex(TABLE_KEYS.DIVISIONS).del();
@@ -292,24 +294,75 @@ export async function seed(knex: Knex): Promise<void> {
       latitude: -6.224026,
       longitude: 106.809132,
       radius_meters: 50,
+      parent_office_code: null,
+      description: "Main headquarters for all operations in Indonesia.",
+      sort_order: 1,
     },
     {
+      // Branch Office - Bandung
       office_code: "OFC0000002",
       name: "Branch Office Bandung",
       address:
         "Jl. Asia Afrika No. 65, Braga, Kec. Sumur Bandung, Kota Bandung, Jawa Barat",
       latitude: -6.921474,
       longitude: 107.611654,
-      radius_meters: 30, // Smaller radius for a shophouse/smaller office
+      radius_meters: 30,
+      parent_office_code: "OFC0000001",
+      description: "Regional sales and support office for West Java.",
+      sort_order: 2,
     },
     {
+      // Warehouse - Surabaya
       office_code: "OFC0000003",
       name: "Warehouse Surabaya",
       address:
         "Kawasan Industri Rungkut, Jl. Rungkut Industri Raya No. 10, Surabaya, Jawa Timur",
       latitude: -7.330523,
       longitude: 112.763312,
-      radius_meters: 100, // Larger radius for a large warehouse complex
+      radius_meters: 100,
+      parent_office_code: "OFC0000001",
+      description: "Primary distribution and storage facility for East Java.",
+      sort_order: 3,
+    },
+  ]);
+
+  // 6. Seed Roles
+  await knex(TABLE_KEYS.ROLES).insert([
+    {
+      role_code: "ROL0000001",
+      name: "SuperAdmin",
+      description:
+        "Highest level of access. Full control over system configuration, user management, and data across all offices.",
+    },
+    {
+      role_code: "ROL0000002",
+      name: "SystemAdmin",
+      description:
+        "Manages system settings, database maintenance, and security configurations, but typically without access to high-level business data.",
+    },
+    {
+      role_code: "ROL0000003",
+      name: "HeadOfficeStaff",
+      description:
+        "Staff role with broad access, typically covering reporting, high-level approval, and data across multiple offices.",
+    },
+    {
+      role_code: "ROL0000004",
+      name: "BranchManager",
+      description:
+        "Manages a specific branch office. Full operational control but restricted to data and settings related to their assigned office.",
+    },
+    {
+      role_code: "ROL0000005",
+      name: "OfficeStaff",
+      description:
+        "Standard operational role. Access limited to daily tasks and data entry within their assigned office.",
+    },
+    {
+      role_code: "ROL0000006",
+      name: "Auditor",
+      description:
+        "Read-only access to all business data and logs for compliance and reporting purposes.",
     },
   ]);
 
@@ -321,20 +374,34 @@ export async function seed(knex: Knex): Promise<void> {
     {
       user_code: "USR0000001",
       email: "budi.pratama@company.com",
-      password: hashedPassword, // placeholder hash
-      role: "admin",
+      password: hashedPassword,
+      role_code: "ROL0000001",
+      session_token: null,
+      login_date: null,
     },
     {
       user_code: "USR0000002",
       email: "siti.rahmawati@company.com",
-      password: hashedPassword, // placeholder hash
-      role: "employee",
+      password: hashedPassword,
+      role_code: "ROL0000005",
+      session_token: null,
+      login_date: null,
     },
     {
       user_code: "USR0000003",
       email: "andi.setiawan@company.com",
-      password: hashedPassword, // placeholder hash
-      role: "employee",
+      password: hashedPassword,
+      role_code: "ROL0000005",
+      session_token: null,
+      login_date: null,
+    },
+    {
+      user_code: "USR0000004",
+      email: "dewi.kartika@company.com",
+      password: hashedPassword,
+      role_code: "ROL0000004",
+      session_token: null,
+      login_date: null,
     },
   ]);
 
