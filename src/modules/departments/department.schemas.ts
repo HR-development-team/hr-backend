@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const addMasterDepartmentsSchema = z.object({
+  office_code: z.string({ required_error: "Office code wajib diisi" }),
   name: z
     .string()
     .min(3, "Nama departemen minimal 3 karakter")
@@ -13,9 +14,10 @@ export const addMasterDepartmentsSchema = z.object({
 
 export const updateMasterDepartmentsSchema = z
   .object({
+    office_code: z.string().optional(),
     name: z
       .string()
-      .min(2, "Nama departemen minimal 2 karakter")
+      .min(3, "Nama departemen minimal 3 karakter")
       .max(100, "Nama departemen maksimal 100 karakter")
       .optional(),
     description: z

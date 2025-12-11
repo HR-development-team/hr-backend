@@ -55,7 +55,9 @@ async function generateOfficeCode() {
 /**
  * Get office by ID.
  */
-export const getMasterOfficeById = async (id: number): Promise<any | null> => {
+export const getMasterOfficeById = async (
+  id: number
+): Promise<GetOfficeById | null> => {
   const result = await db(`${OFFICE_TABLE} as child`)
     .select(
       "child.id",
