@@ -1,20 +1,20 @@
 import { Router } from "express";
-import {
-  createMasterPositions,
-  destroyMasterPositions,
-  fetchAllMasterPositions,
-  fetchMasterPositionsById,
-  updateMasterPositions,
-} from "./position.controller.js";
 import { verifyToken } from "@middleware/jwt.js";
+import {
+  fetchOrganizationTree,
+  fetchPositionList,
+  fetchPositionById,
+} from "./position.controller.js";
 
 const router = Router();
+
 router.use(verifyToken);
 
-router.get("/", fetchAllMasterPositions);
-router.get("/:id", fetchMasterPositionsById);
-router.post("/", createMasterPositions);
-router.put("/:id", updateMasterPositions);
-router.delete("/:id", destroyMasterPositions);
+// Endpoint Organization Tree (Taruh SEBELUM endpoint /:id agar tidak konflik)
+router.get("/organization/:office_id", fetchOrganizationTree);
 
+router.get("/", fetchPositionList);
+// ... route CRUD lainnya ...
+
+router.get("/:id", fetchPositionById);
 export default router;

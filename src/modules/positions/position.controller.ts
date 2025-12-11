@@ -1,379 +1,210 @@
 import { Request, Response } from "express";
-import { errorResponse, successResponse } from "@utils/response.js";
-import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
-import { appLogger } from "src/common/utils/logger.js";
-import { DatabaseError } from "@common/types/error.types.js";
+import { appLogger } from "@utils/logger.js";
 import {
-  addMasterPositions,
-  editMasterPositions,
-  getAllMasterPositions,
-  getMasterPositionsById,
-  removeMasterPositions,
-} from "@modules/positions/position.model.js";
-import {
-  addMasterPositionsSchema,
-  updateMasterPositionsSchema,
-} from "@modules/positions/position.schemas.js";
+  getPositionsByOffice,
+  getAllPositions,
+  getOfficeByCodeOrId,
+  getPositionById,
+} from "./position.model.js";
+import { OrganizationTree, PositionRaw } from "./position.types.js";
+
+// --- [HELPER] ALGORITMA PENYUSUN POHON (REKURSIF) ---
+const buildOrganizationTree = (items: PositionRaw[]): OrganizationTree[] => {
+  const dataMap: { [key: string]: OrganizationTree } = {};
+
+  // 1. Inisialisasi Node
+  items.forEach((item) => {
+    dataMap[item.position_code] = {
+      position_code: item.position_code,
+      name: item.name,
+      employee_code: item.employee_code,
+      employee_name: item.employee_name,
+      children: [],
+    };
+  });
+
+  const tree: OrganizationTree[] = [];
+
+  // 2. Link Parent ke Child
+  items.forEach((item) => {
+    const node = dataMap[item.position_code];
+
+    if (item.parent_position_code && dataMap[item.parent_position_code]) {
+      dataMap[item.parent_position_code].children.push(node);
+    } else {
+      tree.push(node);
+    }
+  });
+
+  return tree;
+};
 
 /**
- * [GET] /master-positions - Fetch all Positions
+ * Endpoint 1: Organization Tree Structure
+ * [GET] /positions/organization/:office_id
  */
-export const fetchAllMasterPositions = async (req: Request, res: Response) => {
+export const fetchOrganizationTree = async (req: Request, res: Response) => {
   try {
-    const positions = await getAllMasterPositions();
+    const { office_id } = req.params;
 
-    return successResponse(
-      res,
-      API_STATUS.SUCCESS,
-      "Data Posisi berhasil di dapatkan",
-      positions,
-      200,
-      RESPONSE_DATA_KEYS.POSITIONS
-    );
+    // Format Tanggal (Prettier Friendly)
+    const now = new Date();
+    const datetime = now
+      .toISOString()
+      .replace(/[-T:Z.]/g, "")
+      .slice(0, 14);
+
+    // 1. Validasi Kantor
+    const office = await getOfficeByCodeOrId(office_id);
+
+    if (!office) {
+      return res.status(404).json({
+        error: true,
+        message: "Kantor tidak ditemukan",
+        datetime: datetime,
+      });
+    }
+
+    // 2. Ambil Data Flat dari DB
+    const rawPositions = await getPositionsByOffice(office_id);
+
+    // 3. Susun menjadi Pohon (Tree)
+    const organizationTree = buildOrganizationTree(rawPositions);
+
+    // 4. Response
+    return res.status(200).json({
+      status: "00",
+      message: `Data Organisasi ${office.name} Berhasil Didapatkan`,
+      office_code: office.office_code,
+      datetime: datetime,
+      organizations: organizationTree,
+    });
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching positions:${dbError}`);
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
+    appLogger.error(`Error fetching organization tree: ${dbError}`);
+    return res.status(500).json({
+      status: "01",
+      message: "Terjadi kesalahan pada server",
+    });
   }
 };
 
 /**
- * [GET] /master-positions/:id - Fetch Position by id
+ * Endpoint 2: Get Position List (Optional Filter)
+ * [GET] /positions
+ * Query param: ?office_code=OFC...
  */
-export const fetchMasterPositionsById = async (req: Request, res: Response) => {
+export const fetchPositionList = async (req: Request, res: Response) => {
   try {
-    // Validate and cast the ID params
-    const id: number = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "ID posisi tidak valid.",
-        400
-      );
+    const { office_code } = req.query;
+
+    const now = new Date();
+    const datetime = now
+      .toISOString()
+      .replace(/[-T:Z.]/g, "")
+      .slice(0, 14);
+
+    // 1. Validasi Office (Jika user mengirim filter)
+    if (office_code) {
+      const office = await getOfficeByCodeOrId(office_code as string);
+      if (!office) {
+        return res.status(404).json({
+          error: true,
+          message: "Kantor tidak ditemukan",
+          datetime: datetime,
+        });
+      }
     }
 
-    const positions = await getMasterPositionsById(id);
+    // 2. Ambil Data
+    const positions = await getAllPositions(office_code as string);
 
-    if (!positions) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Data Posisi tidak ditemukan",
-        404
-      );
-    }
-
-    return successResponse(
-      res,
-      API_STATUS.SUCCESS,
-      "Data Posisi berhasil didapatkan",
-      positions,
-      200,
-      RESPONSE_DATA_KEYS.POSITIONS
-    );
+    // 3. Response
+    return res.status(200).json({
+      status: "00",
+      message: "Data Jabatan Berhasil Didapatkan",
+      datetime: datetime,
+      positions: positions,
+    });
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching positions:${dbError}`);
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
-  }
-};
-
-/**
- * [POST] /master-positions - Create a new Position
- */
-export const createMasterPositions = async (req: Request, res: Response) => {
-  try {
-    const validation = addMasterPositionsSchema.safeParse(req.body);
-
-    if (!validation.success) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "Validasi gagal",
-        400,
-        validation.error.errors.map((err) => ({
-          field: err.path[0],
-          message: err.message,
-        }))
-      );
-    }
-
-    const { name, division_code, base_salary, description } = validation.data;
-    const masterPositions = await addMasterPositions({
-      name,
-      division_code,
-      base_salary,
-      description,
+    appLogger.error(`Error fetching positions list: ${dbError}`);
+    return res.status(500).json({
+      status: "01",
+      message: "Terjadi kesalahan pada server",
     });
-
-    return successResponse(
-      res,
-      API_STATUS.SUCCESS,
-      "Data master posisi berhasil dibuat",
-      masterPositions,
-      201,
-      RESPONSE_DATA_KEYS.POSITIONS
-    );
-  } catch (error) {
-    const dbError = error as DatabaseError;
-
-    if (
-      dbError.code === "ER_NO_REFERENCED_ROW" ||
-      dbError.errno === 1452 ||
-      (dbError.message &&
-        dbError.message.includes("a foreign key constraint fails"))
-    ) {
-      appLogger.warn("Creation failed: Invalid department ID provided.");
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "ID Departemen tidak ditemukan. Pastikan ID Departemen yang digunakan valid.",
-        400
-      );
-    }
-
-    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
-      const errorMessage = dbError.sqlMessage || dbError.message;
-
-      // 1. Check for Duplicate Position CODE
-      if (
-        errorMessage &&
-        (errorMessage.includes("position_code") ||
-          errorMessage.includes("uni_position_code"))
-      ) {
-        appLogger.warn(
-          "Position creation failed: Duplicate department code entry."
-        );
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "name",
-              message: "Kode posisi yang dimasukkan sudah ada.",
-            },
-          ]
-        );
-      }
-
-      if (
-        errorMessage &&
-        (errorMessage.includes("name") || errorMessage.includes("uni_name"))
-      ) {
-        appLogger.warn("Position creation failed: Duplicate name entry.");
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "name",
-              message: "Nama posisi yang dimasukkan sudah ada.",
-            },
-          ]
-        );
-      }
-
-      if (
-        errorMessage &&
-        (errorMessage.includes("name") || errorMessage.includes("uni_name"))
-      ) {
-        appLogger.warn("Position creation failed: Duplicate name entry.");
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "name",
-              message: "Nama posisi yang dimasukkan sudah ada.",
-            },
-          ]
-        );
-      }
-    }
-
-    appLogger.error(`Error creating positions:${dbError}`);
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
   }
 };
 
 /**
- * [PUT] /master-positions/:id - Edit a Position
+ * Endpoint 3: Get Position By ID
+ * [GET] /positions/:id
  */
-export const updateMasterPositions = async (req: Request, res: Response) => {
+export const fetchPositionById = async (req: Request, res: Response) => {
   try {
-    // Validate and cast the ID params
-    const id: number = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "ID posisi tidak valid.",
-        400
-      );
+    const { id } = req.params;
+
+    const now = new Date();
+    const datetime = now
+      .toISOString()
+      .replace(/[-T:Z.]/g, "")
+      .slice(0, 14);
+
+    // 1. Validasi Input
+    const positionId = Number(id);
+    if (isNaN(positionId)) {
+      return res.status(400).json({
+        status: "01",
+        message: "ID Posisi harus berupa angka",
+      });
     }
 
-    // Validate request body
-    const validation = updateMasterPositionsSchema.safeParse(req.body);
-    if (!validation.success) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "Validasi gagal",
-        400,
-        validation.error.errors.map((err) => ({
-          field: err.path[0],
-          message: err.message,
-        }))
-      );
+    // 2. Ambil Data Mentah dari Model
+    const rawPosition = await getPositionById(positionId);
+
+    // 3. Validasi Not Found
+    if (!rawPosition) {
+      return res.status(404).json({
+        status: "03",
+        message: "Posisi tidak ditemukan",
+        datetime: datetime,
+      });
     }
 
-    const validatedData = validation.data;
-    const { name, division_code, base_salary, description } = validatedData;
+    // 4. [PERBAIKAN] Formatting Ulang Objek agar urutannya Sesuai Request
+    const formattedPosition = {
+      id: rawPosition.id,
+      position_code: rawPosition.position_code,
+      division_code: rawPosition.division_code,
 
-    const masterPositions = await editMasterPositions({
-      id,
-      name,
-      division_code,
-      base_salary,
-      description,
+      // Pindahkan field ini ke atas sesuai request
+      department_code: rawPosition.department_code,
+      division_name: rawPosition.division_name,
+
+      parent_position_code: rawPosition.parent_position_code,
+      parent_position_name: rawPosition.parent_position_name, // Pindahkan ke sini
+
+      name: rawPosition.name,
+      base_salary: parseFloat(rawPosition.base_salary), // Pastikan jadi Number/Float
+      sort_order: rawPosition.sort_order,
+      description: rawPosition.description,
+      created_at: rawPosition.created_at,
+      updated_at: rawPosition.updated_at,
+    };
+
+    // 5. Response Sukses
+    return res.status(200).json({
+      status: "00",
+      message: "Data Posisi Berhasil Didapatkan",
+      datetime: datetime,
+      positions: formattedPosition, // Kirim objek yang sudah dirapikan
     });
-
-    // Validate position not found
-    if (!masterPositions) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Data Posisi tidak ditemukan",
-        404
-      );
-    }
-
-    return successResponse(
-      res,
-      API_STATUS.SUCCESS,
-      "Data master posisi berhasil diperbarui",
-      masterPositions,
-      200,
-      RESPONSE_DATA_KEYS.POSITIONS
-    );
   } catch (error) {
-    appLogger.error(`Error editing positions:${error}`);
-
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
-  }
-};
-
-/**
- * [DELETE] /master-positions/:id - Delete a Position
- */
-export const destroyMasterPositions = async (req: Request, res: Response) => {
-  try {
-    // Validate and cast the ID params
-    const id: number = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "ID posisi tidak valid.",
-        400
-      );
-    }
-
-    const existing = await getMasterPositionsById(id);
-
-    if (!existing) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Data Posisi tidak ditemukan",
-        404
-      );
-    }
-
-    await removeMasterPositions(existing.id);
-
-    return successResponse(
-      res,
-      API_STATUS.SUCCESS,
-      "Data master posisi berhasil dihapus",
-      null,
-      200
-    );
-  } catch (error) {
-    const dbError = error as DatabaseError;
-
-    if (
-      dbError.code === "ER_ROW_IS_REFERENCED" ||
-      dbError.errno === 1451 ||
-      (dbError.message &&
-        dbError.message.includes("foreign key constraint fails"))
-    ) {
-      appLogger.warn(
-        `Failed to delete position ID ${req.params.id} due to constraint.`
-      );
-      return errorResponse(
-        res,
-        API_STATUS.CONFLICT,
-        "Tidak dapat menghapus posisi karena masih digunakan oleh pegawai lain.",
-        409
-      );
-    }
-
-    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
-      const errorMessage = dbError.sqlMessage || dbError.message;
-
-      // 1. Check for Duplicate Position CODE
-      if (
-        errorMessage &&
-        (errorMessage.includes("position_code") ||
-          errorMessage.includes("uni_position_code"))
-      ) {
-        appLogger.warn(
-          "Position creation failed: Duplicate position code entry."
-        );
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Kode posisi yang dimasukkan sudah ada. Gunakan kode lain.",
-          400
-        );
-      }
-    }
-
-    // Catch-all for other server errors
-    appLogger.error(`Error editing positions:${error}`);
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching position by id: ${dbError}`);
+    return res.status(500).json({
+      status: "01",
+      message: "Terjadi kesalahan pada server",
+    });
   }
 };
