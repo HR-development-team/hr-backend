@@ -27,37 +27,83 @@ export async function seed(knex: Knex): Promise<void> {
   await knex(TABLE_KEYS.LEAVE_REQUEST).del();
   await knex(TABLE_KEYS.EMPLOYEES).del();
   await knex(TABLE_KEYS.OFFICES).del();
-  await knex(TABLE_KEYS.ROLES).del();
   await knex(TABLE_KEYS.USERS).del();
+  await knex(TABLE_KEYS.ROLES).del();
   await knex(TABLE_KEYS.POSITIONS).del();
   await knex(TABLE_KEYS.DIVISIONS).del();
   await knex(TABLE_KEYS.DEPARTMENTS).del();
   await knex(TABLE_KEYS.LEAVE_TYPES).del();
   await knex(TABLE_KEYS.PAYROLL_PERIODS).del();
 
+  // 1. Seed Offices
+  await knex(TABLE_KEYS.OFFICES).insert([
+    {
+      office_code: "OFC0000001",
+      name: "Head Office Jakarta",
+      address:
+        "Menara Sudirman Lt. 15, Jl. Jend. Sudirman Kav. 60, Senayan, Jakarta Selatan",
+      latitude: -6.224026,
+      longitude: 106.809132,
+      radius_meters: 50,
+      parent_office_code: null,
+      description: "Main headquarters for all operations in Indonesia.",
+      sort_order: 1,
+    },
+    {
+      // Branch Office - Bandung
+      office_code: "OFC0000002",
+      name: "Banch Office Bandung",
+      address:
+        "Jl. Asia Afrika No. 65, Braga, Kec. Sumur Bandung, Kota Bandung, Jawa Barat",
+      latitude: -6.921474,
+      longitude: 107.611654,
+      radius_meters: 30,
+      parent_office_code: "OFC0000001",
+      description: "Regional sales and support office for West Java.",
+      sort_order: 2,
+    },
+    {
+      // Warehouse - Surabaya
+      office_code: "OFC0000003",
+      name: "Warehouse Surabaya",
+      address:
+        "Kawasan Industri Rungkut, Jl. Rungkut Industri Raya No. 10, Surabaya, Jawa Timur",
+      latitude: -7.330523,
+      longitude: 112.763312,
+      radius_meters: 100,
+      parent_office_code: "OFC0000001",
+      description: "Primary distribution and storage facility for East Java.",
+      sort_order: 3,
+    },
+  ]);
+
   // 2. Seed Departments
   await knex(TABLE_KEYS.DEPARTMENTS).insert([
     {
       department_code: "DPT0000001",
       name: "Technology",
+      office_code: "OFC0000001",
       description:
         "Oversees all technical operations including software development, IT infrastructure, and system security.",
     },
     {
       department_code: "DPT0000002",
       name: "Human Resources",
+      office_code: "OFC0000002",
       description:
         "Responsible for recruitment, employee relations, training programs, and maintaining organizational policies.",
     },
     {
       department_code: "DPT0000003",
       name: "Sales",
+      office_code: "OFC0000003",
       description:
         "Drives company revenue through customer acquisition, business development, and account management.",
     },
     {
       department_code: "DPT0000004",
       name: "Finance",
+      office_code: "OFC0000001",
       description:
         "Manages company financial planning, accounting, budgeting, and financial reporting activities.",
     },
@@ -281,48 +327,6 @@ export async function seed(knex: Knex): Promise<void> {
       base_salary: 9500000.0,
       description:
         "Monitors company budget allocations and evaluates resource effectiveness.",
-    },
-  ]);
-
-  // 5. Seed Offices
-  await knex(TABLE_KEYS.OFFICES).insert([
-    {
-      office_code: "OFC0000001",
-      name: "Head Office Jakarta",
-      address:
-        "Menara Sudirman Lt. 15, Jl. Jend. Sudirman Kav. 60, Senayan, Jakarta Selatan",
-      latitude: -6.224026,
-      longitude: 106.809132,
-      radius_meters: 50,
-      parent_office_code: null,
-      description: "Main headquarters for all operations in Indonesia.",
-      sort_order: 1,
-    },
-    {
-      // Branch Office - Bandung
-      office_code: "OFC0000002",
-      name: "Branch Office Bandung",
-      address:
-        "Jl. Asia Afrika No. 65, Braga, Kec. Sumur Bandung, Kota Bandung, Jawa Barat",
-      latitude: -6.921474,
-      longitude: 107.611654,
-      radius_meters: 30,
-      parent_office_code: "OFC0000001",
-      description: "Regional sales and support office for West Java.",
-      sort_order: 2,
-    },
-    {
-      // Warehouse - Surabaya
-      office_code: "OFC0000003",
-      name: "Warehouse Surabaya",
-      address:
-        "Kawasan Industri Rungkut, Jl. Rungkut Industri Raya No. 10, Surabaya, Jawa Timur",
-      latitude: -7.330523,
-      longitude: 112.763312,
-      radius_meters: 100,
-      parent_office_code: "OFC0000001",
-      description: "Primary distribution and storage facility for East Java.",
-      sort_order: 3,
     },
   ]);
 
