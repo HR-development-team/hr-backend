@@ -5,6 +5,7 @@ import {
   fetchAllMasterDepartments,
   fetchMasterDepartmentsById,
   updateMasterDepartments,
+  fetchMasterDepartmentByCode,
 } from "./department.controller.js";
 import { verifyToken } from "@middleware/jwt.js";
 
@@ -12,6 +13,7 @@ const router = Router();
 router.use(verifyToken);
 
 router.get("/", fetchAllMasterDepartments);
+router.get("/code/:department_code", fetchMasterDepartmentByCode);
 router.get("/:id", fetchMasterDepartmentsById);
 router.post("/", createMasterDepartments);
 router.put("/:id", updateMasterDepartments);
