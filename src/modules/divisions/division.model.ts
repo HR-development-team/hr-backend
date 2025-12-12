@@ -4,6 +4,7 @@ import {
   CreateDivision,
   Division,
   GetAllDivision,
+  GetDivisionByCode,
   GetDivisionById,
   UpdateDivision,
 } from "./division.types.js";
@@ -33,20 +34,37 @@ async function generateDivisionCode() {
 /**
  * Get all master division.
  */
-export const getAllMasterDivision = async (): Promise<GetAllDivision[]> =>
-  await db(DIVISION_TABLE)
+export const getAllMasterDivision = async (
+  page: number,
+  limit: number
+): Promise<GetAllDivision[]> => {
+  const offset = (page - 1) * limit;
+
+  return await db(DIVISION_TABLE)
     .select(
       "master_divisions.id",
       "master_divisions.division_code",
       "master_divisions.name",
       "master_divisions.department_code",
-      "master_departments.name as department_name"
+      "master_departments.name as department_name",
+      "master_offices.office_code",
+      "master_offices.name as office_name"
     )
     .leftJoin(
       "master_departments",
       "master_divisions.department_code",
       "master_departments.department_code"
-    );
+    )
+    .leftJoin(
+      "master_offices",
+      "master_departments.office_code",
+      "master_offices.office_code"
+    )
+    .limit(limit)
+    .offset(offset)
+    .orderBy("division_code", "asc")
+    .orderBy("id", "asc");
+};
 
 /**
  * Get division by ID.
@@ -55,13 +73,46 @@ export const getMasterDivisionsById = async (
   id: number
 ): Promise<GetDivisionById | null> =>
   await db(DIVISION_TABLE)
-    .select("master_divisions.*", "master_departments.name as department_name")
+    .select(
+      "master_divisions.*",
+      "master_departments.name as department_name",
+      "master_offices.office_code",
+      "master_offices.name as office_name"
+    )
     .leftJoin(
       "master_departments",
       "master_divisions.department_code",
       "master_departments.department_code"
     )
+    .leftJoin(
+      "master_offices",
+      "master_departments.office_code",
+      "master_offices.office_code"
+    )
     .where({ "master_divisions.id": id })
+    .first();
+
+export const getMasterDivisionsByCode = async (
+  divisionCode: string
+): Promise<GetDivisionByCode | null> =>
+  await db(DIVISION_TABLE)
+    .select(
+      "master_divisions.*",
+      "master_departments.name as department_name",
+      "master_offices.office_code",
+      "master_offices.name as office_name"
+    )
+    .leftJoin(
+      "master_departments",
+      "master_divisions.department_code",
+      "master_departments.department_code"
+    )
+    .leftJoin(
+      "master_offices",
+      "master_departments.office_code",
+      "master_offices.office_code"
+    )
+    .where({ "master_divisions.division_code": divisionCode })
     .first();
 
 /**

@@ -9,11 +9,17 @@ export interface Division {
 }
 
 export interface GetDivisionById extends Division {
+  office_code: string;
+  office_name: string;
   department_name: string;
 }
 
+export interface GetDivisionByCode extends GetDivisionById {}
+
 export interface GetAllDivision {
   id: number;
+  office_code: string;
+  office_name: string;
   division_code: string;
   department_code: string;
   department_name: string;
