@@ -24,7 +24,10 @@ export const fetchAllMasterDepartments = async (
   res: Response
 ) => {
   try {
-    const departments = await getAllMasterDepartments();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+
+    const departments = await getAllMasterDepartments(page, limit);
 
     return successResponse(
       res,

@@ -33,9 +33,12 @@ async function generateDepartmentCode() {
 /**
  * Get all master department.
  */
-export const getAllMasterDepartments = async (): Promise<
-  GetAllDepartment[]
-> => {
+export const getAllMasterDepartments = async (
+  page: number,
+  limit: number
+): Promise<GetAllDepartment[]> => {
+  const offset = (page - 1) * limit;
+
   return await db(DEPARTMENT_TABLE)
     .select(
       `${DEPARTMENT_TABLE}.id`,
@@ -50,6 +53,8 @@ export const getAllMasterDepartments = async (): Promise<
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
     )
+    .limit(limit)
+    .offset(offset)
     .orderBy(`${DEPARTMENT_TABLE}.id`, "asc");
 };
 /**
