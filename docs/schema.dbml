@@ -118,6 +118,7 @@ Table master_employees {
 Table attendance_sessions {
   id int [pk, increment]
   session_code varchar(10) [unique, not null]
+  shift_code varchar(10) [not null]
   date date [unique, not null]
   status enum('open', 'closed') [default: 'closed']
   open_time time [not null]
@@ -224,3 +225,5 @@ Ref: leave_requests.approved_by_user_code > users.user_code
 
 Ref: payrolls.payroll_period_id > payroll_periods.id
 Ref: payrolls.employee_id > master_employees.id
+
+Ref: attendance_sessions.shift_code > master_shifts.shift_code
