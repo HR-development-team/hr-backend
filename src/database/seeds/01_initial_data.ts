@@ -407,12 +407,36 @@ export async function seed(knex: Knex): Promise<void> {
       session_token: null,
       login_date: null,
     },
+    {
+      user_code: "USR0000005",
+      email: "rina.kusuma@company.com",
+      password: hashedPassword,
+      role_code: "ROL0000005", // OfficeStaff
+      session_token: null,
+      login_date: null,
+    },
+    {
+      user_code: "USR0000006",
+      email: "dimas.anggara@company.com",
+      password: hashedPassword,
+      role_code: "ROL0000005", // OfficeStaff
+      session_token: null,
+      login_date: null,
+    },
+    {
+      user_code: "USR0000007",
+      email: "eko.prasetyo@company.com",
+      password: hashedPassword,
+      role_code: "ROL0000005", // OfficeStaff
+      session_token: null,
+      login_date: null,
+    },
   ]);
 
   // 5. Seed the first Employee (who will be the Admin)
   await knex(TABLE_KEYS.EMPLOYEES).insert([
     {
-      employee_code: "KWN0000001",
+      employee_code: "MR0001",
       user_code: "USR0000001",
       position_code: "POS0000001", // Software Engineer
       office_code: "OFC0000001",
@@ -437,7 +461,7 @@ export async function seed(knex: Knex): Promise<void> {
     },
 
     {
-      employee_code: "KWN0000002",
+      employee_code: "MR0002",
       user_code: "USR0000002",
       position_code: "POS0000006", // Recruitment Officer
       office_code: "OFC0000002",
@@ -462,7 +486,7 @@ export async function seed(knex: Knex): Promise<void> {
     },
 
     {
-      employee_code: "KWN0000003",
+      employee_code: "MR0003",
       user_code: "USR0000003",
       position_code: "POS0000014", // Accountant
       office_code: "OFC0000002",
@@ -484,6 +508,55 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_kesehatan: "129876543210",
       npwp: "12.987.654.3-210.000",
       bank_account: "BRI 3344556677",
+    },
+    {
+      employee_code: "MR0005",
+      user_code: "USR0000005",
+      position_code: "POS0000014", // Accountant
+      office_code: "OFC0000001", // Head Office Jakarta
+      full_name: "Rina Kusuma",
+      ktp_number: "3171012345678901",
+      birth_place: "Jakarta",
+      birth_date: "1996-02-14",
+      gender: "perempuan",
+      address: "Jl. Tebet Raya No. 15, Jakarta Selatan",
+      contact_phone: "085612345678",
+      religion: "Islam",
+      maritial_status: "Single",
+      join_date: "2024-01-10",
+      employment_status: "aktif",
+      education: "S1 Akuntansi",
+      blood_type: "O",
+      profile_picture: null,
+      bpjs_ketenagakerjaan: "112233445566",
+      bpjs_kesehatan: "665544332211",
+      npwp: "11.222.333.4-555.000",
+      bank_account: "BCA 5566778899",
+    },
+    // NEW EMPLOYEE 2 (Linked to USR0000006)
+    {
+      employee_code: "MR0006",
+      user_code: "USR0000006",
+      position_code: "POS0000004", // IT Support Specialist
+      office_code: "OFC0000002", // Branch Office Bandung
+      full_name: "Dimas Anggara",
+      ktp_number: "3273012345678901",
+      birth_place: "Bandung",
+      birth_date: "1999-07-20",
+      gender: "laki-laki",
+      address: "Jl. Dago No. 88, Bandung, Jawa Barat",
+      contact_phone: "081908765432",
+      religion: "Islam",
+      maritial_status: "Single",
+      join_date: "2024-03-01",
+      employment_status: "aktif",
+      education: "D3 Teknik Komputer",
+      blood_type: "B",
+      profile_picture: null,
+      bpjs_ketenagakerjaan: "778899001122",
+      bpjs_kesehatan: "223344556677",
+      npwp: "99.888.777.6-555.000",
+      bank_account: "Mandiri 1231231234",
     },
   ]);
 

@@ -19,8 +19,8 @@ import {
  * Function for generating employee code
  */
 async function generateEmployeeCode() {
-  const PREFIX = "KWN";
-  const PAD_LENGTH = 7;
+  const PREFIX = "MR";
+  const PAD_LENGTH = 4;
 
   const lastRow = await db(EMPLOYEE_TABLE)
     .select("employee_code")
@@ -40,8 +40,13 @@ async function generateEmployeeCode() {
 /**
  * Get all master employees.
  */
-export const getAllMasterEmployees = async (): Promise<GetAllEmployee[]> =>
-  await db(EMPLOYEE_TABLE)
+export const getAllMasterEmployees = async (
+  page: number,
+  limit: number
+): Promise<GetAllEmployee[]> => {
+  const offset = (page - 1) * limit;
+
+  return await db(EMPLOYEE_TABLE)
     .select(
       `${EMPLOYEE_TABLE}.id`,
       `${EMPLOYEE_TABLE}.employee_code`,
@@ -85,7 +90,11 @@ export const getAllMasterEmployees = async (): Promise<GetAllEmployee[]> =>
       `${OFFICE_TABLE}`,
       `${EMPLOYEE_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
-    );
+    )
+    .limit(limit)
+    .offset(offset)
+    .orderBy("id", "asc");
+};
 
 /**
  * Get employee by ID.
@@ -188,11 +197,12 @@ export const getMasterEmployeesByCode = async (
  */
 export const getMasterEmployeesByUserCode = async (
   userCode: string
-): Promise<{ employee_code: string } | null> =>
-  await db(EMPLOYEE_TABLE)
+): Promise<{ employee_code: string } | null> => {
+  return await db(EMPLOYEE_TABLE)
     .select("employee_code")
     .where({ user_code: userCode })
     .first();
+};
 
 /**
  * Creates new employee.
