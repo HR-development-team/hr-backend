@@ -1,11 +1,18 @@
 import type { Knex } from "knex";
 
-const TABLE_NAME = "master_employees";
-const COLUMN_NAME = "department_code";
-const CONSTRAINT_NAME = "master_employees_department_code_foreign";
-
 export async function up(knex: Knex): Promise<void> {
-  return knex.schema.alterTable(TABLE_NAME, (table) => {
+  return knex.schema.table("master_employees", (table) => {
+    table.dropForeign(
+      ["department_code"],
+      "master_employees_department_code_foreign"
+    );
+
+    table.dropColumn("department_code");
+  });
+}
+
+export async function down(knex: Knex): Promise<void> {
+  return knex.schema.alterTable("master_employees", (table) => {
     // 1. Tambah Kolom department_code
     table
       .string("department_code", 20) // Sesuaikan panjang string dengan tabel master_departments
@@ -21,21 +28,4 @@ export async function up(knex: Knex): Promise<void> {
       .onDelete("SET NULL") // Jika departemen dihapus, karyawan tidak ikut terhapus (hanya jadi null)
       .onUpdate("CASCADE");
   });
-}
-
-export async function down(knex: Knex): Promise<void> {
-  try {
-    await knex.schema.alterTable(TABLE_NAME, (table) => {
-      table.dropForeign([COLUMN_NAME], CONSTRAINT_NAME);
-    });
-  } catch (error) {}
-
-  // 2. CEK DAN HAPUS KOLOM
-  const hasColumn = await knex.schema.hasColumn(TABLE_NAME, COLUMN_NAME);
-
-  if (hasColumn) {
-    await knex.schema.alterTable(TABLE_NAME, (table) => {
-      table.dropColumn(COLUMN_NAME);
-    });
-  }
 }
