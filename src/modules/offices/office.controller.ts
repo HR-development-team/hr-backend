@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { errorResponse } from "@utils/response.js";
-import { API_STATUS } from "@constants/general.js";
+import { errorResponse, successResponse } from "@utils/response.js";
+import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { DatabaseError } from "@common/types/error.types.js";
 import {
@@ -11,13 +11,18 @@ import {
   getPaginatedOffices,
   getAllOfficesOrganization,
   getMasterOfficeByCode,
-  hasChildOffices, // Pastikan ini ada di office.model.ts Anda
+  hasChildOffices,
+  getOfficeReference, // Pastikan ini ada di office.model.ts Anda
 } from "./office.model.js";
 import {
   addMasterOfficeSchema,
   updateMasterOfficeSchema,
 } from "./office.schemas.js";
 import { OfficeRawWithParent, OfficeTree } from "./office.types.js";
+import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { checkOfficeScope } from "./office.helper.js";
+import { db } from "@database/connection.js";
+import { OFFICE_TABLE } from "@common/constants/database.js";
 
 // --- HELPER FUNCTION (Logic Pohon) ---
 const buildTreeRecursive = (
@@ -41,39 +46,72 @@ const buildTreeRecursive = (
 /**
  * [GET] /master-offices - Fetch all Offices (With Pagination)
  */
-export const fetchOfficeList = async (req: Request, res: Response) => {
+export const fetchOfficeList = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.code as string) || undefined;
 
-    const offices = await getPaginatedOffices(page, limit);
+    const currentUser = req.user!;
 
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const offices = await getPaginatedOffices(
+      page,
+      limit,
+      currentUser.office_code,
+      search
+    );
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Kantor Berhasil Didapatkan",
-      datetime: datetime,
-      offices: offices,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Kantor Berhasil Didapatkan",
+      offices,
+      200,
+      RESPONSE_DATA_KEYS.OFFICES
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching office list: ${dbError}`);
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
 
-    return res.status(500).json({
-      status: "03",
-      message: "Terjadi kesalahan pada server",
-      datetime: datetime,
-    });
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+export const fetchOfficeReference = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const currentUser = req.user!;
+
+    const officeReference = await getOfficeReference(currentUser.office_code);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data referensi kantor berhasil didapatkan",
+      officeReference,
+      200,
+      RESPONSE_DATA_KEYS.OFFICES
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching office reference: ${dbError}`);
+
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
 
@@ -117,9 +155,14 @@ export const fetchOrganizationTree = async (req: Request, res: Response) => {
 /**
  * [GET] /master-offices/:id - Fetch Office by id
  */
-export const fetchMasterOfficeById = async (req: Request, res: Response) => {
+export const fetchMasterOfficeById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const id: number = parseInt(req.params.id, 10);
+    const currentUser = req.user!;
+
     if (isNaN(id)) {
       return errorResponse(
         res,
@@ -129,27 +172,25 @@ export const fetchMasterOfficeById = async (req: Request, res: Response) => {
       );
     }
 
-    const office = await getMasterOfficeById(id);
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const office = await getMasterOfficeById(id, currentUser.office_code);
 
     if (!office) {
-      return res.status(404).json({
-        status: "03",
-        message: "Data Kantor tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Kantor tidak ditemukan",
+        404
+      );
     }
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Kantor berhasil didapatkan",
-      datetime: datetime,
-      offices: office,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data kantor berhasil didapatkan",
+      office,
+      200,
+      RESPONSE_DATA_KEYS.OFFICES
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching office by id: ${dbError}`);
@@ -165,31 +206,35 @@ export const fetchMasterOfficeById = async (req: Request, res: Response) => {
 /**
  * [GET] /master-offices/code/:office_code - Fetch Office by Code
  */
-export const fetchMasterOfficeByCode = async (req: Request, res: Response) => {
+export const fetchMasterOfficeByCode = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { office_code } = req.params;
-    const office = await getMasterOfficeByCode(office_code);
-
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const currentUser = req.user!;
+    const office = await getMasterOfficeByCode(
+      office_code,
+      currentUser.office_code
+    );
 
     if (!office) {
-      return res.status(404).json({
-        status: "03",
-        message: "Kantor tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Kantor tidak ditemukan",
+        404
+      );
     }
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Kantor Berhasil Didapatkan",
-      datetime: datetime,
-      offices: office,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data kantor berhasil didapatkan",
+      office,
+      200,
+      RESPONSE_DATA_KEYS.OFFICES
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching office by code: ${dbError}`);
@@ -205,8 +250,30 @@ export const fetchMasterOfficeByCode = async (req: Request, res: Response) => {
 /**
  * [POST] /master-offices - Create a new Office
  */
-export const createMasterOffice = async (req: Request, res: Response) => {
+export const createMasterOffice = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+    const parentOfficeCode = req.body.parent_office_code;
+
+    if (parentOfficeCode) {
+      const isAllowed = await checkOfficeScope(
+        currentUser.office_code,
+        parentOfficeCode
+      );
+
+      if (!isAllowed) {
+        return errorResponse(
+          res,
+          API_STATUS.UNAUTHORIZED,
+          "Anda tidak memiliki akses ke induk kantor tersebut",
+          403
+        );
+      }
+    }
+
     const validation = addMasterOfficeSchema.safeParse(req.body);
 
     if (!validation.success) {
@@ -224,18 +291,14 @@ export const createMasterOffice = async (req: Request, res: Response) => {
 
     const newOffice = await addMasterOffice(validation.data);
 
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
-
-    return res.status(201).json({
-      status: "00",
-      message: "Data Kantor Berhasil Diperbarui",
-      datetime: datetime,
-      offices: newOffice,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data kantor berhasil di tambahkan",
+      newOffice,
+      200,
+      RESPONSE_DATA_KEYS.OFFICES
+    );
   } catch (error) {
     const dbError = error as DatabaseError;
 
@@ -262,9 +325,15 @@ export const createMasterOffice = async (req: Request, res: Response) => {
 /**
  * [PUT] /master-offices/:id - Edit an Office
  */
-export const updateMasterOffice = async (req: Request, res: Response) => {
+export const updateMasterOffice = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const id = parseInt(req.params.id, 10);
+    const currentUser = req.user!;
+    const parentOfficeCode = req.body.parent_office_code;
+
     if (isNaN(id)) {
       return errorResponse(res, API_STATUS.BAD_REQUEST, "ID tidak valid.", 400);
     }
@@ -294,9 +363,37 @@ export const updateMasterOffice = async (req: Request, res: Response) => {
       );
     }
 
+    const existingOffice = await db(OFFICE_TABLE).where("id", id).first();
+
+    if (!existingOffice) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Kantor tidak ditemukan",
+        404
+      );
+    }
+
+    const isTargetAllowed = await checkOfficeScope(
+      currentUser.office_code,
+      existingOffice.office_code
+    );
+
+    if (!isTargetAllowed) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses untuk mengubah kantor ini",
+        403
+      );
+    }
+
     // --- LOGIKA PENGECEKAN CIRCULAR REFERENCE ---
     if (validation.data.parent_office_code) {
-      const currentOffice = await getMasterOfficeById(id);
+      const currentOffice = await getMasterOfficeById(
+        id,
+        currentUser.office_code
+      );
 
       if (
         currentOffice &&
@@ -310,6 +407,36 @@ export const updateMasterOffice = async (req: Request, res: Response) => {
         );
       }
     }
+
+    // logika check scope user office code (belum selesai)
+    if (
+      parentOfficeCode &&
+      parentOfficeCode !== existingOffice.parent_office_code
+    ) {
+      if (parentOfficeCode === existingOffice.office_code) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Referensi melingkar terdeteksi",
+          400
+        );
+      }
+
+      const isNewParentAllowed = await checkOfficeScope(
+        currentUser.office_code,
+        parentOfficeCode
+      );
+
+      if (!isNewParentAllowed) {
+        return errorResponse(
+          res,
+          API_STATUS.UNAUTHORIZED,
+          "Induk kantor baru diluar wewenang Anda",
+          403
+        );
+      }
+    }
+
     // --------------------------------------------
 
     // 2. Lakukan Update ke Database
@@ -354,52 +481,70 @@ export const updateMasterOffice = async (req: Request, res: Response) => {
 /**
  * [DELETE] /master-offices/:id - Delete an Office
  */
-export const destroyMasterOffice = async (req: Request, res: Response) => {
+export const destroyMasterOffice = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const id = parseInt(req.params.id, 10);
+    const currentOffice = req.user!;
+
     if (isNaN(id)) {
       return errorResponse(res, API_STATUS.BAD_REQUEST, "ID tidak valid.", 400);
     }
 
     // 1. Cek apakah data ada?
-    const existing = await getMasterOfficeById(id);
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const existing = await getMasterOfficeById(id, currentOffice.office_code);
 
     if (!existing) {
       // 404 Not Found -> Status "04"
-      return res.status(404).json({
-        status: "04",
-        message: "Kantor tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Kantor tidak ditemukan",
+        404
+      );
+    }
+
+    const isAllowed = await checkOfficeScope(
+      currentOffice.office_code!,
+      existing.office_code
+    );
+
+    if (!isAllowed) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses untuk menghapus kantor ini",
+        403
+      );
     }
 
     // 2. Cek Logika: Apakah punya kantor anak (Sub-office)?
     // Pastikan hasChildOffices sudah di-import dari office.model.ts
     const hasChildren = await hasChildOffices(existing.office_code);
+
     if (hasChildren) {
       // 409 Conflict -> Status "05"
-      return res.status(409).json({
-        status: "05",
-        message:
-          "Tidak dapat menghapus kantor yang memiliki kantor anak atau karyawan terasosiasi.",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.CONFLICT,
+        "Tidak dapat menghapus kantor yang memiliki kantor anak atau karyawan terasosiasi",
+        409
+      );
     }
 
     // 3. Proses Delete
     await removeMasterOffice(existing.id);
 
     // 4. Sukses -> Status "00"
-    return res.status(200).json({
-      status: "00",
-      message: "Data Kantor Berhasil Dihapus",
-      datetime: datetime,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data kantor berhasil dihapus",
+      null,
+      200
+    );
   } catch (error) {
     const dbError = error as DatabaseError;
     const now = new Date();

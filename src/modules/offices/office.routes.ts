@@ -7,6 +7,7 @@ import {
   updateMasterOffice,
   fetchOrganizationTree,
   fetchMasterOfficeByCode,
+  fetchOfficeReference,
 } from "./office.controller.js";
 import { verifyToken } from "@middleware/jwt.js";
 
@@ -19,6 +20,9 @@ router.get("/organization", fetchOrganizationTree);
 
 // 2. Pagination List
 router.get("/", fetchOfficeList);
+
+// office reference
+router.get("/reference", fetchOfficeReference);
 
 // 3. Get By Code
 router.get("/code/:office_code", fetchMasterOfficeByCode);

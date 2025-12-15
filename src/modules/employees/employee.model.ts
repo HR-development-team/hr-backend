@@ -197,9 +197,9 @@ export const getMasterEmployeesByCode = async (
  */
 export const getMasterEmployeesByUserCode = async (
   userCode: string
-): Promise<{ employee_code: string } | null> => {
+): Promise<{ employee_code: string; office_code: string } | null> => {
   return await db(EMPLOYEE_TABLE)
-    .select("employee_code")
+    .select("employee_code", "office_code")
     .where({ user_code: userCode })
     .first();
 };
