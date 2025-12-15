@@ -19,7 +19,7 @@ export const getOfficeByCodeOrId = async (identifier: string) => {
 };
 
 /**
- * 2. Ambil semua posisi + karyawan (Data Flat)
+ * 2. Ambil semua posisi + karyawan (Data Flat untuk Tree)
  */
 export const getPositionsByOffice = async (
   officeIdentifier: string
@@ -58,7 +58,7 @@ export const getPositionsByOffice = async (
         officeIdentifier
       );
     })
-    .orderBy(`${POSITION_TABLE}.position_code`, "asc");
+    .orderBy(`${POSITION_TABLE}.sort_order`, "asc");
 };
 
 /**
@@ -99,11 +99,10 @@ export const getAllPositions = async (officeCode?: string) => {
   }
 
   return await query;
-}; // <--- KURUNG TUTUP PENTING! Function getAllPositions selesai di sini.
+};
 
 /**
  * 4. Ambil Detail Jabatan by ID
- * (Ditaruh DI LUAR function lain agar bisa di-export)
  */
 export const getPositionById = async (id: number) => {
   return await db(`${POSITION_TABLE} as p`)
@@ -125,4 +124,134 @@ export const getPositionById = async (id: number) => {
     )
     .where("p.id", id)
     .first();
+};
+
+/**
+ * 5. Ambil Detail Jabatan by CODE (String)
+ */
+export const getPositionByCode = async (code: string) => {
+  return await db(`${POSITION_TABLE} as p`)
+    .select(
+      "p.*",
+      "div.name as division_name",
+      "dept.department_code",
+      "dept.name as department_name",
+      "parent.name as parent_position_name"
+    )
+    .leftJoin(
+      `${DIVISION_TABLE} as div`,
+      "p.division_code",
+      "div.division_code"
+    )
+    .leftJoin(
+      `${DEPARTMENT_TABLE} as dept`,
+      "div.department_code",
+      "dept.department_code"
+    )
+    .leftJoin(
+      `${POSITION_TABLE} as parent`,
+      "p.parent_position_code",
+      "parent.position_code"
+    )
+    .where("p.position_code", code)
+    .first();
+};
+
+// --- FUNGSI UNTUK CREATE & UPDATE ---
+
+/**
+ * 6. Cek apakah Division Code ada
+ */
+export const checkDivisionExists = async (divisionCode: string) => {
+  const result = await db(DIVISION_TABLE)
+    .where("division_code", divisionCode)
+    .first();
+  return !!result;
+};
+
+/**
+ * 7. Cek apakah Position Code ada
+ */
+export const checkPositionExists = async (positionCode: string) => {
+  const result = await db(POSITION_TABLE)
+    .where("position_code", positionCode)
+    .first();
+  return !!result;
+};
+
+/**
+ * 8. Generate Next Position Code
+ */
+export const generateNextPositionCode = async () => {
+  const lastRecord = await db(POSITION_TABLE)
+    .orderBy("position_code", "desc")
+    .first();
+
+  if (!lastRecord) {
+    return "JBT0000001";
+  }
+
+  const lastCode = lastRecord.position_code;
+  const lastNumber = parseInt(lastCode.replace("JBT", ""), 10);
+  const nextNumber = lastNumber + 1;
+
+  return `JBT${nextNumber.toString().padStart(7, "0")}`;
+};
+
+/**
+ * 9. Insert Position Baru
+ */
+export const createPosition = async (data: {
+  position_code: string;
+  division_code: string;
+  parent_position_code: string | null;
+  name: string;
+  base_salary: number;
+  sort_order: number;
+  description?: string;
+}) => {
+  const [id] = await db(POSITION_TABLE).insert(data);
+  return await db(POSITION_TABLE).where("id", id).first();
+};
+
+/**
+ * 10. Update Position
+ * <-- INI YANG TADI ERROR (HILANG) -->
+ */
+export const updatePosition = async (id: number, data: any) => {
+  const dataToUpdate = {
+    ...data,
+    updated_at: db.fn.now(),
+  };
+
+  await db(POSITION_TABLE).where("id", id).update(dataToUpdate);
+
+  return await getPositionById(id);
+};
+
+/**
+ * 11. Hitung karyawan yang menempati posisi
+ */
+export const countEmployeesByPositionCode = async (positionCode: string) => {
+  const result = await db(EMPLOYEE_TABLE)
+    .where("position_code", positionCode)
+    .count<{ count: number }[]>({ count: "*" });
+  return Number(result[0]?.count ?? 0);
+};
+
+/**
+ * 12. Hitung posisi bawahan (child)
+ */
+export const countChildPositionsByCode = async (positionCode: string) => {
+  const result = await db(POSITION_TABLE)
+    .where("parent_position_code", positionCode)
+    .count<{ count: number }[]>({ count: "*" });
+  return Number(result[0]?.count ?? 0);
+};
+
+/**
+ * 13. Delete posisi by ID
+ */
+export const deletePositionById = async (id: number) => {
+  return await db(POSITION_TABLE).where("id", id).del();
 };

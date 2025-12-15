@@ -4,6 +4,10 @@ import {
   fetchOrganizationTree,
   fetchPositionList,
   fetchPositionById,
+  fetchPositionByCode,
+  createNewPosition,
+  updatePositionDetails,
+  deletePositionDetails,
 } from "./position.controller.js";
 
 const router = Router();
@@ -17,4 +21,10 @@ router.get("/", fetchPositionList);
 // ... route CRUD lainnya ...
 
 router.get("/:id", fetchPositionById);
+router.get("/code/:position_code", fetchPositionByCode);
+router.post("/", createNewPosition);
+router.put("/:id", updatePositionDetails);
+router.delete("/:id", deletePositionDetails);
+router.get("/:id", fetchPositionById);
+
 export default router;
