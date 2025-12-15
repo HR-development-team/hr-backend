@@ -16,6 +16,7 @@ import {
   updateMasterDepartmentsSchema,
 } from "./department.schemas.js";
 import { getMasterOfficeByCode } from "../offices/office.model.js";
+import { AuthenticatedRequest } from "@common/middleware/jwt.js";
 /**
  * [GET] /master-departments - Fetch all Departments
  */
@@ -113,9 +114,13 @@ export const fetchMasterDepartmentsById = async (
 /**
  * [POST] /master-departments - Create a new Department
  */
-export const createMasterDepartments = async (req: Request, res: Response) => {
+export const createMasterDepartments = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const validation = addMasterDepartmentsSchema.safeParse(req.body);
+    const currentUser = req.user!;
 
     const now = new Date();
     const datetime = now
@@ -139,7 +144,10 @@ export const createMasterDepartments = async (req: Request, res: Response) => {
     const { name, description, office_code } = validation.data;
 
     // 1. Cek Apakah Kantor Ada?
-    const officeExists = await getMasterOfficeByCode(office_code);
+    const officeExists = await getMasterOfficeByCode(
+      office_code,
+      currentUser.office_code
+    );
 
     if (!officeExists) {
       return res.status(400).json({
@@ -208,9 +216,14 @@ export const createMasterDepartments = async (req: Request, res: Response) => {
 /**
  * [PUT] /master-departments/:id - Edit a Department
  */
-export const updateMasterDepartments = async (req: Request, res: Response) => {
+export const updateMasterDepartments = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const id: number = parseInt(req.params.id, 10);
+    const currentUser = req.user!;
+
     if (isNaN(id)) {
       return errorResponse(
         res,
@@ -246,7 +259,10 @@ export const updateMasterDepartments = async (req: Request, res: Response) => {
     // 2. [PERBAIKAN UTAMA] Pasang Satpam (Cek Kantor) Disini!
     // Kita hanya cek jika user mengirimkan office_code baru
     if (office_code) {
-      const officeExists = await getMasterOfficeByCode(office_code);
+      const officeExists = await getMasterOfficeByCode(
+        office_code,
+        currentUser.office_code
+      );
 
       if (!officeExists) {
         // Return Error Status 99 (Kantor Tidak Ditemukan)

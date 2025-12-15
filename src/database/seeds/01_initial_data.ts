@@ -1,5 +1,5 @@
-import type { Knex } from "knex";
 import bcrypt from "bcrypt";
+import { Knex } from "knex";
 
 const TABLE_KEYS = {
   USERS: "users",
@@ -384,7 +384,6 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000001",
       position_code: "JBT0000001",
       office_code: "OFC0000001",
-      department_code: "DPT0000001", // Penting! Relasi ke Dept
       full_name: "Budi Pratama",
       ktp_number: "3578123409876543",
       birth_place: "Surabaya",
@@ -408,7 +407,6 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000002",
       position_code: "JBT0000006",
       office_code: "OFC0000002",
-      department_code: "DPT0000002", // Penting!
       full_name: "Siti Rahmawati",
       ktp_number: "3578012345678912",
       birth_place: "Malang",
@@ -432,7 +430,6 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000003",
       position_code: "JBT0000014",
       office_code: "OFC0000002",
-      department_code: "DPT0000004", // Penting!
       full_name: "Andi Setiawan",
       ktp_number: "3578456712345678",
       birth_place: "Jakarta",
@@ -454,7 +451,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       employee_code: "MR0005",
       user_code: "USR0000005",
-      position_code: "POS0000014", // Accountant
+      position_code: "JBT0000014", // Accountant
       office_code: "OFC0000001", // Head Office Jakarta
       full_name: "Rina Kusuma",
       ktp_number: "3171012345678901",
@@ -479,7 +476,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       employee_code: "MR0006",
       user_code: "USR0000006",
-      position_code: "POS0000004", // IT Support Specialist
+      position_code: "JBT0000004", // IT Support Specialist
       office_code: "OFC0000002", // Branch Office Bandung
       full_name: "Dimas Anggara",
       ktp_number: "3273012345678901",
