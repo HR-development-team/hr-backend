@@ -53,7 +53,7 @@ export const getAllMasterEmployees = async (
       `${EMPLOYEE_TABLE}.full_name`,
       `${EMPLOYEE_TABLE}.join_date`,
       `${EMPLOYEE_TABLE}.position_code`,
-      `${EMPLOYEE_TABLE}.employment_status`,
+      `${EMPLOYEE_TABLE}.employment_status_code`,
 
       // Office fields
       `${OFFICE_TABLE}.office_code`,

@@ -1,12 +1,15 @@
 import type { Knex } from "knex";
 
 export async function seed(knex: Knex): Promise<void> {
+  await knex("master_employees").del();
+
   await knex("master_employees").insert([
     {
       employee_code: "MR0001",
       user_code: "USR0000001",
       position_code: "JBT0000001",
       office_code: "OFC0000001",
+      employment_status_code: "EPS0000001", // Kode untuk "Tetap"
       full_name: "Budi Pratama",
       ktp_number: "3578123409876543",
       birth_place: "Surabaya",
@@ -17,7 +20,6 @@ export async function seed(knex: Knex): Promise<void> {
       religion: "Islam",
       maritial_status: "Single",
       join_date: "2024-11-20",
-      employment_status: "aktif",
       education: "S1",
       blood_type: "O",
       bpjs_ketenagakerjaan: "23098",
@@ -30,6 +32,7 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000002",
       position_code: "JBT0000006",
       office_code: "OFC0000002",
+      employment_status_code: "EPS0000001",
       full_name: "Siti Rahmawati",
       ktp_number: "3578012345678912",
       birth_place: "Malang",
@@ -40,7 +43,6 @@ export async function seed(knex: Knex): Promise<void> {
       religion: "Islam",
       maritial_status: "Married",
       join_date: "2023-07-10",
-      employment_status: "aktif",
       education: "S1",
       blood_type: "A",
       bpjs_ketenagakerjaan: "23012",
@@ -53,6 +55,7 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000003",
       position_code: "JBT0000014",
       office_code: "OFC0000002",
+      employment_status_code: "EPS0000001",
       full_name: "Andi Setiawan",
       ktp_number: "3578456712345678",
       birth_place: "Jakarta",
@@ -63,7 +66,6 @@ export async function seed(knex: Knex): Promise<void> {
       religion: "Kristen",
       maritial_status: "Married",
       join_date: "2022-01-17",
-      employment_status: "aktif",
       education: "S1",
       blood_type: "B",
       bpjs_ketenagakerjaan: "23987",
@@ -74,8 +76,9 @@ export async function seed(knex: Knex): Promise<void> {
     {
       employee_code: "MR0005",
       user_code: "USR0000005",
-      position_code: "JBT0000014", // Accountant
-      office_code: "OFC0000001", // Head Office Jakarta
+      position_code: "JBT0000014",
+      office_code: "OFC0000001",
+      employment_status_code: "EPS0000001",
       full_name: "Rina Kusuma",
       ktp_number: "3171012345678901",
       birth_place: "Jakarta",
@@ -86,7 +89,6 @@ export async function seed(knex: Knex): Promise<void> {
       religion: "Islam",
       maritial_status: "Single",
       join_date: "2024-01-10",
-      employment_status: "aktif",
       education: "S1 Akuntansi",
       blood_type: "O",
       profile_picture: null,
@@ -95,12 +97,12 @@ export async function seed(knex: Knex): Promise<void> {
       npwp: "11.222.333.4-555.000",
       bank_account: "BCA 5566778899",
     },
-    // NEW EMPLOYEE 2 (Linked to USR0000006)
     {
       employee_code: "MR0006",
       user_code: "USR0000006",
-      position_code: "JBT0000004", // IT Support Specialist
-      office_code: "OFC0000002", // Branch Office Bandung
+      position_code: "JBT0000004",
+      office_code: "OFC0000002",
+      employment_status_code: "EPS0000001",
       full_name: "Dimas Anggara",
       ktp_number: "3273012345678901",
       birth_place: "Bandung",
@@ -111,7 +113,6 @@ export async function seed(knex: Knex): Promise<void> {
       religion: "Islam",
       maritial_status: "Single",
       join_date: "2024-03-01",
-      employment_status: "aktif",
       education: "D3 Teknik Komputer",
       blood_type: "B",
       profile_picture: null,
