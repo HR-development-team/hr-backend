@@ -39,3 +39,21 @@ export interface UpdatePosition {
   base_salary?: number;
   description?: string;
 }
+
+// Tipe data mentah dari database (Flat)
+export interface PositionRaw {
+  position_code: string;
+  name: string;
+  parent_position_code: string | null; // <-- Kunci pembentuk hierarki
+  employee_code: string | null;
+  employee_name: string | null;
+}
+
+// Tipe data hasil output (Nested / Bersarang)
+export interface OrganizationTree {
+  position_code: string;
+  name: string;
+  employee_code: string | null;
+  employee_name: string | null;
+  children: OrganizationTree[]; // <-- Rekursif
+}

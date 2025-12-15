@@ -1,7 +1,5 @@
-import knex from "knex";
+import type { Knex } from "knex";
 import bcrypt from "bcrypt";
-
-type Knex = knex.Knex;
 
 const TABLE_KEYS = {
   USERS: "users",
@@ -12,68 +10,57 @@ const TABLE_KEYS = {
   DEPARTMENTS: "master_departments",
   OFFICES: "master_offices",
   LEAVE_TYPES: "master_leave_types",
-  LEAVE_BALANCES: "leave_balances",
-  LEAVE_REQUEST: "leave_requests",
   PAYROLL_PERIODS: "payroll_periods",
-  ATTENDANCES: "attendances",
-  ATTENDANCE_SESSION_TABLE: "attendance_sessions",
 };
 
 export async function seed(knex: Knex): Promise<void> {
-  // 1. Deletes ALL existing entries in reverse order of dependency
-  await knex(TABLE_KEYS.ATTENDANCES).del();
-  await knex(TABLE_KEYS.ATTENDANCE_SESSION_TABLE).del();
-  await knex(TABLE_KEYS.LEAVE_BALANCES).del();
-  await knex(TABLE_KEYS.LEAVE_REQUEST).del();
-  await knex(TABLE_KEYS.EMPLOYEES).del();
-  await knex(TABLE_KEYS.OFFICES).del();
-  await knex(TABLE_KEYS.USERS).del();
-  await knex(TABLE_KEYS.ROLES).del();
-  await knex(TABLE_KEYS.POSITIONS).del();
-  await knex(TABLE_KEYS.DIVISIONS).del();
-  await knex(TABLE_KEYS.DEPARTMENTS).del();
-  await knex(TABLE_KEYS.LEAVE_TYPES).del();
-  await knex(TABLE_KEYS.PAYROLL_PERIODS).del();
+  // CATATAN: Tidak ada delete/truncate disini karena sudah dilakukan di 00_cleanup.ts
 
-  // 1. Seed Offices
+  // 1. Seed Offices (DATA DARI FILE 04 - LENGKAP LAT/LONG)
   await knex(TABLE_KEYS.OFFICES).insert([
     {
       office_code: "OFC0000001",
-      name: "Head Office Jakarta",
-      address:
-        "Menara Sudirman Lt. 15, Jl. Jend. Sudirman Kav. 60, Senayan, Jakarta Selatan",
-      latitude: -6.224026,
-      longitude: 106.809132,
-      radius_meters: 50,
-      parent_office_code: null,
-      description: "Main headquarters for all operations in Indonesia.",
-      sort_order: 1,
-    },
-    {
-      // Branch Office - Bandung
-      office_code: "OFC0000002",
-      name: "Banch Office Bandung",
-      address:
-        "Jl. Asia Afrika No. 65, Braga, Kec. Sumur Bandung, Kota Bandung, Jawa Barat",
-      latitude: -6.921474,
-      longitude: 107.611654,
-      radius_meters: 30,
-      parent_office_code: "OFC0000001",
-      description: "Regional sales and support office for West Java.",
-      sort_order: 2,
-    },
-    {
-      // Warehouse - Surabaya
-      office_code: "OFC0000003",
-      name: "Warehouse Surabaya",
-      address:
-        "Kawasan Industri Rungkut, Jl. Rungkut Industri Raya No. 10, Surabaya, Jawa Timur",
-      latitude: -7.330523,
-      longitude: 112.763312,
+      name: "Kantor Pusat ",
+      address: "Jl. Sudirman No. 1",
+      latitude: -6.2088,
+      longitude: 106.8456,
       radius_meters: 100,
+      parent_office_code: null,
+      sort_order: 1,
+      description: "Pusat Operasional",
+    },
+    {
+      office_code: "OFC0000002",
+      name: "Kantor Cabang Jawa Timur",
+      address: "Surabaya",
+      latitude: -7.2575,
+      longitude: 112.7521,
+      radius_meters: 50,
       parent_office_code: "OFC0000001",
-      description: "Primary distribution and storage facility for East Java.",
+      sort_order: 2,
+      description: "Cabang Jatim",
+    },
+    {
+      office_code: "OFC0000003",
+      name: "Kantor Unit Madiun",
+      address: "Madiun",
+      latitude: -7.6298,
+      longitude: 111.5177,
+      radius_meters: 30,
+      parent_office_code: "OFC0000002",
       sort_order: 3,
+      description: "Unit Madiun",
+    },
+    {
+      office_code: "OFC0000004",
+      name: "Kantor Cabang Jawa Tengah",
+      address: "Semarang",
+      latitude: -6.9932,
+      longitude: 110.4203,
+      radius_meters: 50,
+      parent_office_code: "OFC0000001",
+      sort_order: 4,
+      description: "Cabang Jateng",
     },
   ]);
 
@@ -83,294 +70,259 @@ export async function seed(knex: Knex): Promise<void> {
       department_code: "DPT0000001",
       name: "Technology",
       office_code: "OFC0000001",
-      description:
-        "Oversees all technical operations including software development, IT infrastructure, and system security.",
+      description: "Tech",
     },
     {
       department_code: "DPT0000002",
       name: "Human Resources",
-      office_code: "OFC0000002",
-      description:
-        "Responsible for recruitment, employee relations, training programs, and maintaining organizational policies.",
+      office_code: "OFC0000001",
+      description: "HR",
     },
     {
       department_code: "DPT0000003",
       name: "Sales",
-      office_code: "OFC0000003",
-      description:
-        "Drives company revenue through customer acquisition, business development, and account management.",
+      office_code: "OFC0000002",
+      description: "Sales Jatim",
     },
     {
       department_code: "DPT0000004",
       name: "Finance",
       office_code: "OFC0000001",
-      description:
-        "Manages company financial planning, accounting, budgeting, and financial reporting activities.",
+      description: "Finance",
     },
   ]);
 
   // 3. Seed Divisions
   await knex(TABLE_KEYS.DIVISIONS).insert([
-    // --- Technology Department ---
     {
       division_code: "DIV0000001",
       department_code: "DPT0000001",
       name: "Software Engineering",
-      description:
-        "Responsible for application development, code quality, and system architecture.",
+      description: "Dev",
     },
     {
       division_code: "DIV0000002",
       department_code: "DPT0000001",
       name: "IT Infrastructure",
-      description:
-        "Handles servers, networks, security, and IT support operations.",
+      description: "Infra",
     },
-
-    // --- Human Resources Department ---
     {
       division_code: "DIV0000003",
       department_code: "DPT0000002",
       name: "Recruitment",
-      description:
-        "Manages talent sourcing, candidate screening, and interview processes.",
+      description: "Hiring",
     },
     {
       division_code: "DIV0000004",
       department_code: "DPT0000002",
       name: "Employee Relations",
-      description:
-        "Handles employee engagement, conflict resolution, and HR policy compliance.",
+      description: "ER",
     },
-
-    // --- Sales Department ---
     {
       division_code: "DIV0000005",
       department_code: "DPT0000003",
       name: "Business Development",
-      description:
-        "Focuses on finding new business opportunities and strategic partnerships.",
+      description: "BD",
     },
     {
       division_code: "DIV0000006",
       department_code: "DPT0000003",
       name: "Account Management",
-      description:
-        "Handles customer retention, account growth, and after-sales support.",
+      description: "AM",
     },
-
-    // --- Finance Department ---
     {
       division_code: "DIV0000007",
       department_code: "DPT0000004",
       name: "Accounting",
-      description:
-        "Responsible for bookkeeping, financial statements, and payroll processing.",
+      description: "Acc",
     },
     {
       division_code: "DIV0000008",
       department_code: "DPT0000004",
       name: "Budget & Planning",
-      description:
-        "Manages budgeting, long-term financial planning, and resource allocation.",
+      description: "Plan",
     },
   ]);
 
-  // 4. Seed Positions
+  // 4. Seed Positions (UPDATED: Added parent_position_code & sort_order)
   await knex(TABLE_KEYS.POSITIONS).insert([
-    // --- Software Engineering (DIV0000001) ---
+    // --- LEADERS (Level 1) ---
     {
-      position_code: "POS0000001",
-      division_code: "DIV0000001",
-      name: "Software Engineer",
-      base_salary: 8000000.0,
-      description:
-        "Develops, maintains, and optimizes company software applications.",
-    },
-    {
-      position_code: "POS0000002",
+      position_code: "JBT0000002",
       division_code: "DIV0000001",
       name: "Senior Software Engineer",
-      base_salary: 12000000.0,
-      description:
-        "Leads technical design, code reviews, and mentorship for engineering teams.",
+      base_salary: 12000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Lead",
     },
     {
-      position_code: "POS0000003",
-      division_code: "DIV0000001",
-      name: "QA Engineer",
-      base_salary: 7000000.0,
-      description:
-        "Ensures software quality through testing, automation, and validation.",
-    },
-
-    // --- IT Infrastructure (DIV0000002) ---
-    {
-      position_code: "POS0000004",
-      division_code: "DIV0000002",
-      name: "IT Support Specialist",
-      base_salary: 6000000.0,
-      description:
-        "Provides technical support and resolves operational IT issues.",
-    },
-    {
-      position_code: "POS0000005",
+      position_code: "JBT0000005",
       division_code: "DIV0000002",
       name: "Network Administrator",
-      base_salary: 9000000.0,
-      description:
-        "Maintains network systems, monitors connectivity, and manages security.",
-    },
-
-    // --- Recruitment (DIV0000003) ---
-    {
-      position_code: "POS0000006",
-      division_code: "DIV0000003",
-      name: "Recruitment Officer",
-      base_salary: 6500000.0,
-      description:
-        "Handles sourcing, screening, and coordinating candidate interviews.",
+      base_salary: 9000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Net Admin",
     },
     {
-      position_code: "POS0000007",
-      division_code: "DIV0000003",
-      name: "Talent Acquisition Specialist",
-      base_salary: 8500000.0,
-      description:
-        "Leads end-to-end hiring strategies and maintains candidate pipelines.",
-    },
-
-    // --- Employee Relations (DIV0000004) ---
-    {
-      position_code: "POS0000008",
-      division_code: "DIV0000004",
-      name: "HR Officer",
-      base_salary: 7000000.0,
-      description:
-        "Supports employee relations, engagement programs, and HR policy compliance.",
-    },
-    {
-      position_code: "POS0000009",
+      position_code: "JBT0000009",
       division_code: "DIV0000004",
       name: "HR Manager",
-      base_salary: 13000000.0,
-      description:
-        "Oversees all HR functions including performance management and organizational development.",
+      base_salary: 13000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Manager",
     },
-
-    // --- Business Development (DIV0000005) ---
     {
-      position_code: "POS0000010",
+      position_code: "JBT0000011",
       division_code: "DIV0000005",
-      name: "Business Development Officer",
-      base_salary: 7500000.0,
-      description:
-        "Identifies new business opportunities and develops strategic partnerships.",
+      name: "Business Dev Manager",
+      base_salary: 14000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Manager",
     },
     {
-      position_code: "POS0000011",
-      division_code: "DIV0000005",
-      name: "Business Development Manager",
-      base_salary: 14000000.0,
-      description: "Leads market expansion strategies and manages BD teams.",
-    },
-
-    // --- Account Management (DIV0000006) ---
-    {
-      position_code: "POS0000012",
-      division_code: "DIV0000006",
-      name: "Account Executive",
-      base_salary: 7000000.0,
-      description:
-        "Manages client accounts, retains customers, and supports revenue growth.",
-    },
-    {
-      position_code: "POS0000013",
+      position_code: "JBT0000013",
       division_code: "DIV0000006",
       name: "Senior Account Manager",
-      base_salary: 11000000.0,
-      description:
-        "Leads account operations and fosters long-term client relationships.",
-    },
-
-    // --- Accounting (DIV0000007) ---
-    {
-      position_code: "POS0000014",
-      division_code: "DIV0000007",
-      name: "Accountant",
-      base_salary: 8000000.0,
-      description:
-        "Responsible for bookkeeping, payroll, and preparing financial reports.",
+      base_salary: 11000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Senior",
     },
     {
-      position_code: "POS0000015",
+      position_code: "JBT0000015",
       division_code: "DIV0000007",
       name: "Senior Accountant",
-      base_salary: 12000000.0,
-      description:
-        "Supervises accounting operations and ensures financial compliance.",
+      base_salary: 12000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Senior",
     },
 
-    // --- Budget & Planning (DIV0000008) ---
+    // --- STAFF (Level 2 - Punya Parent) ---
     {
-      position_code: "POS0000016",
-      division_code: "DIV0000008",
-      name: "Financial Analyst",
-      base_salary: 9000000.0,
-      description:
-        "Analyzes financial data and supports budgeting and forecasting processes.",
+      position_code: "JBT0000001",
+      division_code: "DIV0000001",
+      name: "Software Engineer",
+      base_salary: 8000000,
+      parent_position_code: "JBT0000002",
+      sort_order: 2,
+      description: "Dev",
     },
     {
-      position_code: "POS0000017",
+      position_code: "JBT0000003",
+      division_code: "DIV0000001",
+      name: "QA Engineer",
+      base_salary: 7000000,
+      parent_position_code: "JBT0000002",
+      sort_order: 3,
+      description: "QA",
+    },
+    {
+      position_code: "JBT0000004",
+      division_code: "DIV0000002",
+      name: "IT Support Specialist",
+      base_salary: 6000000,
+      parent_position_code: "JBT0000005",
+      sort_order: 2,
+      description: "Support",
+    },
+    {
+      position_code: "JBT0000006",
+      division_code: "DIV0000003",
+      name: "Recruitment Officer",
+      base_salary: 6500000,
+      parent_position_code: "JBT0000009",
+      sort_order: 2,
+      description: "Recruiter",
+    },
+    {
+      position_code: "JBT0000007",
+      division_code: "DIV0000003",
+      name: "Talent Acquisition Spc",
+      base_salary: 8500000,
+      parent_position_code: "JBT0000009",
+      sort_order: 3,
+      description: "Talent",
+    },
+    {
+      position_code: "JBT0000008",
+      division_code: "DIV0000004",
+      name: "HR Officer",
+      base_salary: 7000000,
+      parent_position_code: "JBT0000009",
+      sort_order: 2,
+      description: "Officer",
+    },
+    {
+      position_code: "JBT0000010",
+      division_code: "DIV0000005",
+      name: "BizDev Officer",
+      base_salary: 7500000,
+      parent_position_code: "JBT0000011",
+      sort_order: 2,
+      description: "Officer",
+    },
+    {
+      position_code: "JBT0000012",
+      division_code: "DIV0000006",
+      name: "Account Executive",
+      base_salary: 7000000,
+      parent_position_code: "JBT0000013",
+      sort_order: 2,
+      description: "AE",
+    },
+    {
+      position_code: "JBT0000014",
+      division_code: "DIV0000007",
+      name: "Accountant",
+      base_salary: 8000000,
+      parent_position_code: "JBT0000015",
+      sort_order: 2,
+      description: "Staff",
+    },
+    {
+      position_code: "JBT0000016",
+      division_code: "DIV0000008",
+      name: "Financial Analyst",
+      base_salary: 9000000,
+      parent_position_code: "JBT0000015",
+      sort_order: 2,
+      description: "Analyst",
+    },
+    {
+      position_code: "JBT0000017",
       division_code: "DIV0000008",
       name: "Budget Officer",
-      base_salary: 9500000.0,
-      description:
-        "Monitors company budget allocations and evaluates resource effectiveness.",
+      base_salary: 9500000,
+      parent_position_code: "JBT0000015",
+      sort_order: 3,
+      description: "Budget",
     },
   ]);
 
-  // 6. Seed Roles
+  // 5. Seed Roles
   await knex(TABLE_KEYS.ROLES).insert([
-    {
-      role_code: "ROL0000001",
-      name: "SuperAdmin",
-      description:
-        "Highest level of access. Full control over system configuration, user management, and data across all offices.",
-    },
-    {
-      role_code: "ROL0000002",
-      name: "SystemAdmin",
-      description:
-        "Manages system settings, database maintenance, and security configurations, but typically without access to high-level business data.",
-    },
+    { role_code: "ROL0000001", name: "SuperAdmin", description: "Full Access" },
+    { role_code: "ROL0000002", name: "SystemAdmin", description: "Tech Admin" },
     {
       role_code: "ROL0000003",
       name: "HeadOfficeStaff",
-      description:
-        "Staff role with broad access, typically covering reporting, high-level approval, and data across multiple offices.",
+      description: "HO Staff",
     },
     {
       role_code: "ROL0000004",
       name: "BranchManager",
-      description:
-        "Manages a specific branch office. Full operational control but restricted to data and settings related to their assigned office.",
+      description: "Branch Lead",
     },
-    {
-      role_code: "ROL0000005",
-      name: "OfficeStaff",
-      description:
-        "Standard operational role. Access limited to daily tasks and data entry within their assigned office.",
-    },
-    {
-      role_code: "ROL0000006",
-      name: "Auditor",
-      description:
-        "Read-only access to all business data and logs for compliance and reporting purposes.",
-    },
+    { role_code: "ROL0000005", name: "OfficeStaff", description: "Staff" },
+    { role_code: "ROL0000006", name: "Auditor", description: "ReadOnly" },
   ]);
 
-  // 7. Seed the User
+  // 6. Seed Users
   const password = process.env.DEFAULT_ADMIN_PASSWORD || "Password123!";
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -380,32 +332,24 @@ export async function seed(knex: Knex): Promise<void> {
       email: "budi.pratama@company.com",
       password: hashedPassword,
       role_code: "ROL0000001",
-      session_token: null,
-      login_date: null,
     },
     {
       user_code: "USR0000002",
       email: "siti.rahmawati@company.com",
       password: hashedPassword,
       role_code: "ROL0000005",
-      session_token: null,
-      login_date: null,
     },
     {
       user_code: "USR0000003",
       email: "andi.setiawan@company.com",
       password: hashedPassword,
       role_code: "ROL0000005",
-      session_token: null,
-      login_date: null,
     },
     {
       user_code: "USR0000004",
       email: "dewi.kartika@company.com",
       password: hashedPassword,
       role_code: "ROL0000004",
-      session_token: null,
-      login_date: null,
     },
     {
       user_code: "USR0000005",
@@ -433,81 +377,79 @@ export async function seed(knex: Knex): Promise<void> {
     },
   ]);
 
-  // 5. Seed the first Employee (who will be the Admin)
+  // 7. Seed Employees
   await knex(TABLE_KEYS.EMPLOYEES).insert([
     {
       employee_code: "MR0001",
       user_code: "USR0000001",
-      position_code: "POS0000001", // Software Engineer
+      position_code: "JBT0000001",
       office_code: "OFC0000001",
+      department_code: "DPT0000001", // Penting! Relasi ke Dept
       full_name: "Budi Pratama",
       ktp_number: "3578123409876543",
       birth_place: "Surabaya",
       birth_date: "1997-08-15",
       gender: "laki-laki",
-      address: "Jl. Kenanga No. 24, Surabaya, Jawa Timur",
+      address: "Surabaya",
       contact_phone: "081234567890",
       religion: "Islam",
       maritial_status: "Single",
       join_date: "2024-11-20",
       employment_status: "aktif",
-      education: "S1 Informatika",
+      education: "S1",
       blood_type: "O",
-      profile_picture: null,
-      bpjs_ketenagakerjaan: "230987654321",
-      bpjs_kesehatan: "120987654321",
-      npwp: "54.321.987.4-123.000",
-      bank_account: "BCA 1234567890",
+      bpjs_ketenagakerjaan: "23098",
+      bpjs_kesehatan: "12098",
+      npwp: "54.321",
+      bank_account: "BCA",
     },
-
     {
       employee_code: "MR0002",
       user_code: "USR0000002",
-      position_code: "POS0000006", // Recruitment Officer
+      position_code: "JBT0000006",
       office_code: "OFC0000002",
+      department_code: "DPT0000002", // Penting!
       full_name: "Siti Rahmawati",
       ktp_number: "3578012345678912",
       birth_place: "Malang",
       birth_date: "1995-03-28",
       gender: "perempuan",
-      address: "Jl. Melati No. 3, Malang, Jawa Timur",
-      contact_phone: "082345678912",
+      address: "Malang",
+      contact_phone: "08234",
       religion: "Islam",
       maritial_status: "Married",
       join_date: "2023-07-10",
       employment_status: "aktif",
-      education: "S1 Psikologi",
+      education: "S1",
       blood_type: "A",
-      profile_picture: null,
-      bpjs_ketenagakerjaan: "230123987654",
-      bpjs_kesehatan: "120123987654",
-      npwp: "45.678.234.9-543.000",
-      bank_account: "Mandiri 9876543210",
+      bpjs_ketenagakerjaan: "23012",
+      bpjs_kesehatan: "12012",
+      npwp: "45.678",
+      bank_account: "Mandiri",
     },
-
     {
       employee_code: "MR0003",
       user_code: "USR0000003",
-      position_code: "POS0000014", // Accountant
+      position_code: "JBT0000014",
       office_code: "OFC0000002",
+      department_code: "DPT0000004", // Penting!
       full_name: "Andi Setiawan",
       ktp_number: "3578456712345678",
       birth_place: "Jakarta",
       birth_date: "1992-12-05",
       gender: "laki-laki",
-      address: "Jl. Anggrek No. 56, Jakarta Selatan",
-      contact_phone: "083212345678",
+      address: "Jakarta",
+      contact_phone: "08321",
       religion: "Kristen",
       maritial_status: "Married",
       join_date: "2022-01-17",
       employment_status: "aktif",
-      education: "S1 Akuntansi",
+      education: "S1",
       blood_type: "B",
-      profile_picture: null,
-      bpjs_ketenagakerjaan: "239876543210",
-      bpjs_kesehatan: "129876543210",
-      npwp: "12.987.654.3-210.000",
-      bank_account: "BRI 3344556677",
+      bpjs_ketenagakerjaan: "23987",
+      bpjs_kesehatan: "12987",
+      npwp: "12.987",
+      bank_account: "BRI",
     },
     {
       employee_code: "MR0005",
@@ -560,23 +502,22 @@ export async function seed(knex: Knex): Promise<void> {
     },
   ]);
 
-  // 6. Seed Leave Types (Essential for Leave Balance API)
+  // 8. Seed Leave & Payroll
   await knex(TABLE_KEYS.LEAVE_TYPES).insert([
     {
       name: "Cuti Tahunan",
       type_code: "TCT0000001",
       deduction: 10000,
-      description: "Cuti Tahunan Karyawan",
+      description: "Annual",
     },
     {
       name: "Cuti Sakit",
       type_code: "TCT0000002",
       deduction: 0,
-      description: "Cuti Sakit (Wajib ada surat dokter)",
+      description: "Sick",
     },
   ]);
 
-  // 6. Seed Payroll Periods
   await knex(TABLE_KEYS.PAYROLL_PERIODS).insert([
     {
       period_code: "PRD-JAN25",
@@ -590,5 +531,5 @@ export async function seed(knex: Knex): Promise<void> {
     },
   ]);
 
-  console.log("Database seeded successfully with initial data!");
+  console.log("✅ Master Data Seeded Successfully!");
 }
