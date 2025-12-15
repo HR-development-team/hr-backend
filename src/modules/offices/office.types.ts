@@ -61,3 +61,12 @@ export interface OfficeRawWithParent extends Office {
 export interface OfficeTree extends OfficeRawWithParent {
   children: OfficeTree[];
 }
+
+export interface UserScope {
+  office_code: string | null;
+}
+
+export interface OfficeReference {
+  name: string;
+  office_code: string;
+}
