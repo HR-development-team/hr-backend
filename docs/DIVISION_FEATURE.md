@@ -21,6 +21,7 @@ The Division Management API provides standard CRUD capabilities to manage, retri
 ## 🔐 Authentication
 
 All endpoints require authentication using a Bearer Token in the Authorization header.
+
 ```json
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
@@ -39,6 +40,7 @@ Content-Type: application/json
 ## 📦 Common Response Formats
 
 **Success Response Structure**
+
 ```json
 {
   "status": "00",
@@ -51,6 +53,7 @@ Content-Type: application/json
 ```
 
 **Error Response Structure**
+
 ```json
 {
   "status": "03",
@@ -72,6 +75,7 @@ Content-Type: application/json
 Get a list of all divisions, including their associated parent department code and name. This endpoint is ideal for table displays and data processing.
 
 **Endpoints:**
+
 ```json
 GET /divisions
 ```
@@ -79,43 +83,52 @@ GET /divisions
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Divisi Berhasil Didapatkan",
-    "datetime": "20251103101550",
-    "divisions": [
-        {
-            "id": 101,
-            "division_code": "DIV0000001",
-            "department_code": "DPT0000001",
-            "department_name": "Human Resources",
-            "name": "Recruitment & Staffing",
-            "description": "Bertanggung jawab atas proses perekrutan dan penempatan karyawan."
-        },
-        {
-            "id": 102,
-            "division_code": "DIV0000002",
-            "department_code": "DPT0000002",
-            "department_name": "Finance and Accounting",
-            "name": "Payroll & Benefits",
-            "description": "Mengelola penggajian dan tunjangan karyawan."
-        },
-        {
-            "id": 103,
-            "division_code": "DIV0000003",
-            "department_code": "DPT0000002",
-            "department_name": "Finance and Accounting",
-            "name": "Accounts Payable",
-            "description": "Mengurus semua pembayaran ke vendor dan pemasok."
-        }
-    ]
+  "status": "00",
+  "message": "Data Divisi Berhasil Didapatkan",
+  "datetime": "20251103101550",
+  "divisions": [
+    {
+      "id": 101,
+      "office_code": "OFC0000001",
+      "office_name": "Kantor Pusat Jakarta",
+      "division_code": "DIV0000001",
+      "department_code": "DPT0000001",
+      "department_name": "Human Resources",
+      "name": "Recruitment & Staffing",
+      "description": "Bertanggung jawab atas proses perekrutan dan penempatan karyawan."
+    },
+    {
+      "id": 102,
+      "office_code": "OFC0000001",
+      "office_name": "Kantor Pusat Jakarta",
+      "division_code": "DIV0000002",
+      "department_code": "DPT0000002",
+      "department_name": "Finance and Accounting",
+      "name": "Payroll & Benefits",
+      "description": "Mengelola penggajian dan tunjangan karyawan."
+    },
+    {
+      "id": 103,
+      "office_code": "OFC0000002",
+      "office_name": "Kantor Cabang Jawa Tengah",
+      "division_code": "DIV0000003",
+      "department_code": "DPT0000002",
+      "department_name": "Finance and Accounting",
+      "name": "Accounts Payable",
+      "description": "Mengurus semua pembayaran ke vendor dan pemasok."
+    }
+  ]
 }
 ```
 
 `Field Descriptions:`
 
 - id: The internal database primary key (auto-incremented integer). Used for system efficiency but often omitted in public-facing documentation.
+- office_code: The code pointing to the parent Office (master_offices.office_code) that this division belongs to.
+- office_name: The official name of the Parent Office associated with this division.
 - division_code: A unique code that serves as the primary identifier for the division in API requests and business logic.
 - department_code: The code pointing to the parent Department (master_departments.department_code) that this division belongs to.
 - department_name: The official name of the Parent Department associated with this division.
@@ -123,6 +136,7 @@ GET /divisions
 - description: A brief explanation or note regarding the main function or duties of the division.
 
 **cURL Example:**
+
 ```json
 curl -X GET "https://api.example.com/v1/divisions" \
   -H "Authorization: Bearer YOUR_API_KEY" \
@@ -134,39 +148,45 @@ curl -X GET "https://api.example.com/v1/divisions" \
 Retrieve the detailed data for a single Division using its unique internal database ID (primary key).
 
 **Endpoints:**
+
 ```json
 GET /divisions/{id}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required  | Description |
+| Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
 | id | string | Yes | The unique database ID of the department to retrieve (e.g., 2). |
 
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Divisi Berhasil Didapatkan",
-    "datetime": "20251103101550",
-    "divisions": {
-        "id": 2,
-        "division_code": "DIV0000002",
-        "department_code": "DPT0000001",
-        "department_name": "Human Resources",
-        "name": "Compensation & Benefits",
-        "description": "Bertanggung jawab atas program kompensasi dan tunjangan karyawan.",
-        "created_at": "2025-11-01T09:00:00Z",
-        "updated_at": "2025-11-01T09:00:00Z"
-    }
+  "status": "00",
+  "message": "Data Divisi Berhasil Didapatkan",
+  "datetime": "20251103101550",
+  "divisions": {
+    "id": 2,
+    "office_code": "OFC0000001",
+    "office_name": "Kantor Pusat Jakarta",
+    "division_code": "DIV0000002",
+    "department_code": "DPT0000001",
+    "department_name": "Human Resources",
+    "name": "Compensation & Benefits",
+    "description": "Bertanggung jawab atas program kompensasi dan tunjangan karyawan.",
+    "created_at": "2025-11-01T09:00:00Z",
+    "updated_at": "2025-11-01T09:00:00Z"
+  }
 }
 ```
 
 `Field Descriptions:`
 
 - id: The internal database primary key (auto-incremented integer). Used for system efficiency but often omitted in public-facing documentation.
+- office_code: The code pointing to the parent Office (master_offices.office_code) that this division belongs to.
+- office_name: The official name of the Parent Office associated with this division.
 - division_code: A unique code that serves as the primary identifier for the division in API requests and business logic.
 - department_code: The code pointing to the parent Department (master_departments.department_code) that this division belongs to.
 - department_name: The official name of the Parent Department associated with this division.
@@ -176,15 +196,17 @@ GET /divisions/{id}
 - updated_at: The timestamp (ISO 8601 format) when the division record was last updated.
 
 **404 Not Found:**
+
 ```json
 {
-    "status": "03",
-    "message": "Divisi tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "03",
+  "message": "Divisi tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
+
 ```json
 curl -X GET "https://api.example.com/v1/divisions/2" \
     -H "Authorization: Bearer YOUR_API_KEY" \
@@ -196,39 +218,45 @@ curl -X GET "https://api.example.com/v1/divisions/2" \
 Retrieve the detailed data for a single Division using its unique division code identifier. The response includes all associated division and parent department details.
 
 **Endpoints:**
+
 ```json
 GET /divisions/code/{division_code}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required  | Description |
+| Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
 | division_code | string | Yes | The unique code of the division to retrieve (e.g., DIV0000002). |
 
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Divisi Berhasil Didapatkan",
-    "datetime": "20251103101550",
-    "divisions": {
-        "id": 2,
-        "division_code": "DIV0000002",
-        "department_code": "DPT0000001",
-        "department_name": "Human Resources",
-        "name": "Compensation & Benefits",
-        "description": "Bertanggung jawab atas program kompensasi dan tunjangan karyawan.",
-        "created_at": "2025-11-01T09:00:00Z",
-        "updated_at": "2025-11-01T09:00:00Z"
-    }
+  "status": "00",
+  "message": "Data Divisi Berhasil Didapatkan",
+  "datetime": "20251103101550",
+  "divisions": {
+    "id": 2,
+    "office_code": "OFC0000001",
+    "office_name": "Kantor Pusat Jakarta",
+    "division_code": "DIV0000002",
+    "department_code": "DPT0000001",
+    "department_name": "Human Resources",
+    "name": "Compensation & Benefits",
+    "description": "Bertanggung jawab atas program kompensasi dan tunjangan karyawan.",
+    "created_at": "2025-11-01T09:00:00Z",
+    "updated_at": "2025-11-01T09:00:00Z"
+  }
 }
 ```
 
 `Field Descriptions:`
 
 - id: The internal database primary key (auto-incremented integer). Used for system efficiency but often omitted in public-facing documentation.
+- office_code: The code pointing to the parent Office (master_offices.office_code) that this division belongs to.
+- office_name: The official name of the Parent Office associated with this division.
 - division_code: A unique code that serves as the primary identifier for the division in API requests and business logic.
 - department_code: The code pointing to the parent Department (master_departments.department_code) that this division belongs to.
 - department_name: The official name of the Parent Department associated with this division.
@@ -238,36 +266,40 @@ GET /divisions/code/{division_code}
 - updated_at: The timestamp (ISO 8601 format) when the division record was last updated.
 
 **404 Not Found:**
+
 ```json
 {
-    "status": "03",
-    "message": "Divisi tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "03",
+  "message": "Divisi tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
+
 ```json
 curl -X GET "https://api.example.com/v1/divisions/code/DIV0000002" \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json"
-``` 
+```
 
 ### 4. CREATE Division
 
 Add a new Division record to the system, automatically assigning a unique ID and code, and associating it with a mandatory parent Department.
 
 **Endpoints:**
+
 ```json
 POST /divisions
 ```
 
 **Request Body:**
+
 ```json
 {
-    "department_code": "DPT0000002",
-    "name": "Tax Compliance",
-    "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
+  "department_code": "DPT0000002",
+  "name": "Tax Compliance",
+  "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
 }
 ```
 
@@ -281,28 +313,30 @@ POST /divisions
 **Response:**
 
 **201 Created:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Divisi Berhasil Ditambahkan",
-    "datetime": "20251103101550",
-    "id": 4, 
-    "divisions": {
-        "id": 4, 
-        "division_code": "DIV0000004",
-        "department_code": "DPT0000002",
-        "name": "Tax Compliance",
-        "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
-    }
+  "status": "00",
+  "message": "Data Divisi Berhasil Ditambahkan",
+  "datetime": "20251103101550",
+  "id": 4,
+  "divisions": {
+    "id": 4,
+    "division_code": "DIV0000004",
+    "department_code": "DPT0000002",
+    "name": "Tax Compliance",
+    "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
+  }
 }
 ```
 
 **400 Bad Request:**
+
 ```json
 {
-    "status": "99",
-    "message": "Departemen tidak ditemukan atau data yang diperlukan tidak lengkap.",
-    "datetime": "20251103101551"
+  "status": "99",
+  "message": "Departemen tidak ditemukan atau data yang diperlukan tidak lengkap.",
+  "datetime": "20251103101551"
 }
 ```
 
@@ -330,7 +364,7 @@ PUT /divisions/{id}
 ```
 
 **Path Parameters:**
-| Parameter | Type | Required  | Description |
+| Parameter | Type | Required | Description |
 |----------|----------|----------|---------- |
 | id | integer | Yes | The unique database ID of the division to update (e.g., 1). |
 
@@ -338,9 +372,9 @@ PUT /divisions/{id}
 
 ```json
 {
-    "department_code": "DPT0000002",
-    "name": "Tax Compliance and Reporting",
-    "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
+  "department_code": "DPT0000002",
+  "name": "Tax Compliance and Reporting",
+  "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
 }
 ```
 
@@ -351,23 +385,22 @@ PUT /divisions/{id}
 | name | string | Yes | No official name of the division. | Max 100 characters.|
 | description | string | No | Brief explanation of the division's function. | Max 500 characters. |
 
-
 **Response:**
 
 **200 OK:**
 
 ```json
 {
-    "status": "00",
-    "message": "Data Divisi Berhasil Diperbarui",
-    "datetime": "20251103101550",
-    "divisions": {
-        "id": 1,
-        "division_code": "DIV0000001",
-        "department_code": "DPT0000002",
-        "name": "Tax Compliance and Reporting",
-        "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
-    }
+  "status": "00",
+  "message": "Data Divisi Berhasil Diperbarui",
+  "datetime": "20251103101550",
+  "divisions": {
+    "id": 1,
+    "division_code": "DIV0000001",
+    "department_code": "DPT0000002",
+    "name": "Tax Compliance and Reporting",
+    "description": "Bertanggung jawab atas kepatuhan perpajakan perusahaan dan pelaporan."
+  }
 }
 ```
 
@@ -375,9 +408,9 @@ PUT /divisions/{id}
 
 ```json
 {
-    "status": "99",
-    "message": "Departemen tidak ditemukan",
-    "datetime": "20251103101550"
+  "status": "99",
+  "message": "Departemen tidak ditemukan",
+  "datetime": "20251103101550"
 }
 ```
 
@@ -385,9 +418,9 @@ PUT /divisions/{id}
 
 ```json
 {
-    "status": "03",
-    "message": "Divisi tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "03",
+  "message": "Divisi tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
@@ -408,6 +441,7 @@ curl -X PUT "https://api.example.com/v1/divisions/1" \
 Remove an existing Division record from the system using its unique database ID.
 
 **Endpoints:**
+
 ```json
 DELETE /divisions/{id}
 ```
@@ -420,33 +454,37 @@ DELETE /divisions/{id}
 **Response:**
 
 **200 OK:**
+
 ```json
 {
-    "status": "00",
-    "message": "Data Divisi Berhasil Dihapus",
-    "datetime": "20251103101550"
+  "status": "00",
+  "message": "Data Divisi Berhasil Dihapus",
+  "datetime": "20251103101550"
 }
 ```
 
 **409 Conflict:**
+
 ```json
 {
-    "status": "05",
-    "message": "Tidak dapat menghapus divisi yang masih memiliki karyawan terasosiasi.",
-    "datetime": "20251103101551"
+  "status": "05",
+  "message": "Tidak dapat menghapus divisi yang masih memiliki karyawan terasosiasi.",
+  "datetime": "20251103101551"
 }
 ```
 
 **404 Not Found:**
+
 ```json
 {
-    "status": "04",
-    "message": "Divisi tidak ditemukan",
-    "datetime": "20251103101551"
+  "status": "04",
+  "message": "Divisi tidak ditemukan",
+  "datetime": "20251103101551"
 }
 ```
 
 **cURL Example:**
+
 ```json
 curl -X DELETE "https://api.example.com/v1/divisions/1" \
     -H "Authorization: Bearer YOUR_API_KEY" \

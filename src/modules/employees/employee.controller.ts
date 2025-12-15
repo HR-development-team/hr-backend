@@ -7,7 +7,9 @@ import {
   addMasterEmployees,
   editMasterEmployees,
   getAllMasterEmployees,
+  getMasterEmployeesByCode,
   getMasterEmployeesById,
+  getMasterEmployeesByUserCode,
   removeMasterEmployees,
 } from "./employee.model.js";
 import {
@@ -20,7 +22,10 @@ import {
  */
 export const fetchAllMasterEmployees = async (req: Request, res: Response) => {
   try {
-    const employees = await getAllMasterEmployees();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+
+    const employees = await getAllMasterEmployees(page, limit);
 
     return successResponse(
       res,
@@ -59,6 +64,90 @@ export const fetchMasterEmployeesById = async (req: Request, res: Response) => {
     }
 
     const employees = await getMasterEmployeesById(id);
+
+    if (!employees) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data Karyawan tidak ditemukan",
+        404
+      );
+    }
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Karyawan berhasil didapatkan",
+      employees,
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYEES
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching employees:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /master-employees/:id - Fetch Employee by code
+ */
+export const fetchMasterEmployeesByCode = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    // Validate and cast the ID params
+    const { employee_code } = req.params;
+
+    const employees = await getMasterEmployeesByCode(employee_code);
+
+    if (!employees) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data Karyawan tidak ditemukan",
+        404
+      );
+    }
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Karyawan berhasil didapatkan",
+      employees,
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYEES
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching employees:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /master-employees/:id - Fetch Employee by user code
+ */
+export const fetchMasterEmployeesByUserCode = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    // Validate and cast the ID params
+    const { user_code } = req.params;
+
+    const employees = await getMasterEmployeesByUserCode(user_code);
 
     if (!employees) {
       return errorResponse(

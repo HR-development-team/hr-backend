@@ -7,6 +7,7 @@ import {
   addMasterDivisions,
   editMasterDivisions,
   getAllMasterDivision,
+  getMasterDivisionsByCode,
   getMasterDivisionsById,
   removeMasterDivision,
 } from "./division.model.js";
@@ -20,7 +21,10 @@ import {
  */
 export const fetchAllMasterDivisions = async (req: Request, res: Response) => {
   try {
-    const divisions = await getAllMasterDivision();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+
+    const divisions = await getAllMasterDivision(page, limit);
 
     return successResponse(
       res,
@@ -87,6 +91,37 @@ export const fetchMasterDivisionsById = async (req: Request, res: Response) => {
       500
     );
   }
+};
+
+export const fetchMasterDivisionByCode = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { division_code } = req.params;
+    const division = await getMasterDivisionsByCode(division_code);
+
+    const now = new Date();
+    const datetime = now
+      .toISOString()
+      .replace(/[-T:Z.]/g, "")
+      .slice(0, 14);
+
+    if (!division) {
+      return res.status(404).json({
+        status: "03",
+        message: "Divisi tidak ditemukan",
+        datetime: datetime,
+      });
+    }
+
+    return res.status(200).json({
+      status: "00",
+      message: "Data Divisi Berhasil Didapatkan",
+      datetime: datetime,
+      master_divisions: division,
+    });
+  } catch (error) {}
 };
 
 /**

@@ -1,5 +1,5 @@
-import type { Knex } from "knex";
 import bcrypt from "bcrypt";
+import { Knex } from "knex";
 
 const TABLE_KEYS = {
   USERS: "users",
@@ -144,7 +144,7 @@ export async function seed(knex: Knex): Promise<void> {
     },
   ]);
 
-  // 4. Seed Positions (UPDATED: Added parent_position_code & sort_order)
+  // 4. Seed Positions
   await knex(TABLE_KEYS.POSITIONS).insert([
     // --- LEADERS (Level 1) ---
     {
@@ -351,16 +351,41 @@ export async function seed(knex: Knex): Promise<void> {
       password: hashedPassword,
       role_code: "ROL0000004",
     },
+    // --- GABUNGAN DATA BARU (INCOMING) ---
+    {
+      user_code: "USR0000005",
+      email: "rina.kusuma@company.com",
+      password: hashedPassword,
+      role_code: "ROL0000005",
+      session_token: null,
+      login_date: null,
+    },
+    {
+      user_code: "USR0000006",
+      email: "dimas.anggara@company.com",
+      password: hashedPassword,
+      role_code: "ROL0000005",
+      session_token: null,
+      login_date: null,
+    },
+    {
+      user_code: "USR0000007",
+      email: "eko.prasetyo@company.com",
+      password: hashedPassword,
+      role_code: "ROL0000005",
+      session_token: null,
+      login_date: null,
+    },
   ]);
 
   // 7. Seed Employees
   await knex(TABLE_KEYS.EMPLOYEES).insert([
     {
-      employee_code: "KWN0000001",
+      employee_code: "MR0001",
       user_code: "USR0000001",
       position_code: "JBT0000001",
       office_code: "OFC0000001",
-      department_code: "DPT0000001", // Penting! Relasi ke Dept
+      department_code: "DPT0000001",
       full_name: "Budi Pratama",
       ktp_number: "3578123409876543",
       birth_place: "Surabaya",
@@ -380,11 +405,11 @@ export async function seed(knex: Knex): Promise<void> {
       bank_account: "BCA",
     },
     {
-      employee_code: "KWN0000002",
+      employee_code: "MR0002",
       user_code: "USR0000002",
       position_code: "JBT0000006",
       office_code: "OFC0000002",
-      department_code: "DPT0000002", // Penting!
+      department_code: "DPT0000002",
       full_name: "Siti Rahmawati",
       ktp_number: "3578012345678912",
       birth_place: "Malang",
@@ -404,11 +429,11 @@ export async function seed(knex: Knex): Promise<void> {
       bank_account: "Mandiri",
     },
     {
-      employee_code: "KWN0000003",
+      employee_code: "MR0003",
       user_code: "USR0000003",
       position_code: "JBT0000014",
       office_code: "OFC0000002",
-      department_code: "DPT0000004", // Penting!
+      department_code: "DPT0000004",
       full_name: "Andi Setiawan",
       ktp_number: "3578456712345678",
       birth_place: "Jakarta",
@@ -426,6 +451,57 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_kesehatan: "12987",
       npwp: "12.987",
       bank_account: "BRI",
+    },
+    // --- GABUNGAN DATA BARU (INCOMING) ---
+    {
+      employee_code: "MR0005",
+      user_code: "USR0000005",
+      position_code: "JBT0000014",
+      office_code: "OFC0000001",
+      full_name: "Rina Kusuma",
+      ktp_number: "3171012345678901",
+      birth_place: "Jakarta",
+      birth_date: "1996-02-14",
+      gender: "perempuan",
+      address: "Jl. Tebet Raya No. 15, Jakarta Selatan",
+      contact_phone: "085612345678",
+      religion: "Islam",
+      maritial_status: "Single",
+      join_date: "2024-01-10",
+      employment_status: "aktif",
+      education: "S1 Akuntansi",
+      blood_type: "O",
+      profile_picture: null,
+      bpjs_ketenagakerjaan: "112233445566",
+      bpjs_kesehatan: "665544332211",
+      npwp: "11.222.333.4-555.000",
+      bank_account: "BCA 5566778899",
+      department_code: "DPT0000004", // Tambahan manual agar aman (Accountant biasanya Finance)
+    },
+    {
+      employee_code: "MR0006",
+      user_code: "USR0000006",
+      position_code: "JBT0000004",
+      office_code: "OFC0000002",
+      full_name: "Dimas Anggara",
+      ktp_number: "3273012345678901",
+      birth_place: "Bandung",
+      birth_date: "1999-07-20",
+      gender: "laki-laki",
+      address: "Jl. Dago No. 88, Bandung, Jawa Barat",
+      contact_phone: "081908765432",
+      religion: "Islam",
+      maritial_status: "Single",
+      join_date: "2024-03-01",
+      employment_status: "aktif",
+      education: "D3 Teknik Komputer",
+      blood_type: "B",
+      profile_picture: null,
+      bpjs_ketenagakerjaan: "778899001122",
+      bpjs_kesehatan: "223344556677",
+      npwp: "99.888.777.6-555.000",
+      bank_account: "Mandiri 1231231234",
+      department_code: "DPT0000002", // Tambahan manual agar aman (IT Support biasanya HR/Tech)
     },
   ]);
 
