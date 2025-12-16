@@ -1,6 +1,7 @@
 import { OFFICE_TABLE } from "@common/constants/database.js";
 import { db } from "@database/connection.js";
 import { Knex } from "knex";
+import { GetOfficeById } from "./office.types.js";
 
 // ==========================================================================
 // office hierarchy query helper
@@ -48,7 +49,7 @@ export const formatOfficeLocation = (item: any) => {
 // ==========================================================================
 export const checkOfficeScope = async (
   userOfficeCode: string | null,
-  targetOfficeCode: string
+  targetOfficeCode: string | null
 ): Promise<boolean> => {
   if (userOfficeCode === targetOfficeCode) return true;
 
@@ -57,4 +58,14 @@ export const checkOfficeScope = async (
     .first();
 
   return !!found;
+};
+
+// ==========================================================================
+// check is office exist
+// ==========================================================================
+
+export const isOfficeExist = async (id: number): Promise<GetOfficeById> => {
+  const result = await db(OFFICE_TABLE).where("id", id).first();
+
+  return result;
 };

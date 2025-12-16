@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { errorResponse, successResponse } from "@utils/response.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "src/common/utils/logger.js";
@@ -17,18 +17,34 @@ import {
 } from "./department.schemas.js";
 import { getMasterOfficeByCode } from "../offices/office.model.js";
 import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { checkOfficeScope } from "@modules/offices/office.helper.js";
+import {
+  departmentQueryBuilder,
+  getDepartmentsById,
+  isDepartmentExist,
+} from "./department.helper.js";
 /**
  * [GET] /master-departments - Fetch all Departments
  */
 export const fetchAllMasterDepartments = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.search as string) || "";
+    const searchOfficeCode = (req.query.office_code as string) || "";
 
-    const departments = await getAllMasterDepartments(page, limit);
+    const currentUser = req.user!;
+
+    const departments = await getAllMasterDepartments(
+      page,
+      limit,
+      currentUser.office_code,
+      search,
+      searchOfficeCode
+    );
 
     return successResponse(
       res,
@@ -54,10 +70,12 @@ export const fetchAllMasterDepartments = async (
  * [GET] /master-departments/:id - Fetch Department by id
  */
 export const fetchMasterDepartmentsById = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
+    const currentUser = req.user!;
+
     const id: number = parseInt(req.params.id, 10);
     if (isNaN(id)) {
       return errorResponse(
@@ -70,32 +88,101 @@ export const fetchMasterDepartmentsById = async (
 
     const department = await getMasterDepartmentsById(id);
 
-    // Format Tanggal untuk Wrapper Response (YYYYMMDDHHmmss)
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
-
     if (!department) {
-      // Return 404 Sesuai Format
-      return res.status(404).json({
-        status: "03",
-        message: "Departemen tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Departemen tidak ditemukan",
+        404
+      );
+    }
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      department.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses untuk melihat departemen ini",
+        403
+      );
     }
 
     // Return 200 Sesuai Format
-    return res.status(200).json({
-      status: "00",
-      message: "Data Departemen Berhasil Didapatkan",
-      datetime: datetime,
-      departments: department, // Object (bukan Array)
-    });
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Departemen Berhasil Didapatkan",
+      department,
+      200,
+      RESPONSE_DATA_KEYS.DEPARTMENTS
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching department by id: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /master-departments/code/:department_code - Fetch Department by Code
+ */
+export const fetchMasterDepartmentByCode = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { department_code } = req.params;
+    const currentUser = req.user!;
+
+    // Panggil Model
+    const department = await getMasterDepartmentByCode(department_code);
+
+    // Handle 404 (Tidak Ditemukan)
+    if (!department) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Departemen tidak ditemukan",
+        404
+      );
+    }
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      department.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses untuk melihat departemen ini",
+        403
+      );
+    }
+
+    // Handle 200 (Sukses)
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Departemen Berhasil Didapatkan",
+      department,
+      200,
+      RESPONSE_DATA_KEYS.DEPARTMENTS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching department by code: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -119,14 +206,24 @@ export const createMasterDepartments = async (
   res: Response
 ) => {
   try {
-    const validation = addMasterDepartmentsSchema.safeParse(req.body);
     const currentUser = req.user!;
+    const parentOfficeCode = req.body.office_code;
 
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const isAllowed = checkOfficeScope(
+      currentUser.office_code,
+      parentOfficeCode
+    );
+
+    if (!isAllowed) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses ke kantor ini",
+        403
+      );
+    }
+
+    const validation = addMasterDepartmentsSchema.safeParse(req.body);
 
     if (!validation.success) {
       return errorResponse(
@@ -150,32 +247,48 @@ export const createMasterDepartments = async (
     );
 
     if (!officeExists) {
-      return res.status(400).json({
-        status: "99",
-        message: "Kantor tidak ditemukan.",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Kantor tidak ditemukan",
+        404
+      );
+    }
+
+    const existingName = await isDepartmentExist(parentOfficeCode, name);
+
+    if (existingName) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Nama departemen sudah ada di kantor ini",
+        400
+      );
     }
 
     // 2. Simpan Data ke Database
-    const newDepartment = await addMasterDepartments({
-      name,
-      description,
-      office_code,
-    });
+    const newDepartment = await addMasterDepartments(
+      {
+        name,
+        description,
+        office_code,
+      },
+      office_code
+    );
 
     // 3. [PENTING] Definisikan departmentData di sini!
     // Kita pisahkan created_at dan updated_at agar tidak ikut terkirim.
     // ID tetap ada di dalam departmentData.
     const { created_at, updated_at, ...departmentData } = newDepartment;
 
-    return res.status(201).json({
-      status: "00",
-      message: "Data Departemen Berhasil Ditambahkan",
-      datetime: datetime,
-      // Sekarang variable departmentData sudah dikenali
-      departments: departmentData,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Departemen Berhasil Ditambahkan",
+      departmentData,
+      201,
+      RESPONSE_DATA_KEYS.DEPARTMENTS
+    );
   } catch (error) {
     const dbError = error as DatabaseError;
 
@@ -256,6 +369,62 @@ export const updateMasterDepartments = async (
 
     const { name, description, office_code } = validation.data;
 
+    const oldDept = await getDepartmentsById(id);
+
+    if (!oldDept) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data departemen tidak ditemukan",
+        404
+      );
+    }
+
+    if (office_code && office_code !== oldDept.office_code) {
+      const hasAccessToCurrent = await checkOfficeScope(
+        currentUser.office_code,
+        oldDept.office_code
+      );
+
+      if (!hasAccessToCurrent) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Kantor tujuan tidak ditemukan atau diluar wewenang anda",
+          400
+        );
+      }
+    }
+
+    /**
+     * cek duplikasi nama departemen dalam satu kantor
+     */
+
+    if (name || office_code) {
+      const targetOffice = office_code || oldDept.office_code;
+
+      const duplicateCheck = await departmentQueryBuilder()
+        .where("office_code", targetOffice)
+        .where("name", name)
+        .whereNot("id", id)
+        .first();
+
+      if (duplicateCheck) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Validasi Gagal",
+          400,
+          [
+            {
+              field: "Name",
+              message: "Nama departemen sudah digunakan di kantor ini",
+            },
+          ]
+        );
+      }
+    }
+
     // 2. [PERBAIKAN UTAMA] Pasang Satpam (Cek Kantor) Disini!
     // Kita hanya cek jika user mengirimkan office_code baru
     if (office_code) {
@@ -312,10 +481,16 @@ export const updateMasterDepartments = async (
 /**
  * [DELETE] /master-departments/:id - Delete a Department
  */
-export const destroyMasterDepartments = async (req: Request, res: Response) => {
+export const destroyMasterDepartments = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     // 1. Validasi ID
     const id: number = parseInt(req.params.id, 10);
+
     if (isNaN(id)) {
       return errorResponse(
         res,
@@ -325,41 +500,46 @@ export const destroyMasterDepartments = async (req: Request, res: Response) => {
       );
     }
 
-    // Format Tanggal
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
-
     // 2. Cek Apakah Data Ada?
-    const existing = await getMasterDepartmentsById(id);
+    const existing = (await getMasterDepartmentsById(id)) || null;
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      existing?.office_code || null
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang untuk menghapus departemen dari kantor ini",
+        403
+      );
+    }
 
     if (!existing) {
       // Return 404 Not Found (Sesuai Request: Status "04")
-      return res.status(404).json({
-        status: "04",
-        message: "Departemen tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Departemen tidak ditemukan",
+        404
+      );
     }
 
     // 3. Eksekusi Hapus
     await removeMasterDepartments(existing.id);
 
     // Return 200 OK (Sesuai Request: Status "00")
-    return res.status(200).json({
-      status: "00",
-      message: "Data Departemen Berhasil Dihapus",
-      datetime: datetime,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Departemen Berhasil Dihapus",
+      null,
+      200
+    );
   } catch (error) {
     const dbError = error as DatabaseError;
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
 
     // 4. Handle Foreign Key Constraint (Konflik)
     // Error 1451 / ER_ROW_IS_REFERENCED artinya departemen ini dipakai di tabel lain (misal: employees)
@@ -369,64 +549,16 @@ export const destroyMasterDepartments = async (req: Request, res: Response) => {
       dbError.errno === 1451
     ) {
       // Return 409 Conflict (Sesuai Request: Status "05")
-      return res.status(409).json({
-        status: "05",
-        message:
-          "Tidak dapat menghapus departemen yang masih memiliki karyawan terasosiasi.",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.CONFLICT,
+        "Tidak dapat menghapus departemen yang masih memiliki karyawan terasosiasi",
+        409
+      );
     }
 
     // Error Server Lainnya
     appLogger.error(`Error deleting department: ${dbError}`);
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
-  }
-};
-
-/**
- * [GET] /master-departments/code/:department_code - Fetch Department by Code
- */
-export const fetchMasterDepartmentByCode = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const { department_code } = req.params;
-
-    // Panggil Model
-    const department = await getMasterDepartmentByCode(department_code);
-
-    // Format Tanggal
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
-
-    // Handle 404 (Tidak Ditemukan)
-    if (!department) {
-      return res.status(404).json({
-        status: "03",
-        message: "Departemen tidak ditemukan",
-        datetime: datetime,
-      });
-    }
-
-    // Handle 200 (Sukses)
-    return res.status(200).json({
-      status: "00",
-      message: "Data Departemen Berhasil Didapatkan",
-      datetime: datetime,
-      departments: department,
-    });
-  } catch (error) {
-    const dbError = error as unknown;
-    appLogger.error(`Error fetching department by code: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

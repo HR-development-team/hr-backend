@@ -67,7 +67,7 @@ export const getPaginatedOffices = async (
   page: number,
   limit: number,
   officeCode: string | null,
-  searchOfficeCode?: string
+  search?: string
 ): Promise<GetAllOffices[]> => {
   const offset = (page - 1) * limit;
 
@@ -75,9 +75,11 @@ export const getPaginatedOffices = async (
 
   let query: Knex.QueryBuilder = officeHierarchyQuery(officeCode).select("*");
 
-  if (searchOfficeCode) {
+  if (search) {
     query = query.where((builder) => {
-      builder.where("office_code", "like", `%${searchOfficeCode}%`);
+      builder
+        .where("office_code", "like", `%${search}%`)
+        .orWhere("name", "like", `%${search}%`);
     });
   }
 

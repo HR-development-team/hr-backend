@@ -3,6 +3,7 @@ import {
   DEPARTMENT_TABLE,
   DIVISION_TABLE,
   EMPLOYEE_TABLE,
+  EMPLOYMENT_STATUS_TABLE,
   OFFICE_TABLE,
   POSITION_TABLE,
 } from "@constants/database.js";
@@ -53,7 +54,10 @@ export const getAllMasterEmployees = async (
       `${EMPLOYEE_TABLE}.full_name`,
       `${EMPLOYEE_TABLE}.join_date`,
       `${EMPLOYEE_TABLE}.position_code`,
-      `${EMPLOYEE_TABLE}.employment_status_code`,
+
+      // Employment status fields
+      `${EMPLOYMENT_STATUS_TABLE}.status_code as employment_status_code`,
+      `${EMPLOYMENT_STATUS_TABLE}.name as employment_status`,
 
       // Office fields
       `${OFFICE_TABLE}.office_code`,
@@ -90,6 +94,11 @@ export const getAllMasterEmployees = async (
       `${OFFICE_TABLE}`,
       `${EMPLOYEE_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
+    )
+    .leftJoin(
+      `${EMPLOYMENT_STATUS_TABLE}`,
+      `${EMPLOYEE_TABLE}.employment_status_code`,
+      `${EMPLOYMENT_STATUS_TABLE}.status_code`
     )
     .limit(limit)
     .offset(offset)

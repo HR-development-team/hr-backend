@@ -18,11 +18,13 @@ import {
   addMasterOfficeSchema,
   updateMasterOfficeSchema,
 } from "./office.schemas.js";
-import { OfficeRawWithParent, OfficeTree } from "./office.types.js";
+import {
+  GetOfficeById,
+  OfficeRawWithParent,
+  OfficeTree,
+} from "./office.types.js";
 import { AuthenticatedRequest } from "@common/middleware/jwt.js";
-import { checkOfficeScope } from "./office.helper.js";
-import { db } from "@database/connection.js";
-import { OFFICE_TABLE } from "@common/constants/database.js";
+import { checkOfficeScope, isOfficeExist } from "./office.helper.js";
 
 // --- HELPER FUNCTION (Logic Pohon) ---
 const buildTreeRecursive = (
@@ -53,7 +55,7 @@ export const fetchOfficeList = async (
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
-    const search = (req.query.code as string) || undefined;
+    const search = (req.query.search as string) || undefined;
 
     const currentUser = req.user!;
 
@@ -363,7 +365,7 @@ export const updateMasterOffice = async (
       );
     }
 
-    const existingOffice = await db(OFFICE_TABLE).where("id", id).first();
+    const existingOffice: GetOfficeById = await isOfficeExist(id);
 
     if (!existingOffice) {
       return errorResponse(
