@@ -88,6 +88,7 @@ Table master_employees {
   user_code varchar(10) [unique]                // FK → users.user_code
   position_code varchar(10) [not null]          // FK → master_positions.position_code
   office_code varchar(10)                       // FK → master_offices.office_code
+  employment_status_code varchar(20) [not null] // FK => employment_status.status_code
   full_name varchar(100) [not null]
   ktp_number varchar(16) [unique]
   birth_place varchar(100)
@@ -99,7 +100,7 @@ Table master_employees {
   maritial_status varchar(50)
   join_date date [not null]
   resign_date varchar(50)
-  employment_status varchar(50) [default: 'aktif']
+  // employment_status varchar(50) [default: 'aktif'] // replace with employment_status
   education varchar(50)
   blood_type varchar(5)
   profile_picture varchar(255)
@@ -202,6 +203,15 @@ Table payrolls {
   updated_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
+Table employment_statuses {
+  id int [pk, increment]
+  status_code varchar(20) [not null]
+  name varchar(20) [not null]
+  description text [null]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
 //////////////////////////////////////////////////////
 // REFERENCES
 //////////////////////////////////////////////////////
@@ -227,3 +237,5 @@ Ref: payrolls.payroll_period_id > payroll_periods.id
 Ref: payrolls.employee_id > master_employees.id
 
 Ref: attendance_sessions.shift_code > master_shifts.shift_code
+
+Ref: master_employees.employment_status_code > employment_statuses.status_code
