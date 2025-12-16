@@ -7,27 +7,44 @@ import {
   UpdateDepartment,
   GetDepartmentDetail,
 } from "./department.types.js";
+import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 
 /**
  * Function for generating department code
  */
-async function generateDepartmentCode() {
+async function generateDepartmentCode(office_code: string) {
   const PREFIX = "DPT";
-  const PAD_LENGTH = 7;
+  const OFFICE_PAD_LENGTH = 2;
+  const SEQUENCE_PAD_LENGTH = 5;
+
+  const officeNumberMatch = office_code.match(/\d+$/);
+  const officeNumber = officeNumberMatch
+    ? parseInt(officeNumberMatch[0], 10)
+    : 0;
+
+  const officePrefix = String(officeNumber).padStart(OFFICE_PAD_LENGTH, "0");
 
   const lastRow = await db(DEPARTMENT_TABLE)
-    .select("department_code")
-    .orderBy("id", "desc")
+    .where("office_code", office_code)
+    .orderBy("department_code", "desc")
     .first();
 
   if (!lastRow) {
-    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
+    return `${PREFIX}${officePrefix}${String(1).padStart(SEQUENCE_PAD_LENGTH, "0")}`;
   }
 
+  // if (!lastRow) {
+  //   return PREFIX + String(1).padStart(SEQUENCE_PAD_LENGTH, "0");
+  // }
+
   const lastCode = lastRow.department_code;
-  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
-  const newNumber = lastNumber + 1;
-  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
+  const lastSequenceStr = lastCode.slice(-SEQUENCE_PAD_LENGTH);
+  const lastSequence = parseInt(lastSequenceStr, 10);
+  // const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
+  // const newNumber = lastNumber + 1;
+  const newSequence = lastSequence + 1;
+  // return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
+  return `${PREFIX}${officePrefix}${String(newSequence).padStart(SEQUENCE_PAD_LENGTH, "0")}`;
 }
 
 /**
@@ -35,11 +52,14 @@ async function generateDepartmentCode() {
  */
 export const getAllMasterDepartments = async (
   page: number,
-  limit: number
+  limit: number,
+  userOfficeCode: string | null,
+  search: string,
+  searchByOfficeCode: string
 ): Promise<GetAllDepartment[]> => {
   const offset = (page - 1) * limit;
 
-  return await db(DEPARTMENT_TABLE)
+  const query = db(DEPARTMENT_TABLE)
     .select(
       `${DEPARTMENT_TABLE}.id`,
       `${DEPARTMENT_TABLE}.department_code`,
@@ -52,7 +72,34 @@ export const getAllMasterDepartments = async (
       OFFICE_TABLE,
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
-    )
+    );
+
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${DEPARTMENT_TABLE}.department_code`, "like", `%${search}%`)
+        .orWhere(`${DEPARTMENT_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  if (searchByOfficeCode) {
+    query.andWhere((builder) => {
+      builder.where(
+        `${DEPARTMENT_TABLE}.office_code`,
+        "like",
+        `%${searchByOfficeCode}%`
+      );
+    });
+  }
+
+  return query
     .limit(limit)
     .offset(offset)
     .orderBy(`${DEPARTMENT_TABLE}.id`, "asc");
@@ -87,12 +134,13 @@ export const getMasterDepartmentsById = async (
  * Creates new department.
  */
 export const addMasterDepartments = async (
-  data: CreateDepartment
+  data: CreateDepartment,
+  officeCode: string
 ): Promise<Department> => {
   // 1. Ambil office_code dari parameter data
   const { name, description, office_code } = data;
 
-  const department_code = await generateDepartmentCode();
+  const department_code = await generateDepartmentCode(officeCode);
 
   const [id] = await db(DEPARTMENT_TABLE).insert({
     name,
