@@ -19,10 +19,12 @@ import { getMasterOfficeByCode } from "../offices/office.model.js";
 import { AuthenticatedRequest } from "@common/middleware/jwt.js";
 import { checkOfficeScope } from "@modules/offices/office.helper.js";
 import {
-  departmentQueryBuilder,
   getDepartmentsById,
-  isDepartmentExist,
+  isDepartmentNameExist,
 } from "./department.helper.js";
+import { isDuplicate } from "@common/utils/duplicateChecker.js";
+import { db } from "@database/connection.js";
+import { DEPARTMENT_TABLE } from "@common/constants/database.js";
 /**
  * [GET] /master-departments - Fetch all Departments
  */
@@ -166,7 +168,7 @@ export const fetchMasterDepartmentByCode = async (
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
-        "Anda tidak memiliki akses untuk melihat departemen ini",
+        "Anda tidak memiliki akses untuk melihat divisi ini",
         403
       );
     }
@@ -192,12 +194,6 @@ export const fetchMasterDepartmentByCode = async (
   }
 };
 
-/**
- * [POST] /master-departments - Create a new Department
- */
-/**
- * [POST] /master-departments - Create a new Department
- */
 /**
  * [POST] /master-departments - Create a new Department
  */
@@ -255,7 +251,7 @@ export const createMasterDepartments = async (
       );
     }
 
-    const existingName = await isDepartmentExist(parentOfficeCode, name);
+    const existingName = await isDepartmentNameExist(parentOfficeCode, name);
 
     if (existingName) {
       return errorResponse(
@@ -346,12 +342,6 @@ export const updateMasterDepartments = async (
       );
     }
 
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
-
     // 1. Validasi Input Dasar
     const validation = updateMasterDepartmentsSchema.safeParse(req.body);
     if (!validation.success) {
@@ -390,7 +380,7 @@ export const updateMasterDepartments = async (
         return errorResponse(
           res,
           API_STATUS.BAD_REQUEST,
-          "Kantor tujuan tidak ditemukan atau diluar wewenang anda",
+          "Kantor tujuan tidak ditemukan atau diluar wewenang Anda",
           400
         );
       }
@@ -402,12 +392,20 @@ export const updateMasterDepartments = async (
 
     if (name || office_code) {
       const targetOffice = office_code || oldDept.office_code;
+      const targetName = name || oldDept.name;
 
-      const duplicateCheck = await departmentQueryBuilder()
-        .where("office_code", targetOffice)
-        .where("name", name)
-        .whereNot("id", id)
-        .first();
+      const criteria = {
+        office_code: targetOffice,
+        name: targetName,
+      };
+
+      const duplicateCheck = await isDuplicate(
+        db,
+        DEPARTMENT_TABLE,
+        criteria,
+        id,
+        "id"
+      );
 
       if (duplicateCheck) {
         return errorResponse(
@@ -418,7 +416,7 @@ export const updateMasterDepartments = async (
           [
             {
               field: "Name",
-              message: "Nama departemen sudah digunakan di kantor ini",
+              message: `Departemen '${targetName}' sudah digunakan di kantor ini`,
             },
           ]
         );
@@ -435,11 +433,12 @@ export const updateMasterDepartments = async (
 
       if (!officeExists) {
         // Return Error Status 99 (Kantor Tidak Ditemukan)
-        return res.status(400).json({
-          status: "99",
-          message: "Kantor tidak ditemukan.",
-          datetime: datetime,
-        });
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Kantor tidak ditemukan",
+          400
+        );
       }
     }
 
@@ -452,22 +451,25 @@ export const updateMasterDepartments = async (
     });
 
     if (!updatedDepartment) {
-      return res.status(404).json({
-        status: "03",
-        message: "Data Departemen tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data Departemen tidak ditemukan",
+        404
+      );
     }
 
     // 4. Format Output
     const { created_at, updated_at, ...cleanDepartment } = updatedDepartment;
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Departemen Berhasil Diperbarui",
-      datetime: datetime,
-      departments: cleanDepartment,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Departemen Berhasil Diperbarui",
+      cleanDepartment,
+      200,
+      RESPONSE_DATA_KEYS.DEPARTMENTS
+    );
   } catch (error) {
     appLogger.error(`Error editing departments: ${error}`);
     return errorResponse(
@@ -503,6 +505,19 @@ export const destroyMasterDepartments = async (
     // 2. Cek Apakah Data Ada?
     const existing = (await getMasterDepartmentsById(id)) || null;
 
+    if (!existing) {
+      // Return 404 Not Found (Sesuai Request: Status "04")
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Departemen tidak ditemukan",
+        404
+      );
+    }
+
+    /**
+     * jika data ada, apakah user memiliki akses?
+     */
     const hasAccess = await checkOfficeScope(
       currentUser.office_code,
       existing?.office_code || null
@@ -514,16 +529,6 @@ export const destroyMasterDepartments = async (
         API_STATUS.UNAUTHORIZED,
         "Anda tidak memiliki wewenang untuk menghapus departemen dari kantor ini",
         403
-      );
-    }
-
-    if (!existing) {
-      // Return 404 Not Found (Sesuai Request: Status "04")
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Departemen tidak ditemukan",
-        404
       );
     }
 

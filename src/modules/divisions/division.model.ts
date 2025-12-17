@@ -1,4 +1,8 @@
-import { DIVISION_TABLE } from "@constants/database.js";
+import {
+  DEPARTMENT_TABLE,
+  DIVISION_TABLE,
+  OFFICE_TABLE,
+} from "@constants/database.js";
 import { db } from "@database/connection.js";
 import {
   CreateDivision,
@@ -8,62 +12,57 @@ import {
   GetDivisionById,
   UpdateDivision,
 } from "./division.types.js";
-
-/**
- * Function for generating division code
- */
-async function generateDivisionCode() {
-  const PREFIX = "DIV";
-  const PAD_LENGTH = 7;
-
-  const lastRow = await db(DIVISION_TABLE)
-    .select("division_code")
-    .orderBy("id", "desc")
-    .first();
-
-  if (!lastRow) {
-    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
-  }
-
-  const lastCode = lastRow.division_code;
-  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
-  const newNumber = lastNumber + 1;
-  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
-}
+import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
+import { generateDivisionCode } from "./division.helper.js";
 
 /**
  * Get all master division.
  */
 export const getAllMasterDivision = async (
   page: number,
-  limit: number
+  limit: number,
+  userOfficeCode: string | null,
+  search: string
 ): Promise<GetAllDivision[]> => {
   const offset = (page - 1) * limit;
 
-  return await db(DIVISION_TABLE)
+  const query = db(DIVISION_TABLE)
     .select(
-      "master_divisions.id",
-      "master_divisions.division_code",
-      "master_divisions.name",
-      "master_divisions.department_code",
-      "master_departments.name as department_name",
-      "master_offices.office_code",
-      "master_offices.name as office_name"
+      `${DIVISION_TABLE}.*`,
+      `${DEPARTMENT_TABLE}.name as department_name`,
+      `${OFFICE_TABLE}.office_code`,
+      `${OFFICE_TABLE}.name as office_name`
     )
     .leftJoin(
-      "master_departments",
-      "master_divisions.department_code",
-      "master_departments.department_code"
+      `${DEPARTMENT_TABLE}`,
+      `${DIVISION_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.department_code`
     )
     .leftJoin(
-      "master_offices",
-      "master_departments.office_code",
-      "master_offices.office_code"
-    )
+      `${OFFICE_TABLE}`,
+      `${DEPARTMENT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    );
+
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${DIVISION_TABLE}.division_code`, "like", `%${search}%`)
+        .orWhere(`${DIVISION_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  return query
     .limit(limit)
     .offset(offset)
-    .orderBy("division_code", "asc")
-    .orderBy("id", "asc");
+    .orderBy(`${DIVISION_TABLE}.id`, "asc");
 };
 
 /**
@@ -122,7 +121,16 @@ export const addMasterDivisions = async (
   data: CreateDivision
 ): Promise<Division> => {
   const { name, department_code, description } = data;
-  const division_code = await generateDivisionCode();
+
+  const officeCode = await db(DEPARTMENT_TABLE)
+    .select(`${DEPARTMENT_TABLE}.office_code`)
+    .where("department_code", department_code)
+    .first();
+
+  const division_code = await generateDivisionCode(
+    officeCode.office_code,
+    department_code
+  );
 
   const [id] = await db(DIVISION_TABLE).insert({
     name,

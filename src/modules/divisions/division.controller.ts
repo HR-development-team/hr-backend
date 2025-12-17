@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { errorResponse, successResponse } from "@utils/response.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
@@ -15,16 +15,34 @@ import {
   addMasterDivisionsSchema,
   updateMasterDivisionsSchema,
 } from "./division.schemas.js";
+import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { checkOfficeScope } from "@modules/offices/office.helper.js";
+import { getMasterDepartmentByCode } from "@modules/departments/department.model.js";
+import { isDivisionNameExist } from "./division.helper.js";
+import { isDuplicate } from "@common/utils/duplicateChecker.js";
+import { db } from "@database/connection.js";
+import { DIVISION_TABLE } from "@common/constants/database.js";
 
 /**
  * [GET] /master-divisions - Fetch all Divisions
  */
-export const fetchAllMasterDivisions = async (req: Request, res: Response) => {
+export const fetchAllMasterDivisions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.search as string) || "";
 
-    const divisions = await getAllMasterDivision(page, limit);
+    const currentUser = req.user!;
+
+    const divisions = await getAllMasterDivision(
+      page,
+      limit,
+      currentUser.office_code,
+      search
+    );
 
     return successResponse(
       res,
@@ -49,8 +67,13 @@ export const fetchAllMasterDivisions = async (req: Request, res: Response) => {
 /**
  * [GET] /master-divisions/:id - Fetch Division by id
  */
-export const fetchMasterDivisionsById = async (req: Request, res: Response) => {
+export const fetchMasterDivisionsById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -73,6 +96,20 @@ export const fetchMasterDivisionsById = async (req: Request, res: Response) => {
       );
     }
 
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      divisions.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang untuk melihat departemen ini",
+        403
+      );
+    }
+
     return successResponse(
       res,
       API_STATUS.SUCCESS,
@@ -83,7 +120,8 @@ export const fetchMasterDivisionsById = async (req: Request, res: Response) => {
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching divisions:${dbError}`);
+    appLogger.error(`Error fetching division by id: ${dbError}`);
+
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -94,41 +132,97 @@ export const fetchMasterDivisionsById = async (req: Request, res: Response) => {
 };
 
 export const fetchMasterDivisionByCode = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
     const { division_code } = req.params;
     const division = await getMasterDivisionsByCode(division_code);
 
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const currentUser = req.user!;
 
     if (!division) {
-      return res.status(404).json({
-        status: "03",
-        message: "Divisi tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Divisi tidak ditemukan",
+        404
+      );
     }
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Divisi Berhasil Didapatkan",
-      datetime: datetime,
-      master_divisions: division,
-    });
-  } catch (error) {}
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      division.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses untuk melihat divisi ini",
+        403
+      );
+    }
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Divisi Berhasil Didapatkan",
+      division,
+      200,
+      RESPONSE_DATA_KEYS.DIVISIONS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching division by code: ${dbError}`);
+
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
 };
 
 /**
  * [POST] /master-divisions - Create a new Division
  */
-export const createMasterDivisions = async (req: Request, res: Response) => {
+export const createMasterDivisions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+    const parentDepartementCode = req.body.department_code;
+
+    const parentDepartment = await getMasterDepartmentByCode(
+      parentDepartementCode
+    );
+
+    if (!parentDepartementCode) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Departemen induk tidak ditemukan",
+        404
+      );
+    }
+
+    const isAllowed = await checkOfficeScope(
+      currentUser.office_code,
+      parentDepartment.office_code
+    );
+
+    if (!isAllowed) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses ke departemen ini",
+        403
+      );
+    }
+
     const validation = addMasterDivisionsSchema.safeParse(req.body);
 
     if (!validation.success) {
@@ -145,6 +239,18 @@ export const createMasterDivisions = async (req: Request, res: Response) => {
     }
 
     const { name, department_code, description } = validation.data;
+
+    const existingName = await isDivisionNameExist(department_code, name);
+
+    if (existingName) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Nama divisi sudah ada di departemen ini",
+        400
+      );
+    }
+
     const masterDivisions = await addMasterDivisions({
       name,
       department_code,
@@ -216,10 +322,19 @@ export const createMasterDivisions = async (req: Request, res: Response) => {
 /**
  * [PUT] /master-divisions/:id - Edit a Division
  */
-export const updateMasterDivisions = async (req: Request, res: Response) => {
+export const updateMasterDivisions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
+    const currentUser = req.user!;
+    const parentDepartmentCode = req.body.department_code;
+
+    const parentDepartment =
+      await getMasterDepartmentByCode(parentDepartmentCode);
+
     if (isNaN(id)) {
       return errorResponse(
         res,
@@ -247,6 +362,89 @@ export const updateMasterDivisions = async (req: Request, res: Response) => {
     const validatedData = validation.data;
     const { name, department_code, description } = validatedData;
 
+    const oldDiv = await getMasterDivisionsById(id);
+
+    if (!oldDiv) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Data divisi tidak ditemukan",
+        404
+      );
+    }
+
+    if (department_code && department_code !== oldDiv.department_code) {
+      const hasAccessToCurrent = checkOfficeScope(
+        currentUser.office_code,
+        parentDepartment.office_code
+      );
+
+      if (!hasAccessToCurrent) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Departemen tujuan tidak ditemukan atau diluar wewenang Anda",
+          400
+        );
+      }
+    }
+
+    /**
+     * cek duplikasi nama divisi dalam satu departemen
+     */
+
+    if (name || department_code) {
+      const targetDept = department_code || oldDiv.department_code;
+      const targetName = name || oldDiv.name;
+
+      const criteria = {
+        department_code: targetDept,
+        name: targetName,
+      };
+
+      const duplicateCheck = await isDuplicate(
+        db,
+        DIVISION_TABLE,
+        criteria,
+        id,
+        "id"
+      );
+
+      if (duplicateCheck) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Validasi Gagal",
+          400,
+          [
+            {
+              field: "Name",
+              message: `Divisi '${targetName}' sudah digunakan di departemen ini`,
+            },
+          ]
+        );
+      }
+    }
+
+    /**
+     * cek departemen jika user mengirimkan departement_code baru
+     */
+    if (department_code) {
+      const deptExist = await getMasterDepartmentByCode(department_code);
+
+      if (!deptExist) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Departemen tidak ditemukan",
+          400
+        );
+      }
+    }
+
+    /**
+     * lanjut ke database
+     */
     const masterDivisions = await editMasterDivisions({
       id,
       name,
@@ -302,8 +500,13 @@ export const updateMasterDivisions = async (req: Request, res: Response) => {
 /**
  * [DELETE] /master-divisions/:id - Delete a Division
  */
-export const destroyMasterDivisions = async (req: Request, res: Response) => {
+export const destroyMasterDivisions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -315,7 +518,12 @@ export const destroyMasterDivisions = async (req: Request, res: Response) => {
       );
     }
 
-    const existing = await getMasterDivisionsById(id);
+    // cek apakah data ada?
+    const existing = (await getMasterDivisionsById(id)) || null;
+
+    const parentDepartment = await getMasterDepartmentByCode(
+      existing?.department_code || ""
+    );
 
     if (!existing) {
       return errorResponse(
@@ -323,6 +531,23 @@ export const destroyMasterDivisions = async (req: Request, res: Response) => {
         API_STATUS.NOT_FOUND,
         "Data Divisi tidak ditemukan",
         404
+      );
+    }
+
+    /**
+     * jika data ada, apakah user memiliki akses
+     */
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      parentDepartment.office_code || ""
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang untuk menghapus divisi dari departemen ini",
+        403
       );
     }
 
