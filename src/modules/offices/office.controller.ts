@@ -410,7 +410,7 @@ export const updateMasterOffice = async (
       }
     }
 
-    // logika check scope user office code (belum selesai)
+    // logika check scope user office code (selesai)
     if (
       parentOfficeCode &&
       parentOfficeCode !== existingOffice.parent_office_code
