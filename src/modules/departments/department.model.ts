@@ -8,44 +8,8 @@ import {
   GetDepartmentDetail,
 } from "./department.types.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
+import { generateDepartmentCode } from "./department.helper.js";
 
-/**
- * Function for generating department code
- */
-async function generateDepartmentCode(office_code: string) {
-  const PREFIX = "DPT";
-  const OFFICE_PAD_LENGTH = 2;
-  const SEQUENCE_PAD_LENGTH = 5;
-
-  const officeNumberMatch = office_code.match(/\d+$/);
-  const officeNumber = officeNumberMatch
-    ? parseInt(officeNumberMatch[0], 10)
-    : 0;
-
-  const officePrefix = String(officeNumber).padStart(OFFICE_PAD_LENGTH, "0");
-
-  const lastRow = await db(DEPARTMENT_TABLE)
-    .where("office_code", office_code)
-    .orderBy("department_code", "desc")
-    .first();
-
-  if (!lastRow) {
-    return `${PREFIX}${officePrefix}${String(1).padStart(SEQUENCE_PAD_LENGTH, "0")}`;
-  }
-
-  // if (!lastRow) {
-  //   return PREFIX + String(1).padStart(SEQUENCE_PAD_LENGTH, "0");
-  // }
-
-  const lastCode = lastRow.department_code;
-  const lastSequenceStr = lastCode.slice(-SEQUENCE_PAD_LENGTH);
-  const lastSequence = parseInt(lastSequenceStr, 10);
-  // const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
-  // const newNumber = lastNumber + 1;
-  const newSequence = lastSequence + 1;
-  // return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
-  return `${PREFIX}${officePrefix}${String(newSequence).padStart(SEQUENCE_PAD_LENGTH, "0")}`;
-}
 
 /**
  * Get all master department.
@@ -130,6 +94,30 @@ export const getMasterDepartmentsById = async (
     .first();
 };
 
+
+export const getMasterDepartmentByCode = async (
+  departmentCode: string
+): Promise<any | null> => {
+  return await db(DEPARTMENT_TABLE)
+    .select(
+      `${DEPARTMENT_TABLE}.id`,
+      `${DEPARTMENT_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.name as office_name`, // Ambil nama kantor
+      `${DEPARTMENT_TABLE}.name`,
+      `${DEPARTMENT_TABLE}.description`,
+      `${DEPARTMENT_TABLE}.created_at`,
+      `${DEPARTMENT_TABLE}.updated_at`
+    )
+    .leftJoin(
+      OFFICE_TABLE,
+      `${DEPARTMENT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    )
+    .where(`${DEPARTMENT_TABLE}.department_code`, departmentCode)
+    .first();
+};
+
 /**
  * Creates new department.
  */
@@ -182,28 +170,6 @@ export async function removeMasterDepartments(id: number): Promise<number> {
   return db(DEPARTMENT_TABLE).where({ id }).delete();
 }
 
-export const getMasterDepartmentByCode = async (
-  departmentCode: string
-): Promise<any | null> => {
-  return await db(DEPARTMENT_TABLE)
-    .select(
-      `${DEPARTMENT_TABLE}.id`,
-      `${DEPARTMENT_TABLE}.department_code`,
-      `${DEPARTMENT_TABLE}.office_code`,
-      `${OFFICE_TABLE}.name as office_name`, // Ambil nama kantor
-      `${DEPARTMENT_TABLE}.name`,
-      `${DEPARTMENT_TABLE}.description`,
-      `${DEPARTMENT_TABLE}.created_at`,
-      `${DEPARTMENT_TABLE}.updated_at`
-    )
-    .leftJoin(
-      OFFICE_TABLE,
-      `${DEPARTMENT_TABLE}.office_code`,
-      `${OFFICE_TABLE}.office_code`
-    )
-    .where(`${DEPARTMENT_TABLE}.department_code`, departmentCode)
-    .first();
-};
 
 export const getMasterOfficeByCode = async (
   officeCode: string
