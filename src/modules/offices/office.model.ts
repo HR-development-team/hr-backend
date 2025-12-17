@@ -66,14 +66,20 @@ export const getMasterOfficeById = async (
 export const getPaginatedOffices = async (
   page: number,
   limit: number,
-  officeCode: string | null,
+  userOfficeCode: string | null,
   search?: string
 ): Promise<GetAllOffices[]> => {
   const offset = (page - 1) * limit;
 
-  if (!officeCode) return [];
+  if (!userOfficeCode) return [];
 
-  let query: Knex.QueryBuilder = officeHierarchyQuery(officeCode).select("*");
+  let query: Knex.QueryBuilder = officeHierarchyQuery(userOfficeCode)
+    .select("office_tree.*", "parent.name as parent_office_name")
+    .leftJoin(
+      `${OFFICE_TABLE} as parent`,
+      "office_tree.parent_office_code",
+      "parent.office_code"
+    );
 
   if (search) {
     query = query.where((builder) => {
