@@ -8,6 +8,7 @@ import {
   getMasterEmployeesByCode,
 } from "@modules/employees/employee.model.js";
 import { updateProfileSchema } from "./profile.schemas.js";
+import { getRoleByCode } from "@modules/roles/role.model.js";
 
 /**
  * [GET] /profile - Fetch employee profile
@@ -17,6 +18,7 @@ export const fetchEmployeeProfile = async (
   res: Response
 ) => {
   const employeeCode = req.user!.employee_code;
+  const roleCode = req.user!.role_code;
 
   if (!employeeCode) {
     return errorResponse(
@@ -28,9 +30,10 @@ export const fetchEmployeeProfile = async (
   }
 
   try {
-    const profile = await getMasterEmployeesByCode(employeeCode);
+    const employee = await getMasterEmployeesByCode(employeeCode);
+    const role = await getRoleByCode(roleCode);
 
-    if (!profile) {
+    if (!employee) {
       appLogger.error(
         `FATAL: User ID ${req.user!.id} has no linked Employee profile.`
       );
@@ -42,13 +45,28 @@ export const fetchEmployeeProfile = async (
       );
     }
 
+    if (!role) {
+      appLogger.error(`FATAL: User ID ${req.user!.id} has no linked Role.`);
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Role tidak ditemukan.",
+        404
+      );
+    }
+
+    const profile = {
+      ...employee,
+      role_name: role.name,
+    };
+
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data profil berhasil didapatkan.",
       profile,
       200,
-      RESPONSE_DATA_KEYS.USERS // Assuming EMPLOYEE is the key for single profile data
+      RESPONSE_DATA_KEYS.USERS
     );
   } catch (error) {
     appLogger.error(
