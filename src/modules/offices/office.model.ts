@@ -44,23 +44,6 @@ async function generateOfficeCode() {
 // ==========================================================================
 
 /**
- * Get office by ID.
- */
-export const getMasterOfficeById = async (
-  id: number,
-  officeCode: string | null
-): Promise<GetOfficeById | null> => {
-  if (!officeCode) return null;
-
-  const result = await officeHierarchyQuery(officeCode)
-    .select("*")
-    .where("office_tree.id", id)
-    .first();
-
-  return formatOfficeLocation(result);
-};
-
-/**
  * [BARU] Mengambil list kantor dengan PAGINATION
  */
 export const getPaginatedOffices = async (
@@ -96,6 +79,45 @@ export const getPaginatedOffices = async (
     .orderBy("id", "asc");
 
   return result.map(formatOfficeLocation);
+};
+
+/**
+ * Get office by ID.
+ */
+export const getMasterOfficeById = async (
+  id: number,
+  officeCode: string | null
+): Promise<GetOfficeById | null> => {
+  if (!officeCode) return null;
+
+  const result = await officeHierarchyQuery(officeCode)
+    .select("office_tree.*", "parent.name as parent_office_name")
+    .leftJoin(
+      `${OFFICE_TABLE} as parent`,
+      "office_tree.parent_office_code",
+      "parent.office_code"
+    )
+    .where("office_tree.id", id)
+    .first();
+
+  return formatOfficeLocation(result);
+};
+
+export const getMasterOfficeByCode = async (
+  officeCodeParams: string,
+  officeCode: string | null
+): Promise<GetOfficeById | null> => {
+  const result = await officeHierarchyQuery(officeCode)
+    .select("office_tree.*", "parent.name as parent_office_name")
+    .leftJoin(
+      `${OFFICE_TABLE} as parent`,
+      "office_tree.parent_office_code",
+      "parent.office_code"
+    )
+    .where("office_tree.office_code", officeCodeParams)
+    .first();
+
+  return formatOfficeLocation(result);
 };
 
 export const getOfficeReference = async (
@@ -211,18 +233,6 @@ export const editMasterOffice = async (
 
 export const removeMasterOffice = async (id: number): Promise<number> =>
   await db(OFFICE_TABLE).where({ id }).delete();
-
-export const getMasterOfficeByCode = async (
-  officeCodeParams: string,
-  officeCode: string | null
-): Promise<GetOfficeById | null> => {
-  const result = await officeHierarchyQuery(officeCode)
-    .select("*")
-    .where("office_tree.office_code", officeCodeParams)
-    .first();
-
-  return formatOfficeLocation(result);
-};
 
 export const hasChildOffices = async (officeCode: string): Promise<boolean> => {
   const result = await db(OFFICE_TABLE)

@@ -8,6 +8,7 @@ import { findUserByEmail } from "./auth.model.js";
 import { comparePassword } from "@utils/bcrypt.js";
 import { AuthenticatedRequest } from "@middleware/jwt.js";
 import { getMasterEmployeesByUserCode } from "@modules/employees/employee.model.js";
+import { getRoleByCode } from "@modules/roles/role.model.js";
 
 /**
  * [POST] /api/v1/auth/login - Login User (Employee or Admin)
@@ -55,6 +56,9 @@ export const loginUser = async (req: Request, res: Response) => {
     // get employee code based on user code
     const employee = await getMasterEmployeesByUserCode(user.user_code);
 
+    // get role name based on role_code
+    const role = await getRoleByCode(user.role_code);
+
     // generate token phase
     const userResponse = {
       id: user.id,
@@ -63,6 +67,7 @@ export const loginUser = async (req: Request, res: Response) => {
       office_code: employee?.office_code || null,
       employee_code: employee?.employee_code || null,
       role_code: user.role_code,
+      role_name: role?.name,
     };
     const token = await generateToken(userResponse);
 

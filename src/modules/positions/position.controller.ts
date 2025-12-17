@@ -17,6 +17,8 @@ import {
   deletePositionById,
 } from "./position.model.js";
 import { OrganizationTree, PositionRaw } from "./position.types.js";
+import { API_STATUS, RESPONSE_DATA_KEYS } from "@common/constants/general.js";
+import { successResponse } from "@common/utils/response.js";
 
 // --- [HELPER 1] ALGORITMA PENYUSUN POHON ---
 const buildOrganizationTree = (items: PositionRaw[]): OrganizationTree[] => {
@@ -101,13 +103,14 @@ export const fetchOrganizationTree = async (req: Request, res: Response) => {
     const rawPositions = await getPositionsByOffice(office_id);
     const organizationTree = buildOrganizationTree(rawPositions);
 
-    return res.status(200).json({
-      status: "00",
-      message: `Data Organisasi ${office.name} Berhasil Didapatkan`,
-      office_code: office.office_code,
-      datetime: datetime,
-      organizations: organizationTree,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      `Data Organisasi ${office.name} Berhasil Didapatkan`,
+      organizationTree,
+      200,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching organization tree: ${dbError}`);
@@ -143,12 +146,14 @@ export const fetchPositionList = async (req: Request, res: Response) => {
 
     const positions = await getAllPositions(office_code as string);
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Jabatan Berhasil Didapatkan",
-      datetime: datetime,
-      positions: positions,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Jabatan Berhasil Didapatkan",
+      positions,
+      200,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching positions list: ${dbError}`);
@@ -205,12 +210,14 @@ export const fetchPositionById = async (req: Request, res: Response) => {
       updated_at: rawPosition.updated_at,
     };
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Posisi Berhasil Didapatkan",
-      datetime: datetime,
-      positions: formattedPosition,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Jabatan Berhasil Didapatkan",
+      formattedPosition,
+      200,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching position by id: ${dbError}`);
@@ -260,12 +267,14 @@ export const fetchPositionByCode = async (req: Request, res: Response) => {
       updated_at: rawPosition.updated_at,
     };
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Posisi Berhasil Didapatkan",
-      datetime: datetime,
-      positions: formattedPosition,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Jabatan Berhasil Didapatkan",
+      formattedPosition,
+      200,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching position by code: ${dbError}`);
@@ -378,12 +387,14 @@ export const createNewPosition = async (req: Request, res: Response) => {
       description: createdPosition.description,
     };
 
-    return res.status(201).json({
-      status: "00",
-      message: "Data Posisi Berhasil Ditambahkan",
-      datetime: datetime,
-      positions: responseData,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Jabatan Berhasil Ditambahkan",
+      responseData,
+      200,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error creating position: ${dbError}`);
