@@ -34,6 +34,7 @@ export const fetchAllMasterDivisions = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
     const search = (req.query.search as string) || "";
+    const deptCode = (req.query.department_code as string) || "";
 
     const currentUser = req.user!;
 
@@ -41,7 +42,8 @@ export const fetchAllMasterDivisions = async (
       page,
       limit,
       currentUser.office_code,
-      search
+      search,
+      deptCode
     );
 
     return successResponse(

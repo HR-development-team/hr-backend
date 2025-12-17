@@ -22,7 +22,8 @@ export const getAllMasterDivision = async (
   page: number,
   limit: number,
   userOfficeCode: string | null,
-  search: string
+  search: string,
+  deptCode: string
 ): Promise<GetAllDivision[]> => {
   const offset = (page - 1) * limit;
 
@@ -56,6 +57,16 @@ export const getAllMasterDivision = async (
       builder
         .where(`${DIVISION_TABLE}.division_code`, "like", `%${search}%`)
         .orWhere(`${DIVISION_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  if (deptCode) {
+    query.andWhere((builder) => {
+      builder.where(
+        `${DIVISION_TABLE}.department_code`,
+        "like",
+        `%${deptCode}%`
+      );
     });
   }
 
