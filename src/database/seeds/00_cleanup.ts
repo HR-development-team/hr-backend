@@ -4,7 +4,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Matikan Foreign Key Check
   await knex.raw("SET FOREIGN_KEY_CHECKS = 0");
 
-  const tables = [  
+  const tables = [
     "attendances",
     "attendance_sessions",
     "leave_balances",
@@ -16,6 +16,8 @@ export async function seed(knex: Knex): Promise<void> {
     "master_departments",
     "master_offices",
     "master_leave_types",
+    "role_permissions",
+    "features",
     "roles",
     "payroll_periods",
   ];

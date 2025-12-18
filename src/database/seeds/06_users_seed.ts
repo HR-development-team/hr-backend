@@ -16,25 +16,25 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000002",
       email: "siti.rahmawati@company.com",
       password: hashedPassword,
-      role_code: "ROL0000005",
+      role_code: "ROL0000002",
     },
     {
       user_code: "USR0000003",
       email: "andi.setiawan@company.com",
       password: hashedPassword,
-      role_code: "ROL0000005",
+      role_code: "ROL0000003",
     },
     {
       user_code: "USR0000004",
       email: "dewi.kartika@company.com",
       password: hashedPassword,
-      role_code: "ROL0000004",
+      role_code: "ROL0000002",
     },
     {
       user_code: "USR0000005",
       email: "rina.kusuma@company.com",
       password: hashedPassword,
-      role_code: "ROL0000005", // OfficeStaff
+      role_code: "ROL0000003",
       session_token: null,
       login_date: null,
     },
@@ -42,7 +42,7 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000006",
       email: "dimas.anggara@company.com",
       password: hashedPassword,
-      role_code: "ROL0000005", // OfficeStaff
+      role_code: "ROL0000002", // OfficeStaff
       session_token: null,
       login_date: null,
     },
@@ -50,7 +50,7 @@ export async function seed(knex: Knex): Promise<void> {
       user_code: "USR0000007",
       email: "eko.prasetyo@company.com",
       password: hashedPassword,
-      role_code: "ROL0000005", // OfficeStaff
+      role_code: "ROL0000002", // OfficeStaff
       session_token: null,
       login_date: null,
     },
