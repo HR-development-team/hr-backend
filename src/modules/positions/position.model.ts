@@ -6,7 +6,15 @@ import {
   DEPARTMENT_TABLE,
   DIVISION_TABLE,
 } from "@constants/database.js";
-import { PositionRaw } from "./position.types.js";
+import {
+  CreatePosition,
+  GetAllPosition,
+  GetPositionById,
+  Position,
+  PositionRaw,
+} from "./position.types.js";
+import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
+import { positionSortOrder } from "./position.helper.js";
 
 /**
  * 1. Validasi apakah Kantor Ada
@@ -64,83 +72,90 @@ export const getPositionsByOffice = async (
 /**
  * 3. Ambil List Jabatan (Bisa filter by Office Code)
  */
-export const getAllPositions = async (officeCode?: string) => {
+export const getAllPositions = async (
+  page: number,
+  limit: number,
+  userOfficeCode: string | null,
+  search: string,
+  divCode: string
+): Promise<GetAllPosition[]> => {
+  const offset = (page - 1) * limit;
+
   const query = db(POSITION_TABLE)
     .select(
-      `${POSITION_TABLE}.id`,
-      `${POSITION_TABLE}.position_code`,
-      `${POSITION_TABLE}.division_code`,
-      `${POSITION_TABLE}.parent_position_code`,
-      `${POSITION_TABLE}.name`,
-      `${POSITION_TABLE}.base_salary`,
-      `${POSITION_TABLE}.sort_order`,
-      `${POSITION_TABLE}.description`
+      `${POSITION_TABLE}.*`,
+      `${OFFICE_TABLE}.name as office_name`,
+      `${OFFICE_TABLE}.office_code`,
+      `${DEPARTMENT_TABLE}.name as department_name`,
+      `${DEPARTMENT_TABLE}.department_code`,
+      `${DIVISION_TABLE}.name as division_name`,
+      `${DIVISION_TABLE}.division_code`
     )
-    .orderBy(`${POSITION_TABLE}.sort_order`, "asc");
+    .leftJoin(
+      `${DIVISION_TABLE}`,
+      `${POSITION_TABLE}.division_code`,
+      `${DIVISION_TABLE}.division_code`
+    )
+    .leftJoin(
+      `${DEPARTMENT_TABLE}`,
+      `${DIVISION_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.department_code`
+    )
+    .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${DEPARTMENT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    );
 
-  if (officeCode) {
-    query
-      .leftJoin(
-        DIVISION_TABLE,
-        `${POSITION_TABLE}.division_code`,
-        `${DIVISION_TABLE}.division_code`
-      )
-      .leftJoin(
-        DEPARTMENT_TABLE,
-        `${DIVISION_TABLE}.department_code`,
-        `${DEPARTMENT_TABLE}.department_code`
-      )
-      .leftJoin(
-        OFFICE_TABLE,
-        `${DEPARTMENT_TABLE}.office_code`,
-        `${OFFICE_TABLE}.office_code`
-      )
-      .where(`${OFFICE_TABLE}.office_code`, officeCode);
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
   }
 
-  return await query;
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${POSITION_TABLE}.position_code`, "like", `%${search}%`)
+        .orWhere(`${POSITION_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  if (divCode) {
+    query.andWhere((builder) => {
+      builder.where(`${POSITION_TABLE}.division_code`, "like", `%${divCode}%`);
+    });
+  }
+
+  return query
+    .limit(limit)
+    .offset(offset)
+    .orderBy(`${POSITION_TABLE}.sort_order`, "asc");
 };
 
 /**
  * 4. Ambil Detail Jabatan by ID
  */
-export const getPositionById = async (id: number) => {
-  return await db(`${POSITION_TABLE} as p`)
+export const getPositionById = async (id: number): Promise<GetPositionById> => {
+  return await db(`${POSITION_TABLE} as pos`)
     .select(
-      "p.*",
-      "div.name as division_name",
-      "div.department_code",
-      "parent.name as parent_position_name"
-    )
-    .leftJoin(
-      `${DIVISION_TABLE} as div`,
-      "p.division_code",
-      "div.division_code"
+      "pos.*",
+      "parent.name as parent_position_name",
+      "ofc.name as office_name",
+      "ofc.office_code",
+      "dept.name as department_name",
+      "dept.department_code",
+      "div.name as division_name"
     )
     .leftJoin(
       `${POSITION_TABLE} as parent`,
-      "p.parent_position_code",
+      "pos.parent_position_code",
       "parent.position_code"
-    )
-    .where("p.id", id)
-    .first();
-};
-
-/**
- * 5. Ambil Detail Jabatan by CODE (String)
- */
-export const getPositionByCode = async (code: string) => {
-  return await db(`${POSITION_TABLE} as p`)
-    .select(
-      "p.*",
-      "div.name as division_name",
-      "dept.department_code",
-      "dept.name as department_name",
-      "parent.name as parent_position_name"
     )
     .leftJoin(
       `${DIVISION_TABLE} as div`,
-      "p.division_code",
+      "pos.division_code",
       "div.division_code"
     )
     .leftJoin(
@@ -148,12 +163,42 @@ export const getPositionByCode = async (code: string) => {
       "div.department_code",
       "dept.department_code"
     )
+    .leftJoin(`${OFFICE_TABLE} as ofc`, "dept.office_code", "ofc.office_code")
+    .where("pos.id", id)
+    .first();
+};
+
+/**
+ * 5. Ambil Detail Jabatan by CODE (String)
+ */
+export const getPositionByCode = async (code: string) => {
+  return await db(`${POSITION_TABLE} as pos`)
+    .select(
+      "pos.*",
+      "parent.name as parent_position_name",
+      "ofc.name as office_name",
+      "ofc.office_code",
+      "dept.name as department_name",
+      "dept.department_code",
+      "div.name as division_name"
+    )
     .leftJoin(
       `${POSITION_TABLE} as parent`,
-      "p.parent_position_code",
+      "pos.parent_position_code",
       "parent.position_code"
     )
-    .where("p.position_code", code)
+    .leftJoin(
+      `${DIVISION_TABLE} as div`,
+      "pos.division_code",
+      "div.division_code"
+    )
+    .leftJoin(
+      `${DEPARTMENT_TABLE} as dept`,
+      "div.department_code",
+      "dept.department_code"
+    )
+    .leftJoin(`${OFFICE_TABLE} as ofc`, "dept.office_code", "ofc.office_code")
+    .where("pos.position_code", code)
     .first();
 };
 
@@ -201,16 +246,30 @@ export const generateNextPositionCode = async () => {
 /**
  * 9. Insert Position Baru
  */
-export const createPosition = async (data: {
-  position_code: string;
-  division_code: string;
-  parent_position_code: string | null;
-  name: string;
-  base_salary: number;
-  sort_order: number;
-  description?: string;
-}) => {
-  const [id] = await db(POSITION_TABLE).insert(data);
+export const addMasterPosition = async (
+  data: CreatePosition
+): Promise<Position> => {
+  const {
+    parent_position_code,
+    division_code,
+    name,
+    base_salary,
+    description,
+  } = data;
+
+  const position_code = await generateNextPositionCode();
+  const sort_order = await positionSortOrder();
+
+  const [id] = await db(POSITION_TABLE).insert({
+    position_code,
+    division_code,
+    parent_position_code,
+    name,
+    base_salary,
+    sort_order,
+    description,
+  });
+
   return await db(POSITION_TABLE).where("id", id).first();
 };
 

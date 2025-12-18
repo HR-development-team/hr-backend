@@ -107,7 +107,7 @@ export const fetchMasterDivisionsById = async (
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
-        "Anda tidak memiliki wewenang untuk melihat departemen ini",
+        "Anda tidak memiliki wewenang untuk melihat divisi ini",
         403
       );
     }

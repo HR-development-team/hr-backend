@@ -5,9 +5,9 @@ import {
   fetchPositionList,
   fetchPositionById,
   fetchPositionByCode,
-  createNewPosition,
-  updatePositionDetails,
-  deletePositionDetails,
+  createMasterPositions,
+  updateMasterPosition,
+  destroyMasterPositions,
 } from "./position.controller.js";
 
 const router = Router();
@@ -22,9 +22,9 @@ router.get("/", fetchPositionList);
 
 router.get("/:id", fetchPositionById);
 router.get("/code/:position_code", fetchPositionByCode);
-router.post("/", createNewPosition);
-router.put("/:id", updatePositionDetails);
-router.delete("/:id", deletePositionDetails);
+router.post("/", createMasterPositions);
+router.put("/:id", updateMasterPosition);
+router.delete("/:id", destroyMasterPositions);
 router.get("/:id", fetchPositionById);
 
 export default router;

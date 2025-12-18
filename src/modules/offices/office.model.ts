@@ -8,36 +8,12 @@ import {
   OfficeReference,
   UpdateOffice,
 } from "./office.types.js";
-import { formatOfficeLocation, officeHierarchyQuery } from "./office.helper.js";
+import {
+  formatOfficeLocation,
+  generateOfficeCode,
+  officeHierarchyQuery,
+} from "./office.helper.js";
 import { Knex } from "knex";
-
-// ==========================================================================
-// 2. INTERNAL HELPER
-// ==========================================================================
-async function generateOfficeCode() {
-  const PREFIX = "OFC";
-  const PAD_LENGTH = 7;
-
-  const lastRow = await db(OFFICE_TABLE)
-    .select("office_code")
-    .orderBy("id", "desc")
-    .first();
-
-  if (!lastRow) {
-    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
-  }
-
-  const lastCode = lastRow.office_code;
-  const lastNumberString = lastCode.replace(PREFIX, "");
-  const lastNumber = parseInt(lastNumberString, 10);
-
-  if (isNaN(lastNumber)) {
-    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
-  }
-
-  const newNumber = lastNumber + 1;
-  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
-}
 
 // ==========================================================================
 // 3. MAIN EXPORTED FUNCTIONS
@@ -86,11 +62,11 @@ export const getPaginatedOffices = async (
  */
 export const getMasterOfficeById = async (
   id: number,
-  officeCode: string | null
+  userOfficeCode: string | null
 ): Promise<GetOfficeById | null> => {
-  if (!officeCode) return null;
+  if (!userOfficeCode) return null;
 
-  const result = await officeHierarchyQuery(officeCode)
+  const result = await officeHierarchyQuery(userOfficeCode)
     .select("office_tree.*", "parent.name as parent_office_name")
     .leftJoin(
       `${OFFICE_TABLE} as parent`,
