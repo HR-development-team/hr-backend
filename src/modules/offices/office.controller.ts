@@ -334,7 +334,6 @@ export const updateMasterOffice = async (
   try {
     const id = parseInt(req.params.id, 10);
     const currentUser = req.user!;
-    const parentOfficeCode = req.body.parent_office_code;
 
     if (isNaN(id)) {
       return errorResponse(res, API_STATUS.BAD_REQUEST, "ID tidak valid.", 400);
@@ -348,7 +347,7 @@ export const updateMasterOffice = async (
         API_STATUS.BAD_REQUEST,
         "Validasi gagal",
         400,
-        validation.error.errors.map((err: any) => ({
+        validation.error.errors.map((err) => ({
           field: err.path[0],
           message: err.message,
         }))
@@ -390,43 +389,22 @@ export const updateMasterOffice = async (
       );
     }
 
+    const newParentCode = validation.data.parent_office_code;
+
     // --- LOGIKA PENGECEKAN CIRCULAR REFERENCE ---
-    if (validation.data.parent_office_code) {
-      const currentOffice = await getMasterOfficeById(
-        id,
-        currentUser.office_code
-      );
-
-      if (
-        currentOffice &&
-        validation.data.parent_office_code === currentOffice.office_code
-      ) {
-        return errorResponse(
-          res,
-          "99",
-          "Tidak dapat membuat referensi melingkar dalam organisasi",
-          400
-        );
-      }
-    }
-
-    // logika check scope user office code (selesai)
-    if (
-      parentOfficeCode &&
-      parentOfficeCode !== existingOffice.parent_office_code
-    ) {
-      if (parentOfficeCode === existingOffice.office_code) {
+    if (newParentCode && newParentCode !== existingOffice.parent_office_code) {
+      if (newParentCode === existingOffice.office_code) {
         return errorResponse(
           res,
           API_STATUS.BAD_REQUEST,
-          "Referensi melingkar terdeteksi",
+          "Tidak dapat membuat referensi melingkar dalam organisasi",
           400
         );
       }
 
       const isNewParentAllowed = await checkOfficeScope(
         currentUser.office_code,
-        parentOfficeCode
+        newParentCode
       );
 
       if (!isNewParentAllowed) {
@@ -447,28 +425,25 @@ export const updateMasterOffice = async (
       ...validation.data,
     });
 
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
-
     // 3. Handle 404 Not Found (Status "03")
     if (!updatedOffice) {
-      return res.status(404).json({
-        status: "03",
-        message: "Kantor tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Kantor tidak ditemukan",
+        404
+      );
     }
 
     // 4. Handle Success 200 OK (Status "00")
-    return res.status(200).json({
-      status: "00",
-      message: "Data Kantor Berhasil Diperbarui",
-      datetime: datetime,
-      offices: updatedOffice,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Kantor Berhasil Diperbarui",
+      updatedOffice,
+      200,
+      RESPONSE_DATA_KEYS.OFFICES
+    );
   } catch (error) {
     appLogger.error(`Error editing office: ${error}`);
     return errorResponse(

@@ -1,5 +1,4 @@
 import { DIVISION_TABLE } from "@common/constants/database.js";
-import { GetDivisionById } from "./division.types.js";
 import { db } from "@database/connection.js";
 
 /**
@@ -46,7 +45,7 @@ export async function generateDivisionCode(
 export const isDivisionNameExist = async (
   departmentCode: string,
   name: string
-): Promise<GetDivisionById> => {
+): Promise<Boolean> => {
   const result = await db(DIVISION_TABLE)
     .where({
       department_code: departmentCode,
@@ -54,9 +53,5 @@ export const isDivisionNameExist = async (
     })
     .first();
 
-  return result;
+  return !!result;
 };
-
-export const duplicateCheckHelper = () => {
-  
-}

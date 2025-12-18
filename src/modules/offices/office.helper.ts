@@ -4,6 +4,34 @@ import { Knex } from "knex";
 import { GetOfficeById } from "./office.types.js";
 
 // ==========================================================================
+// 2. INTERNAL HELPER
+// ==========================================================================
+export async function generateOfficeCode() {
+  const PREFIX = "OFC";
+  const PAD_LENGTH = 7;
+
+  const lastRow = await db(OFFICE_TABLE)
+    .select("office_code")
+    .orderBy("id", "desc")
+    .first();
+
+  if (!lastRow) {
+    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
+  }
+
+  const lastCode = lastRow.office_code;
+  const lastNumberString = lastCode.replace(PREFIX, "");
+  const lastNumber = parseInt(lastNumberString, 10);
+
+  if (isNaN(lastNumber)) {
+    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
+  }
+
+  const newNumber = lastNumber + 1;
+  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
+}
+
+// ==========================================================================
 // office hierarchy query helper
 // ==========================================================================
 

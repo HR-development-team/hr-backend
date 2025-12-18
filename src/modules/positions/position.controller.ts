@@ -1,82 +1,32 @@
 import { Request, Response } from "express";
 import { appLogger } from "@utils/logger.js";
-import { z, ZodError } from "zod"; // <--- 1. IMPORT ZOD DISINI
 import {
   getPositionsByOffice,
   getAllPositions,
   getOfficeByCodeOrId,
   getPositionById,
   getPositionByCode,
-  checkDivisionExists,
   checkPositionExists,
-  generateNextPositionCode,
-  createPosition,
   updatePosition, // <--- [FIX 1] Import ini tadi hilang
   countEmployeesByPositionCode,
   countChildPositionsByCode,
   deletePositionById,
+  addMasterPosition,
 } from "./position.model.js";
-import { OrganizationTree, PositionRaw } from "./position.types.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@common/constants/general.js";
-import { successResponse } from "@common/utils/response.js";
-
-// --- [HELPER 1] ALGORITMA PENYUSUN POHON ---
-const buildOrganizationTree = (items: PositionRaw[]): OrganizationTree[] => {
-  const dataMap: { [key: string]: OrganizationTree } = {};
-
-  items.forEach((item) => {
-    dataMap[item.position_code] = {
-      position_code: item.position_code,
-      name: item.name,
-      employee_code: item.employee_code,
-      employee_name: item.employee_name,
-      children: [],
-    };
-  });
-
-  const tree: OrganizationTree[] = [];
-
-  items.forEach((item) => {
-    const node = dataMap[item.position_code];
-    if (item.parent_position_code && dataMap[item.parent_position_code]) {
-      dataMap[item.parent_position_code].children.push(node);
-    } else {
-      tree.push(node);
-    }
-  });
-
-  return tree;
-};
-
-// --- [HELPER 2] CEK CIRCULAR REFERENCE (Untuk Update) ---
-// [FIX 2] Fungsi ini tadi hilang, sekarang ditambahkan kembali
-const isCircularReference = async (
-  myPositionCode: string,
-  targetParentCode: string
-): Promise<boolean> => {
-  // 1. Cek Self-Reference
-  if (myPositionCode === targetParentCode) return true;
-
-  // 2. Cek Ancestry (Telusuri ke atas)
-  let currentCode: string | null = targetParentCode;
-
-  while (currentCode) {
-    const parentNode = await getPositionByCode(currentCode);
-
-    // Jika data putus/tidak ketemu, berhenti
-    if (!parentNode) break;
-
-    // Jika bapaknya si target ternyata adalah SAYA, berarti circular!
-    if (parentNode.parent_position_code === myPositionCode) {
-      return true;
-    }
-
-    // Lanjut naik ke atas
-    currentCode = parentNode.parent_position_code;
-  }
-
-  return false;
-};
+import { errorResponse, successResponse } from "@common/utils/response.js";
+import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { checkOfficeScope } from "@modules/offices/office.helper.js";
+import { getMasterDivisionsByCode } from "@modules/divisions/division.model.js";
+import { getMasterDepartmentByCode } from "@modules/departments/department.model.js";
+import {
+  addMasterPositionsSchema,
+  updateMasterPositionsSchema,
+} from "./position.schemas.js";
+import {
+  buildOrganizationTree,
+  isPositionNameExist,
+} from "./position.helper.js";
 
 /**
  * 1. [GET] Organization Tree
@@ -84,20 +34,16 @@ const isCircularReference = async (
 export const fetchOrganizationTree = async (req: Request, res: Response) => {
   try {
     const { office_id } = req.params;
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
 
     const office = await getOfficeByCodeOrId(office_id);
 
     if (!office) {
-      return res.status(404).json({
-        error: true,
-        message: "Kantor tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Kantor tidak ditemukan",
+        404
+      );
     }
 
     const rawPositions = await getPositionsByOffice(office_id);
@@ -114,37 +60,37 @@ export const fetchOrganizationTree = async (req: Request, res: Response) => {
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching organization tree: ${dbError}`);
-    return res.status(500).json({
-      status: "01",
-      message: "Terjadi kesalahan pada server",
-    });
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
 
 /**
  * 2. [GET] Position List
  */
-export const fetchPositionList = async (req: Request, res: Response) => {
+export const fetchPositionList = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const { office_code } = req.query;
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.search as string) || "";
+    const divCode = (req.query.division_code as string) || "";
 
-    if (office_code) {
-      const office = await getOfficeByCodeOrId(office_code as string);
-      if (!office) {
-        return res.status(404).json({
-          error: true,
-          message: "Kantor tidak ditemukan",
-          datetime: datetime,
-        });
-      }
-    }
+    const currentUser = req.user!;
 
-    const positions = await getAllPositions(office_code as string);
+    const positions = await getAllPositions(
+      page,
+      limit,
+      currentUser.office_code,
+      search,
+      divCode
+    );
 
     return successResponse(
       res,
@@ -157,340 +103,297 @@ export const fetchPositionList = async (req: Request, res: Response) => {
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching positions list: ${dbError}`);
-    return res.status(500).json({
-      status: "01",
-      message: "Terjadi kesalahan pada server",
-    });
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
 
 /**
  * 3. [GET] Position By ID
  */
-export const fetchPositionById = async (req: Request, res: Response) => {
+export const fetchPositionById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     const { id } = req.params;
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
 
     const positionId = Number(id);
     if (isNaN(positionId)) {
-      return res.status(400).json({
-        status: "01",
-        message: "ID Posisi harus berupa angka",
-      });
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "ID Jabatan harus berupa angka",
+        400
+      );
     }
 
-    const rawPosition = await getPositionById(positionId);
+    const position = await getPositionById(positionId);
 
-    if (!rawPosition) {
-      return res.status(404).json({
-        status: "03",
-        message: "Posisi tidak ditemukan",
-        datetime: datetime,
-      });
+    if (!position) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Posisi tidak ditemukan",
+        404
+      );
     }
 
-    const formattedPosition = {
-      id: rawPosition.id,
-      position_code: rawPosition.position_code,
-      division_code: rawPosition.division_code,
-      department_code: rawPosition.department_code,
-      division_name: rawPosition.division_name,
-      parent_position_code: rawPosition.parent_position_code,
-      parent_position_name: rawPosition.parent_position_name,
-      name: rawPosition.name,
-      base_salary: parseFloat(rawPosition.base_salary),
-      sort_order: rawPosition.sort_order,
-      description: rawPosition.description,
-      created_at: rawPosition.created_at,
-      updated_at: rawPosition.updated_at,
-    };
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      position.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang untuk melihat jabatan ini",
+        403
+      );
+    }
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data Jabatan Berhasil Didapatkan",
-      formattedPosition,
+      position,
       200,
       RESPONSE_DATA_KEYS.POSITIONS
     );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching position by id: ${dbError}`);
-    return res.status(500).json({
-      status: "01",
-      message: "Terjadi kesalahan pada server",
-    });
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
 
 /**
  * 4. [GET] Position By Code
  */
-export const fetchPositionByCode = async (req: Request, res: Response) => {
+export const fetchPositionByCode = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     const { position_code } = req.params;
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
 
-    const rawPosition = await getPositionByCode(position_code);
+    const position = await getPositionByCode(position_code);
 
-    if (!rawPosition) {
-      return res.status(404).json({
-        status: "03",
-        message: "Posisi tidak ditemukan",
-        datetime: datetime,
-      });
+    if (!position) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Posisi tidak ditemukan",
+        404
+      );
     }
 
-    const formattedPosition = {
-      id: rawPosition.id,
-      position_code: rawPosition.position_code,
-      department_code: rawPosition.department_code,
-      department_name: rawPosition.department_name,
-      division_code: rawPosition.division_code,
-      division_name: rawPosition.division_name,
-      parent_position_code: rawPosition.parent_position_code,
-      parent_position_name: rawPosition.parent_position_name,
-      name: rawPosition.name,
-      base_salary: parseFloat(rawPosition.base_salary),
-      sort_order: rawPosition.sort_order,
-      description: rawPosition.description,
-      created_at: rawPosition.created_at,
-      updated_at: rawPosition.updated_at,
-    };
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      position.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang melihat jabatan ini",
+        403
+      );
+    }
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data Jabatan Berhasil Didapatkan",
-      formattedPosition,
+      position,
       200,
       RESPONSE_DATA_KEYS.POSITIONS
     );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching position by code: ${dbError}`);
-    return res.status(500).json({
-      status: "01",
-      message: "Terjadi kesalahan pada server",
-    });
+
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
 
 /**
  * 5. [POST] Create New Position
  */
-export const createNewPosition = async (req: Request, res: Response) => {
+export const createMasterPositions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+    const validation = addMasterPositionsSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Validasi gagal",
+        400,
+        validation.error.errors.map((err) => ({
+          field: err.path[0],
+          message: err.message,
+        }))
+      );
+    }
+
     const {
       division_code,
       parent_position_code,
       name,
       base_salary,
-      sort_order,
       description,
-    } = req.body;
+    } = validation.data;
 
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const parentDivision = await getMasterDivisionsByCode(division_code);
 
-    // 1. Validasi Input Dasar
-    if (!division_code || !name || !base_salary) {
-      return res.status(400).json({
-        status: "01",
-        message: "Field division_code, name, dan base_salary wajib diisi.",
-        datetime: datetime,
-      });
+    if (!parentDivision) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Divisi tidak ditemukan",
+        404
+      );
     }
 
-    // 2. Validasi Division Code
-    const isDivisionValid = await checkDivisionExists(division_code);
-    if (!isDivisionValid) {
-      return res.status(400).json({
-        status: "01",
-        message: `Division Code '${division_code}' tidak ditemukan.`,
-        datetime: datetime,
-      });
+    const parentDepartment = await getMasterDepartmentByCode(
+      parentDivision.department_code
+    );
+
+    if (!parentDepartment) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Departemen induk tidak ditemukan",
+        404
+      );
     }
 
-    // 3. Validasi Parent Position
-    if (parent_position_code) {
-      // 3a. Validasi Panjang Karakter (Harus 10)
-      if (parent_position_code.length !== 10) {
-        return res.status(400).json({
-          status: "01",
-          message:
-            "Parent Position Code harus tepat 10 karakter (Contoh: JBT0000001).",
-          datetime: datetime,
-        });
-      }
+    const isAllowed = await checkOfficeScope(
+      currentUser.office_code,
+      parentDepartment.office_code
+    );
 
-      // 3b. Cek Circular Reference DULUAN
-      const nextCode = await generateNextPositionCode();
-      if (parent_position_code === nextCode) {
-        return res.status(400).json({
-          status: "99",
-          message:
-            "Tidak dapat membuat referensi melingkar dalam organisasi posisi.",
-          datetime: datetime,
-        });
-      }
-
-      // 3c. Cek apakah Parent ada di database
-      const isParentValid = await checkPositionExists(parent_position_code);
-      if (!isParentValid) {
-        return res.status(400).json({
-          status: "01",
-          message: `Parent Position Code '${parent_position_code}' tidak ditemukan.`,
-          datetime: datetime,
-        });
-      }
+    if (!isAllowed) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses ke divisi ini",
+        403
+      );
     }
 
-    // 4. Generate Kode Baru
-    const newPositionCode = await generateNextPositionCode();
+    const isDuplicate = await isPositionNameExist(division_code, name);
 
-    // 5. Siapkan Data Insert
-    const newPositionData = {
-      position_code: newPositionCode,
+    if (isDuplicate) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Nama jabatan sudah ada di divisi ini",
+        400
+      );
+    }
+
+    const newOffice = await addMasterPosition({
       division_code,
       parent_position_code: parent_position_code || null,
       name,
-      base_salary: parseFloat(base_salary),
-      sort_order: sort_order || 0,
-      description: description || null,
-    };
-
-    // 6. Simpan ke Database
-    const createdPosition = await createPosition(newPositionData);
-
-    // 7. Format Respon (Bersih tanpa timestamps)
-    const responseData = {
-      id: createdPosition.id,
-      position_code: createdPosition.position_code,
-      division_code: createdPosition.division_code,
-      parent_position_code: createdPosition.parent_position_code,
-      name: createdPosition.name,
-      base_salary: parseFloat(createdPosition.base_salary),
-      sort_order: createdPosition.sort_order,
-      description: createdPosition.description,
-    };
+      base_salary,
+      description,
+    });
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data Jabatan Berhasil Ditambahkan",
-      responseData,
+      newOffice,
       200,
       RESPONSE_DATA_KEYS.POSITIONS
     );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error creating position: ${dbError}`);
-    return res.status(500).json({
-      status: "01",
-      message: "Terjadi kesalahan pada server",
-    });
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
-const updateMasterPositionsSchema = z
-  .object({
-    name: z
-      .string()
-      .min(3, "Nama posisi minimal 3 karakter")
-      .max(100, "Nama posisi maksimal 100 karakter")
-      .optional(),
-    division_code: z
-      .string()
-      .length(10, "Kode divisi harus tepat 10 karakter")
-      .optional(),
-    base_salary: z
-      .number({
-        invalid_type_error: "Gaji pokok harus berupa angka.",
-      })
-      .min(1000000, "Gaji pokok minimal 1.000.000")
-      .max(100000000, "Gaji pokok maksimal 100.000.000")
-      .optional(),
-    description: z
-      .string()
-      .max(500, "Deskripsi maksimal 500 karakter.")
-      .optional(),
-    parent_position_code: z.string().length(10).optional(),
-    sort_order: z.number().optional(),
-  })
-  .strict()
-  // LOGIKA: Mencegah body kosong
-  .refine((data) => Object.keys(data).length > 0, {
-    message:
-      "Setidaknya satu field (name, division_code, dll) harus diisi untuk pembaruan.",
-    path: ["body"],
-  });
 
 // ==========================================
 // 2. CONTROLLER UTAMA
 // ==========================================
-export const updatePositionDetails = async (req: Request, res: Response) => {
+export const updateMasterPosition = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    const currentUser = req.user!;
 
-    // Setup Datetime
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
-
-    // -----------------------------------------------------------
-    // [VALIDASI INPUT] Menggunakan Zod secara manual
-    // -----------------------------------------------------------
-    try {
-      await updateMasterPositionsSchema.parseAsync(req.body);
-    } catch (validationError) {
-      if (validationError instanceof ZodError) {
-        const formattedErrors = validationError.errors.map((issue) => ({
-          field: issue.path.join(".") || "body",
-          message: issue.message,
-        }));
-
-        // Return Error Custom Status 99
-        return res.status(400).json({
-          status: "99",
-          message: "Validasi gagal",
-          datetime: datetime,
-          errors: formattedErrors,
-        });
-      }
-      throw validationError; // Lempar error lain jika bukan Zod
+    if (isNaN(id)) {
+      return errorResponse(res, API_STATUS.BAD_REQUEST, "ID tidak valid", 400);
     }
-    // -----------------------------------------------------------
 
-    const positionId = Number(id);
-    if (isNaN(positionId)) {
-      return res.status(400).json({
-        status: "01",
-        message: "ID Posisi harus berupa angka",
-      });
+    const validation = updateMasterPositionsSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Validasi gagal",
+        400,
+        validation.error.errors.map((err) => ({
+          field: err.path[0],
+          message: err.message,
+        }))
+      );
+    }
+
+    if (Object.keys(validation.data).length === 0) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Tidak ada data yang dikirim",
+        400
+      );
     }
 
     // 1. Cek Existing Position
-    const existingPosition = await getPositionById(positionId);
+    const existingPosition = await getPositionById(id);
     if (!existingPosition) {
-      return res.status(404).json({
-        status: "03",
-        message: "Posisi tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Posisi tidak ditemukan",
+        404
+      );
     }
 
     // Ambil data dari body
@@ -501,60 +404,82 @@ export const updatePositionDetails = async (req: Request, res: Response) => {
       base_salary,
       sort_order,
       description,
-    } = req.body;
+    } = validation.data;
 
-    // 2. Validasi Division (Logic Database)
     if (division_code) {
-      const isDivisionValid = await checkDivisionExists(division_code);
-      if (!isDivisionValid) {
-        return res.status(400).json({
-          status: "01",
-          message: `Division Code '${division_code}' tidak ditemukan.`,
-          datetime: datetime,
-        });
+      const parentDivision = await getMasterDivisionsByCode(division_code);
+
+      if (!parentDivision) {
+        return errorResponse(
+          res,
+          API_STATUS.NOT_FOUND,
+          "Divisi tidak ditemukan",
+          404
+        );
+      }
+
+      const parentDepartment = await getMasterDepartmentByCode(
+        parentDivision.department_code
+      );
+
+      if (!parentDepartment) {
+        return errorResponse(
+          res,
+          API_STATUS.NOT_FOUND,
+          "Departemen induk tidak ditemukan",
+          404
+        );
+      }
+
+      const isTargetAllowed = await checkOfficeScope(
+        currentUser.office_code,
+        parentDepartment.office_code
+      );
+
+      if (!isTargetAllowed) {
+        return errorResponse(
+          res,
+          API_STATUS.UNAUTHORIZED,
+          "Anda tidak memiliki akses untuk mengubah jabatan ini",
+          403
+        );
       }
     }
 
     // 3. Validasi Parent (Logic Database)
     if (parent_position_code) {
-      // 3a. Cek apakah parent ada di DB
-      const isParentValid = await checkPositionExists(parent_position_code);
-      if (!isParentValid) {
-        return res.status(400).json({
-          status: "01",
-          message: `Parent Position Code '${parent_position_code}' tidak ditemukan.`,
-          datetime: datetime,
-        });
+      if (parent_position_code === existingPosition.position_code) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Tidak dapat membuat referensi melingkar dalam organisasi jabatan",
+          400
+        );
       }
 
-      // 3b. Cek Circular Reference (Disini perbaikan error 'unused variable' tadi)
-      // Pastikan fungsi isCircularReference tersedia di scope ini
-      const isCircular = await isCircularReference(
-        existingPosition.position_code,
-        parent_position_code
-      );
-
-      if (isCircular) {
-        return res.status(400).json({
-          status: "99",
-          message:
-            "Tidak dapat membuat referensi melingkar (Circular Reference). Posisi bawahan tidak boleh menjadi atasan.",
-          datetime: datetime,
-        });
+      // 3b. Cek keberadaan parent
+      const isParentValid = await checkPositionExists(parent_position_code);
+      if (!isParentValid) {
+        return errorResponse(
+          res,
+          API_STATUS.NOT_FOUND,
+          `Kode induk jabatan '${parent_position_code}' tidak ditemukan`,
+          404
+        );
       }
     }
 
     // 4. Update Database
-    const updateData: any = {};
-    if (division_code !== undefined) updateData.division_code = division_code;
-    if (parent_position_code !== undefined)
-      updateData.parent_position_code = parent_position_code;
-    if (name !== undefined) updateData.name = name;
-    if (base_salary !== undefined) updateData.base_salary = base_salary;
-    if (sort_order !== undefined) updateData.sort_order = sort_order;
-    if (description !== undefined) updateData.description = description;
+    const updateData = {
+      ...(division_code !== undefined && { division_code }),
+      ...(parent_position_code !== undefined && { parent_position_code }),
+      ...(name !== undefined && { name }),
+      ...(base_salary !== undefined && { base_salary }),
+      ...(description !== undefined && { description }),
+      ...(sort_order !== undefined && { sort_order }),
+    };
 
-    const updatedRaw = await updatePosition(positionId, updateData);
+    const updatedRaw = await updatePosition(id, updateData);
 
     // Format Response
     const responseData = {
@@ -569,19 +494,23 @@ export const updatePositionDetails = async (req: Request, res: Response) => {
       updated_at: updatedRaw.updated_at,
     };
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Posisi Berhasil Diperbarui",
-      datetime: datetime,
-      positions: responseData,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Jabatan Berhasil Diperbarui",
+      responseData,
+      200,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error updating position: ${dbError}`);
-    return res.status(500).json({
-      status: "01",
-      message: "Terjadi kesalahan pada server",
-    });
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
 
@@ -589,30 +518,66 @@ export const updatePositionDetails = async (req: Request, res: Response) => {
  * 7. [DELETE] Delete Position
  * Gagal jika posisi ditempati karyawan atau punya posisi bawahan.
  */
-export const deletePositionDetails = async (req: Request, res: Response) => {
+export const destroyMasterPositions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const { id } = req.params;
-    const now = new Date();
-    const datetime = now
-      .toISOString()
-      .replace(/[-T:Z.]/g, "")
-      .slice(0, 14);
+    const currentUser = req.user!;
+
+    const id = parseInt(req.params.id, 10);
 
     const positionId = Number(id);
     if (isNaN(positionId)) {
-      return res.status(400).json({
-        status: "01",
-        message: "ID Posisi harus berupa angka",
-      });
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "ID Jabatan harus berupa angka",
+        400
+      );
+    }
+
+    const existing = (await getPositionById(id)) || null;
+
+    const parentDivision = await getMasterDivisionsByCode(
+      existing.division_code
+    );
+
+    if (!parentDivision) {
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Divisi tidak ditemukan",
+        404
+      );
+    }
+
+    const parentDepartment = await getMasterDepartmentByCode(
+      parentDivision.department_code
+    );
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      parentDepartment.office_code || ""
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang untuk menghapus jabatan dari divisi ini",
+        403
+      );
     }
 
     const existingPosition = await getPositionById(positionId);
     if (!existingPosition) {
-      return res.status(404).json({
-        status: "04",
-        message: "Posisi tidak ditemukan",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.NOT_FOUND,
+        "Posisi tidak ditemukan",
+        404
+      );
     }
 
     const positionCode = existingPosition.position_code;
@@ -621,27 +586,31 @@ export const deletePositionDetails = async (req: Request, res: Response) => {
     const childCount = await countChildPositionsByCode(positionCode);
 
     if (employeeCount > 0 || childCount > 0) {
-      return res.status(409).json({
-        status: "05",
-        message:
-          "Tidak dapat menghapus posisi yang memiliki karyawan terasosiasi atau posisi bawahan.",
-        datetime: datetime,
-      });
+      return errorResponse(
+        res,
+        API_STATUS.CONFLICT,
+        "Tidak dapat menghapus jabatan yang memiliki karyawan terasosiasi atau posisi bawahan",
+        409
+      );
     }
 
     await deletePositionById(positionId);
 
-    return res.status(200).json({
-      status: "00",
-      message: "Data Posisi Berhasil Dihapus",
-      datetime: datetime,
-    });
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Jabatan Berhasil Dihapus",
+      null,
+      200
+    );
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error deleting position: ${dbError}`);
-    return res.status(500).json({
-      status: "01",
-      message: "Terjadi kesalahan pada server",
-    });
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
   }
 };
