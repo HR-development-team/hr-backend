@@ -1,7 +1,7 @@
 // status.controller.ts
 import { Request, Response } from "express";
 import { errorResponse, successResponse } from "@utils/response.js";
-import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
+import { API_STATUS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { DatabaseError } from "@apptypes/error.types.js";
 import {
@@ -11,7 +11,6 @@ import {
   addEmploymentStatus,
   editEmploymentStatus,
   removeEmploymentStatus,
-//  employmentStatusExists,
 } from "./status.model.js";
 import {
   addEmploymentStatusSchema,
