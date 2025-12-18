@@ -2,14 +2,13 @@ import type { Knex } from "knex";
 
 export async function seed(knex: Knex): Promise<void> {
   await knex("master_employees").del();
-
   await knex("master_employees").insert([
     {
       employee_code: "MR0001",
       user_code: "USR0000001",
       position_code: "JBT0000001",
       office_code: "OFC0000001",
-      employment_status_code: "EPS0000001", // Kode untuk "Tetap"
+      employment_status_code: "EPS0000001",
       full_name: "Budi Pratama",
       ktp_number: "3578123409876543",
       birth_place: "Surabaya",
