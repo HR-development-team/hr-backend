@@ -22,7 +22,6 @@ export const RESPONSE_DATA_KEYS = {
   FEATURES: "features",
   PERMISSIONS: "role_permissions",
   AUTH: "auth",
-  EMPLOYMENT_STATUSES: "employment_statuses",
   EMPLOYMENT_STATUS: "employment_status",
 
   // transaction Data

@@ -1,7 +1,7 @@
 // status.controller.ts
 import { Request, Response } from "express";
 import { errorResponse, successResponse } from "@utils/response.js";
-import { API_STATUS } from "@constants/general.js";
+import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { DatabaseError } from "@apptypes/error.types.js";
 import {
@@ -35,8 +35,8 @@ export const fetchAllEmploymentStatuses = async (
       API_STATUS.SUCCESS,
       "Data status karyawan berhasil didapatkan",
       statuses,
-      200
-      // RESPONSE_DATA_KEYS.EMPLOYMENT_STATUSES // Uncomment setelah ditambahkan ke constants
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS
     );
   } catch (error) {
     const dbError = error as unknown;
@@ -84,8 +84,8 @@ export const fetchEmploymentStatusById = async (
       API_STATUS.SUCCESS,
       "Data status karyawan berhasil didapatkan",
       status,
-      200
-      // RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS // Uncomment setelah ditambahkan ke constants
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS
     );
   } catch (error) {
     const dbError = error as unknown;
@@ -125,8 +125,8 @@ export const fetchEmploymentStatusByCode = async (
       API_STATUS.SUCCESS,
       "Data status karyawan berhasil didapatkan",
       status,
-      200
-      // RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS // Uncomment setelah ditambahkan ke constants
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS
     );
   } catch (error) {
     const dbError = error as unknown;
@@ -170,8 +170,8 @@ export const createEmploymentStatus = async (req: Request, res: Response) => {
       API_STATUS.SUCCESS,
       "Data status karyawan berhasil dibuat",
       status,
-      201
-      // RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS // Uncomment setelah ditambahkan ke constants
+      201,
+      RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS
     );
   } catch (error) {
     const dbError = error as DatabaseError;
@@ -191,7 +191,8 @@ export const createEmploymentStatus = async (req: Request, res: Response) => {
           [
             {
               field: "name",
-              message: "Terjadi kesalahan saat generate kode status. Silakan coba lagi.",
+              message:
+                "Terjadi kesalahan saat generate kode status. Silakan coba lagi.",
             },
           ]
         );
@@ -254,8 +255,8 @@ export const updateEmploymentStatus = async (req: Request, res: Response) => {
       API_STATUS.SUCCESS,
       "Data status karyawan berhasil diperbarui",
       status,
-      200
-      // RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS // Uncomment setelah ditambahkan ke constants
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS
     );
   } catch (error) {
     appLogger.error(`Error updating employment status: ${error}`);
