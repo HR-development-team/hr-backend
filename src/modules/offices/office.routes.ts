@@ -9,10 +9,10 @@ import {
   fetchMasterOfficeByCode,
   fetchOfficeReference,
 } from "./office.controller.js";
-import { verifyToken } from "@middleware/jwt.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 // 1. Organization Tree (WAJIB PALING ATAS)
 // Agar tidak tertangkap oleh /:id

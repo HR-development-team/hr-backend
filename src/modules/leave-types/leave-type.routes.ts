@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { verifyToken } from "@middleware/jwt.js";
 import {
   fetchAllMasterLeaveTypes,
   fetchMasterLeaveTypesById,
@@ -7,9 +6,10 @@ import {
   updateMasterLeaveTypes,
   destroyMasterLeaveTypes,
 } from "./leave-type.controller.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get("/", fetchAllMasterLeaveTypes);
 router.get("/:id", fetchMasterLeaveTypesById);

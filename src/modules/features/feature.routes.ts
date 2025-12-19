@@ -7,10 +7,10 @@ import {
   fetchFeaturesById,
   updateFeatures,
 } from "./feature.controller.js";
-import { verifyToken } from "@middleware/jwt.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get("/", fetchAllFeatures);
 router.get("/:id", fetchFeaturesById);

@@ -15,7 +15,7 @@ import {
 } from "./position.model.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@common/constants/general.js";
 import { errorResponse, successResponse } from "@common/utils/response.js";
-import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { checkOfficeScope } from "@modules/offices/office.helper.js";
 import { getMasterDivisionsByCode } from "@modules/divisions/division.model.js";
 import { getMasterDepartmentByCode } from "@modules/departments/department.model.js";

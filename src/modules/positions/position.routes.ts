@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { verifyToken } from "@middleware/jwt.js";
 import {
   fetchOrganizationTree,
   fetchPositionList,
@@ -9,10 +8,11 @@ import {
   updateMasterPosition,
   destroyMasterPositions,
 } from "./position.controller.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
 
-router.use(verifyToken);
+router.use(authMiddleware);
 
 // Endpoint Organization Tree (Taruh SEBELUM endpoint /:id agar tidak konflik)
 router.get("/organization/:office_id", fetchOrganizationTree);

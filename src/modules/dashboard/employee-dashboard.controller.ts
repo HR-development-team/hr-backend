@@ -3,7 +3,7 @@ import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { errorResponse, successResponse } from "@utils/response.js";
 import { appLogger } from "src/common/utils/logger.js";
 import { DatabaseError } from "@apptypes/error.types.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { getMasterEmployeesByCode } from "@modules/employees/employee.model.js";
 import { calculateTotalAttendancesAndAbsences } from "./dashboard.model.js";
 
