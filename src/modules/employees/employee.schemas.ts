@@ -38,13 +38,8 @@ export const addMasterEmployeesSchema = z.object({
     .optional(),
   employment_status_code: z.string({
     required_error: "Status karyawan belum diisi",
-    invalid_type_error: "Status harus berupa text",
+    invalid_type_error: "Status harus berupa string",
   }),
-  // employment_status_code: z
-  //   .enum(["aktif", "inaktif"])
-  //   .default("aktif")
-  //   .nullable()
-  //   .optional(),
   education: z
     .string()
     .min(2, "Pendidikan minimal 2 karakter")
@@ -135,7 +130,12 @@ export const updateMasterEmployeesSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal resign harus YYYY-MM-DD")
       .nullable()
       .optional(),
-    employment_status: z.enum(["aktif", "inaktif"]).optional(),
+    employment_status_code: z.string({
+      required_error: "Status karyawan belum diisi",
+      invalid_type_error: "Status harus berupa text",
+    }),
+
+    // employment_status: z.enum(["aktif", "inaktif"]).optional(),
     education: z
       .string()
       .min(2, "Pendidikan minimal 2 karakter")

@@ -16,16 +16,35 @@ import {
   addMasterEmployeesSchema,
   updateMasterEmployeesSchema,
 } from "./employee.schemas.js";
+import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { checkOfficeScope } from "@modules/offices/office.helper.js";
 
 /**
  * [GET] /master-employees - Fetch all Employees
  */
-export const fetchAllMasterEmployees = async (req: Request, res: Response) => {
+export const fetchAllMasterEmployees = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.search as string) || "";
+    const officeCodeFilter = (req.query.office_code as string) || "";
+    const division_code = (req.query.division_code as string) || "";
+    const position_code = (req.query.position_code as string) || "";
 
-    const employees = await getAllMasterEmployees(page, limit);
+    const currentUser = req.user!;
+
+    const employees = await getAllMasterEmployees(
+      page,
+      limit,
+      currentUser.office_code || "",
+      search,
+      officeCodeFilter,
+      division_code,
+      position_code
+    );
 
     return successResponse(
       res,
@@ -50,8 +69,13 @@ export const fetchAllMasterEmployees = async (req: Request, res: Response) => {
 /**
  * [GET] /master-employees/:id - Fetch Employee by id
  */
-export const fetchMasterEmployeesById = async (req: Request, res: Response) => {
+export const fetchMasterEmployeesById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -70,6 +94,20 @@ export const fetchMasterEmployeesById = async (req: Request, res: Response) => {
         res,
         API_STATUS.NOT_FOUND,
         "Data Karyawan tidak ditemukan",
+        404
+      );
+    }
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      employees.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Data karyawan tidak ditemukan",
         404
       );
     }
@@ -98,10 +136,12 @@ export const fetchMasterEmployeesById = async (req: Request, res: Response) => {
  * [GET] /master-employees/:id - Fetch Employee by code
  */
 export const fetchMasterEmployeesByCode = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
+    const currentUser = req.user!;
+
     // Validate and cast the ID params
     const { employee_code } = req.params;
 
@@ -112,6 +152,20 @@ export const fetchMasterEmployeesByCode = async (
         res,
         API_STATUS.NOT_FOUND,
         "Data Karyawan tidak ditemukan",
+        404
+      );
+    }
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      employees.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Data karyawan tidak ditemukan",
         404
       );
     }
@@ -149,6 +203,8 @@ export const fetchMasterEmployeesByUserCode = async (
 
     const employees = await getMasterEmployeesByUserCode(user_code);
 
+    // const user = await getUserByCode(employees.user_code);
+
     if (!employees) {
       return errorResponse(
         res,
@@ -181,8 +237,12 @@ export const fetchMasterEmployeesByUserCode = async (
 /**
  * [POST] /master-employees - Create a new Employee
  */
-export const createMasterEmployees = async (req: Request, res: Response) => {
+export const createMasterEmployees = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
     const validation = addMasterEmployeesSchema.safeParse(req.body);
 
     if (!validation.success) {
@@ -195,6 +255,22 @@ export const createMasterEmployees = async (req: Request, res: Response) => {
           field: err.path[0],
           message: err.message,
         }))
+      );
+    }
+
+    const parentOffice = validation.data.office_code;
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      parentOffice
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses ke kantor ini",
+        403
       );
     }
 
@@ -225,6 +301,15 @@ export const createMasterEmployees = async (req: Request, res: Response) => {
         validationErrors.push({
           field: "employee_code",
           message: "Kode karyawan yang dimasukkan sudah ada.",
+        });
+      }
+
+      // Duplicate user code
+      if (errorMessage && errorMessage.includes("user_code")) {
+        validationErrors.push({
+          field: "user_code",
+          message:
+            "Akun user yang dimasukkan sudah digunakan oleh karyawan lain",
         });
       }
 
@@ -301,8 +386,13 @@ export const createMasterEmployees = async (req: Request, res: Response) => {
 /**
  * [PUT] /master-employees/:id - Edit a Employee
  */
-export const updateMasterEmployees = async (req: Request, res: Response) => {
+export const updateMasterEmployees = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -329,7 +419,58 @@ export const updateMasterEmployees = async (req: Request, res: Response) => {
       );
     }
 
+    if (Object.keys(validation.data).length === 0) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Tidak ada data yang dikirim",
+        400
+      );
+    }
+
+    const parentOfficeCode = req.body.office_code;
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      parentOfficeCode
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang menaruh karyawan di kantor ini",
+        403
+      );
+    }
+
     const employeeData = validation.data;
+
+    const employee = await getMasterEmployeesById(id);
+
+    if (!employee) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Karyawan tidak ditemukan",
+        404
+      );
+    }
+
+    const isTargetAllowed = await checkOfficeScope(
+      currentUser.office_code,
+      employee?.office_code
+    );
+
+    if (!isTargetAllowed) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki akses untuk mengubah karyawan ini",
+        403
+      );
+    }
+
     const masterEmployees = await editMasterEmployees({ id, ...employeeData });
 
     // Validate employee not found
@@ -366,6 +507,15 @@ export const updateMasterEmployees = async (req: Request, res: Response) => {
         validationErrors.push({
           field: "employee_code",
           message: "Kode karyawan yang dimasukkan sudah ada.",
+        });
+      }
+
+      // Duplicate user code
+      if (errorMessage && errorMessage.includes("user_code")) {
+        validationErrors.push({
+          field: "user_code",
+          message:
+            "Akun user yang dimasukkan sudah digunakan oleh karyawan lain",
         });
       }
 
@@ -442,8 +592,13 @@ export const updateMasterEmployees = async (req: Request, res: Response) => {
 /**
  * [DELETE] /master-employees/:id - Delete a Employee
  */
-export const destroyMasterEmployees = async (req: Request, res: Response) => {
+export const destroyMasterEmployees = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const currentUser = req.user!;
+
     // Validate and cast the ID params
     const id: number = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -463,6 +618,20 @@ export const destroyMasterEmployees = async (req: Request, res: Response) => {
         API_STATUS.NOT_FOUND,
         "Data Karyawan tidak ditemukan",
         404
+      );
+    }
+
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      existing?.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang untuk menghapus karyawan ini",
+        403
       );
     }
 

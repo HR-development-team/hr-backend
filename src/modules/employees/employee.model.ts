@@ -15,45 +15,26 @@ import {
   GetEmployeeById,
   UpdateEmployeeByCode,
 } from "./employee.types.js";
-
-/**
- * Function for generating employee code
- */
-async function generateEmployeeCode() {
-  const PREFIX = "MR";
-  const PAD_LENGTH = 4;
-
-  const lastRow = await db(EMPLOYEE_TABLE)
-    .select("employee_code")
-    .orderBy("id", "desc")
-    .first();
-
-  if (!lastRow) {
-    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
-  }
-
-  const lastCode = lastRow.employee_code;
-  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
-  const newNumber = lastNumber + 1;
-  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
-}
+import { generateEmployeeCode } from "./employee.helper.js";
+import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 
 /**
  * Get all master employees.
  */
 export const getAllMasterEmployees = async (
   page: number,
-  limit: number
+  limit: number,
+  userOfficeCode: string | "",
+  search: string,
+  officeCodeFilter: string | "",
+  divisionCodeFilter: string | "",
+  positionCodeFilter: string | ""
 ): Promise<GetAllEmployee[]> => {
   const offset = (page - 1) * limit;
 
-  return await db(EMPLOYEE_TABLE)
+  const query = db(EMPLOYEE_TABLE)
     .select(
-      `${EMPLOYEE_TABLE}.id`,
-      `${EMPLOYEE_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.full_name`,
-      `${EMPLOYEE_TABLE}.join_date`,
-      `${EMPLOYEE_TABLE}.position_code`,
+      `${EMPLOYEE_TABLE}.*`,
 
       // Employment status fields
       `${EMPLOYMENT_STATUS_TABLE}.status_code as employment_status_code`,
@@ -73,7 +54,10 @@ export const getAllMasterEmployees = async (
 
       // Department fields
       `${DEPARTMENT_TABLE}.department_code`,
-      `${DEPARTMENT_TABLE}.name as department_name`
+      `${DEPARTMENT_TABLE}.name as department_name`,
+
+      // Office fields
+      `${OFFICE_TABLE}.name as office_name`
     )
     .leftJoin(
       `${POSITION_TABLE}`,
@@ -99,10 +83,54 @@ export const getAllMasterEmployees = async (
       `${EMPLOYMENT_STATUS_TABLE}`,
       `${EMPLOYEE_TABLE}.employment_status_code`,
       `${EMPLOYMENT_STATUS_TABLE}.status_code`
-    )
-    .limit(limit)
-    .offset(offset)
-    .orderBy("id", "asc");
+    );
+
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${EMPLOYEE_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${EMPLOYEE_TABLE}.employee_code`, "like", `%${search}%`)
+        .orWhere(`${EMPLOYEE_TABLE}.full_name`, "like", `%${search}%`);
+    });
+  }
+
+  if (officeCodeFilter) {
+    query.andWhere((builder) => {
+      builder.where(
+        `${EMPLOYEE_TABLE}.office_code`,
+        "like",
+        `%${officeCodeFilter}%`
+      );
+    });
+  }
+
+  if (divisionCodeFilter) {
+    query.andWhere((builder) => {
+      builder.where(
+        `${DIVISION_TABLE}.division_code`,
+        "like",
+        `%${divisionCodeFilter}%`
+      );
+    });
+  }
+
+  if (positionCodeFilter) {
+    query.andWhere((builder) => {
+      builder.where(
+        `${POSITION_TABLE}.position_code`,
+        "like",
+        `%${positionCodeFilter}%`
+      );
+    });
+  }
+
+  return query.limit(limit).offset(offset).orderBy("id", "asc");
 };
 
 /**

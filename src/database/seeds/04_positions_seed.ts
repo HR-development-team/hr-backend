@@ -1,185 +1,1160 @@
 import type { Knex } from "knex";
 
 export async function seed(knex: Knex): Promise<void> {
-  // Hapus data lama (Opsional)
+  // Opsional: Hapus data lama agar bersih saat re-seed
   // await knex("master_positions").del();
 
+  const positions = [
+    // =================================================================
+    // 1. KANTOR PUSAT (01) - Gaji Standar Tinggi
+    // =================================================================
+
+    // --- DIV0101001: Software Engineering ---
+    {
+      position_code: "JBT0000001",
+      division_code: "DIV0101001",
+      name: "Engineering Manager",
+      base_salary: 18000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Head of Engineering",
+    },
+    {
+      position_code: "JBT0000002",
+      division_code: "DIV0101001",
+      name: "Lead Developer",
+      base_salary: 13000000,
+      parent_position_code: "JBT0000001",
+      sort_order: 2,
+      description: "Team Lead",
+    },
+    {
+      position_code: "JBT0000003",
+      division_code: "DIV0101001",
+      name: "Software Engineer",
+      base_salary: 9000000,
+      parent_position_code: "JBT0000002",
+      sort_order: 3,
+      description: "Fullstack Developer",
+    },
+
+    // --- DIV0101002: IT Infrastructure ---
+    {
+      position_code: "JBT0000004",
+      division_code: "DIV0101002",
+      name: "IT Infra Manager",
+      base_salary: 15000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Head of Infrastructure",
+    },
+    {
+      position_code: "JBT0000005",
+      division_code: "DIV0101002",
+      name: "Network Administrator",
+      base_salary: 10000000,
+      parent_position_code: "JBT0000004",
+      sort_order: 2,
+      description: "Senior Network Admin",
+    },
+    {
+      position_code: "JBT0000006",
+      division_code: "DIV0101002",
+      name: "IT Support Staff",
+      base_salary: 6500000,
+      parent_position_code: "JBT0000005",
+      sort_order: 3,
+      description: "Technical Support",
+    },
+
+    // --- DIV0101003: Data & Security ---
+    {
+      position_code: "JBT0000007",
+      division_code: "DIV0101003",
+      name: "CISO (Security Head)",
+      base_salary: 18000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Chief Info Security Officer",
+    },
+    {
+      position_code: "JBT0000008",
+      division_code: "DIV0101003",
+      name: "Security Analyst",
+      base_salary: 12000000,
+      parent_position_code: "JBT0000007",
+      sort_order: 2,
+      description: "Cyber Security Analyst",
+    },
+    {
+      position_code: "JBT0000009",
+      division_code: "DIV0101003",
+      name: "Data Entry Officer",
+      base_salary: 6000000,
+      parent_position_code: "JBT0000008",
+      sort_order: 3,
+      description: "Data Processor",
+    },
+
+    // --- DIV0102001: Recruitment ---
+    {
+      position_code: "JBT0000010",
+      division_code: "DIV0102001",
+      name: "Recruitment Manager",
+      base_salary: 14000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Head of Recruitment",
+    },
+    {
+      position_code: "JBT0000011",
+      division_code: "DIV0102001",
+      name: "Talent Acquisition Lead",
+      base_salary: 9500000,
+      parent_position_code: "JBT0000010",
+      sort_order: 2,
+      description: "Senior Recruiter",
+    },
+    {
+      position_code: "JBT0000012",
+      division_code: "DIV0102001",
+      name: "Recruitment Admin",
+      base_salary: 6000000,
+      parent_position_code: "JBT0000011",
+      sort_order: 3,
+      description: "Admin HR",
+    },
+
+    // --- DIV0102002: Employee Relations ---
+    {
+      position_code: "JBT0000013",
+      division_code: "DIV0102002",
+      name: "HR Operations Manager",
+      base_salary: 14000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Head of HR Ops",
+    },
+    {
+      position_code: "JBT0000014",
+      division_code: "DIV0102002",
+      name: "Industrial Relations Spv",
+      base_salary: 9500000,
+      parent_position_code: "JBT0000013",
+      sort_order: 2,
+      description: "Supervisor IR",
+    },
+    {
+      position_code: "JBT0000015",
+      division_code: "DIV0102002",
+      name: "HR Generalist",
+      base_salary: 6500000,
+      parent_position_code: "JBT0000014",
+      sort_order: 3,
+      description: "Staff HR",
+    },
+
+    // --- DIV0102003: Training & Development ---
+    {
+      position_code: "JBT0000016",
+      division_code: "DIV0102003",
+      name: "L&D Manager",
+      base_salary: 14000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Learning & Development Head",
+    },
+    {
+      position_code: "JBT0000017",
+      division_code: "DIV0102003",
+      name: "Training Specialist",
+      base_salary: 9000000,
+      parent_position_code: "JBT0000016",
+      sort_order: 2,
+      description: "Trainer",
+    },
+    {
+      position_code: "JBT0000018",
+      division_code: "DIV0102003",
+      name: "Training Admin",
+      base_salary: 5500000,
+      parent_position_code: "JBT0000017",
+      sort_order: 3,
+      description: "Admin Training",
+    },
+
+    // --- DIV0103001: Accounting ---
+    {
+      position_code: "JBT0000019",
+      division_code: "DIV0103001",
+      name: "Accounting Manager",
+      base_salary: 15000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Head of Accounting",
+    },
+    {
+      position_code: "JBT0000020",
+      division_code: "DIV0103001",
+      name: "Senior Accountant",
+      base_salary: 10500000,
+      parent_position_code: "JBT0000019",
+      sort_order: 2,
+      description: "Supervisor Akunting",
+    },
+    {
+      position_code: "JBT0000021",
+      division_code: "DIV0103001",
+      name: "Junior Accountant",
+      base_salary: 6500000,
+      parent_position_code: "JBT0000020",
+      sort_order: 3,
+      description: "Staff Akunting",
+    },
+
+    // --- DIV0103002: Tax & Treasury ---
+    {
+      position_code: "JBT0000022",
+      division_code: "DIV0103002",
+      name: "Tax Manager",
+      base_salary: 15000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Head of Tax",
+    },
+    {
+      position_code: "JBT0000023",
+      division_code: "DIV0103002",
+      name: "Tax Specialist",
+      base_salary: 10500000,
+      parent_position_code: "JBT0000022",
+      sort_order: 2,
+      description: "Konsultan Pajak Internal",
+    },
+    {
+      position_code: "JBT0000024",
+      division_code: "DIV0103002",
+      name: "Treasury Staff",
+      base_salary: 6500000,
+      parent_position_code: "JBT0000023",
+      sort_order: 3,
+      description: "Staff Keuangan",
+    },
+
+    // --- DIV0103003: Budgeting ---
+    {
+      position_code: "JBT0000025",
+      division_code: "DIV0103003",
+      name: "Budget Control Head",
+      base_salary: 14500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Anggaran",
+    },
+    {
+      position_code: "JBT0000026",
+      division_code: "DIV0103003",
+      name: "Financial Analyst",
+      base_salary: 10000000,
+      parent_position_code: "JBT0000025",
+      sort_order: 2,
+      description: "Analis Keuangan",
+    },
+    {
+      position_code: "JBT0000027",
+      division_code: "DIV0103003",
+      name: "Budget Admin",
+      base_salary: 6000000,
+      parent_position_code: "JBT0000026",
+      sort_order: 3,
+      description: "Admin Anggaran",
+    },
+
+    // --- DIV0104001: Board Support ---
+    {
+      position_code: "JBT0000028",
+      division_code: "DIV0104001",
+      name: "Head of Secretariat",
+      base_salary: 14000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Sekretariat",
+    },
+    {
+      position_code: "JBT0000029",
+      division_code: "DIV0104001",
+      name: "Executive Assistant",
+      base_salary: 9500000,
+      parent_position_code: "JBT0000028",
+      sort_order: 2,
+      description: "Asisten Direksi",
+    },
+    {
+      position_code: "JBT0000030",
+      division_code: "DIV0104001",
+      name: "Secretary",
+      base_salary: 7500000,
+      parent_position_code: "JBT0000029",
+      sort_order: 3,
+      description: "Sekretaris",
+    },
+
+    // --- DIV0104002: Strategic Planning ---
+    {
+      position_code: "JBT0000031",
+      division_code: "DIV0104002",
+      name: "Head of Strategy",
+      base_salary: 17000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Strategi",
+    },
+    {
+      position_code: "JBT0000032",
+      division_code: "DIV0104002",
+      name: "Strategy Consultant",
+      base_salary: 11500000,
+      parent_position_code: "JBT0000031",
+      sort_order: 2,
+      description: "Senior Consultant",
+    },
+    {
+      position_code: "JBT0000033",
+      division_code: "DIV0104002",
+      name: "Strategy Officer",
+      base_salary: 8000000,
+      parent_position_code: "JBT0000032",
+      sort_order: 3,
+      description: "Staf Perencanaan",
+    },
+
+    // --- DIV0104003: Internal Audit ---
+    {
+      position_code: "JBT0000034",
+      division_code: "DIV0104003",
+      name: "Head of Internal Audit",
+      base_salary: 16000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Audit",
+    },
+    {
+      position_code: "JBT0000035",
+      division_code: "DIV0104003",
+      name: "Senior Auditor",
+      base_salary: 10500000,
+      parent_position_code: "JBT0000034",
+      sort_order: 2,
+      description: "Auditor Senior",
+    },
+    {
+      position_code: "JBT0000036",
+      division_code: "DIV0104003",
+      name: "Junior Auditor",
+      base_salary: 7000000,
+      parent_position_code: "JBT0000035",
+      sort_order: 3,
+      description: "Auditor Junior",
+    },
+
+    // =================================================================
+    // 2. CABANG JAWA TIMUR (02) - Gaji Menengah
+    // =================================================================
+
+    // --- DIV0201001: Direct Sales ---
+    {
+      position_code: "JBT0000037",
+      division_code: "DIV0201001",
+      name: "Sales Manager Jatim",
+      base_salary: 12500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Penjualan Jatim",
+    },
+    {
+      position_code: "JBT0000038",
+      division_code: "DIV0201001",
+      name: "Sales Supervisor",
+      base_salary: 8500000,
+      parent_position_code: "JBT0000037",
+      sort_order: 2,
+      description: "SPV Sales",
+    },
+    {
+      position_code: "JBT0000039",
+      division_code: "DIV0201001",
+      name: "Sales Officer",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000038",
+      sort_order: 3,
+      description: "Salesman",
+    },
+
+    // --- DIV0201002: Corporate Sales ---
+    {
+      position_code: "JBT0000040",
+      division_code: "DIV0201002",
+      name: "B2B Manager",
+      base_salary: 13000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala B2B",
+    },
+    {
+      position_code: "JBT0000041",
+      division_code: "DIV0201002",
+      name: "Key Account Manager",
+      base_salary: 9500000,
+      parent_position_code: "JBT0000040",
+      sort_order: 2,
+      description: "Senior Sales B2B",
+    },
+    {
+      position_code: "JBT0000042",
+      division_code: "DIV0201002",
+      name: "Account Executive",
+      base_salary: 5500000,
+      parent_position_code: "JBT0000041",
+      sort_order: 3,
+      description: "Sales B2B",
+    },
+
+    // --- DIV0201003: Sales Admin ---
+    {
+      position_code: "JBT0000043",
+      division_code: "DIV0201003",
+      name: "Sales Admin Head",
+      base_salary: 8500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Koordinator Admin Sales",
+    },
+    {
+      position_code: "JBT0000044",
+      division_code: "DIV0201003",
+      name: "Senior Sales Admin",
+      base_salary: 6000000,
+      parent_position_code: "JBT0000043",
+      sort_order: 2,
+      description: "Senior Admin",
+    },
+    {
+      position_code: "JBT0000045",
+      division_code: "DIV0201003",
+      name: "Sales Admin Staff",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000044",
+      sort_order: 3,
+      description: "Admin Input",
+    },
+
+    // --- DIV0202001: Digital Marketing ---
+    {
+      position_code: "JBT0000046",
+      division_code: "DIV0202001",
+      name: "Digital Marketing Mgr",
+      base_salary: 11500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Manager Digital",
+    },
+    {
+      position_code: "JBT0000047",
+      division_code: "DIV0202001",
+      name: "SEO/SEM Specialist",
+      base_salary: 8000000,
+      parent_position_code: "JBT0000046",
+      sort_order: 2,
+      description: "Ads Specialist",
+    },
+    {
+      position_code: "JBT0000048",
+      division_code: "DIV0202001",
+      name: "Social Media Admin",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000047",
+      sort_order: 3,
+      description: "Admin Sosmed",
+    },
+
+    // --- DIV0202002: Event Management ---
+    {
+      position_code: "JBT0000049",
+      division_code: "DIV0202002",
+      name: "Event Manager",
+      base_salary: 10500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Event",
+    },
+    {
+      position_code: "JBT0000050",
+      division_code: "DIV0202002",
+      name: "Event Coordinator",
+      base_salary: 7500000,
+      parent_position_code: "JBT0000049",
+      sort_order: 2,
+      description: "Koordinator Lapangan",
+    },
+    {
+      position_code: "JBT0000051",
+      division_code: "DIV0202002",
+      name: "Event Crew",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000050",
+      sort_order: 3,
+      description: "Kru Event",
+    },
+
+    // --- DIV0202003: Creative Design ---
+    {
+      position_code: "JBT0000052",
+      division_code: "DIV0202003",
+      name: "Art Director",
+      base_salary: 11000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Desain",
+    },
+    {
+      position_code: "JBT0000053",
+      division_code: "DIV0202003",
+      name: "Senior Graphic Designer",
+      base_salary: 8000000,
+      parent_position_code: "JBT0000052",
+      sort_order: 2,
+      description: "Desainer Senior",
+    },
+    {
+      position_code: "JBT0000054",
+      division_code: "DIV0202003",
+      name: "Junior Designer",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000053",
+      sort_order: 3,
+      description: "Desainer Junior",
+    },
+
+    // --- DIV0203001: Helpdesk L1 ---
+    {
+      position_code: "JBT0000055",
+      division_code: "DIV0203001",
+      name: "Helpdesk Manager",
+      base_salary: 10000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala CS",
+    },
+    {
+      position_code: "JBT0000056",
+      division_code: "DIV0203001",
+      name: "Team Leader CS",
+      base_salary: 7000000,
+      parent_position_code: "JBT0000055",
+      sort_order: 2,
+      description: "TL Helpdesk",
+    },
+    {
+      position_code: "JBT0000057",
+      division_code: "DIV0203001",
+      name: "CS Agent",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000056",
+      sort_order: 3,
+      description: "Agen CS",
+    },
+
+    // --- DIV0203002: Technical Support L2 ---
+    {
+      position_code: "JBT0000058",
+      division_code: "DIV0203002",
+      name: "Tech Support Lead",
+      base_salary: 9500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Teknis CS",
+    },
+    {
+      position_code: "JBT0000059",
+      division_code: "DIV0203002",
+      name: "Senior Tech Support",
+      base_salary: 7000000,
+      parent_position_code: "JBT0000058",
+      sort_order: 2,
+      description: "Support L2 Senior",
+    },
+    {
+      position_code: "JBT0000060",
+      division_code: "DIV0203002",
+      name: "Junior Tech Support",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000059",
+      sort_order: 3,
+      description: "Support L2 Junior",
+    },
+
+    // --- DIV0203003: Retention ---
+    {
+      position_code: "JBT0000061",
+      division_code: "DIV0203003",
+      name: "Retention Manager",
+      base_salary: 10500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Retensi",
+    },
+    {
+      position_code: "JBT0000062",
+      division_code: "DIV0203003",
+      name: "Complaint Specialist",
+      base_salary: 7000000,
+      parent_position_code: "JBT0000061",
+      sort_order: 2,
+      description: "Spesialis Komplain",
+    },
+    {
+      position_code: "JBT0000063",
+      division_code: "DIV0203003",
+      name: "Retention Agent",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000062",
+      sort_order: 3,
+      description: "Agen Retensi",
+    },
+
+    // =================================================================
+    // 3. UNIT MADIUN (03) - Gaji UMR Plus
+    // =================================================================
+
+    // --- DIV0301001: Installation Team ---
+    {
+      position_code: "JBT0000064",
+      division_code: "DIV0301001",
+      name: "Installation Coordinator",
+      base_salary: 7500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Koordinator Pasang",
+    },
+    {
+      position_code: "JBT0000065",
+      division_code: "DIV0301001",
+      name: "Field Technician Leader",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000064",
+      sort_order: 2,
+      description: "Foreman",
+    },
+    {
+      position_code: "JBT0000066",
+      division_code: "DIV0301001",
+      name: "Installer",
+      base_salary: 3500000,
+      parent_position_code: "JBT0000065",
+      sort_order: 3,
+      description: "Teknisi Pasang",
+    },
+
+    // --- DIV0301002: Maintenance Team ---
+    {
+      position_code: "JBT0000067",
+      division_code: "DIV0301002",
+      name: "Maintenance Coordinator",
+      base_salary: 7500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Koordinator Perbaikan",
+    },
+    {
+      position_code: "JBT0000068",
+      division_code: "DIV0301002",
+      name: "Senior Technician",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000067",
+      sort_order: 2,
+      description: "Teknisi Senior",
+    },
+    {
+      position_code: "JBT0000069",
+      division_code: "DIV0301002",
+      name: "Junior Technician",
+      base_salary: 3500000,
+      parent_position_code: "JBT0000068",
+      sort_order: 3,
+      description: "Teknisi Junior",
+    },
+
+    // --- DIV0301003: Quality Control ---
+    {
+      position_code: "JBT0000070",
+      division_code: "DIV0301003",
+      name: "QC Supervisor",
+      base_salary: 6500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Pengawas QC",
+    },
+    {
+      position_code: "JBT0000071",
+      division_code: "DIV0301003",
+      name: "QC Field Officer",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000070",
+      sort_order: 2,
+      description: "Petugas QC",
+    },
+    {
+      position_code: "JBT0000072",
+      division_code: "DIV0301003",
+      name: "QC Admin",
+      base_salary: 3200000,
+      parent_position_code: "JBT0000071",
+      sort_order: 3,
+      description: "Admin Data QC",
+    },
+
+    // --- DIV0302001: Front Office ---
+    {
+      position_code: "JBT0000073",
+      division_code: "DIV0302001",
+      name: "FO Supervisor",
+      base_salary: 5500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Spv Resepsionis",
+    },
+    {
+      position_code: "JBT0000074",
+      division_code: "DIV0302001",
+      name: "Receptionist",
+      base_salary: 3500000,
+      parent_position_code: "JBT0000073",
+      sort_order: 2,
+      description: "Resepsionis",
+    },
+    {
+      position_code: "JBT0000075",
+      division_code: "DIV0302001",
+      name: "Guest Relation Officer",
+      base_salary: 3200000,
+      parent_position_code: "JBT0000074",
+      sort_order: 3,
+      description: "Penyambut Tamu",
+    },
+
+    // --- DIV0302002: Filing & Archive ---
+    {
+      position_code: "JBT0000076",
+      division_code: "DIV0302002",
+      name: "Archive Coordinator",
+      base_salary: 5000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Koordinator Arsip",
+    },
+    {
+      position_code: "JBT0000077",
+      division_code: "DIV0302002",
+      name: "Document Controller",
+      base_salary: 3800000,
+      parent_position_code: "JBT0000076",
+      sort_order: 2,
+      description: "Pengendali Dokumen",
+    },
+    {
+      position_code: "JBT0000078",
+      division_code: "DIV0302002",
+      name: "Filing Clerk",
+      base_salary: 3000000,
+      parent_position_code: "JBT0000077",
+      sort_order: 3,
+      description: "Staf Arsip",
+    },
+
+    // --- DIV0302003: General Admin ---
+    {
+      position_code: "JBT0000079",
+      division_code: "DIV0302003",
+      name: "Office Manager Unit",
+      base_salary: 6500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Kantor Unit",
+    },
+    {
+      position_code: "JBT0000080",
+      division_code: "DIV0302003",
+      name: "Senior Admin",
+      base_salary: 4000000,
+      parent_position_code: "JBT0000079",
+      sort_order: 2,
+      description: "Admin Senior",
+    },
+    {
+      position_code: "JBT0000081",
+      division_code: "DIV0302003",
+      name: "Office Boy/Girl",
+      base_salary: 2800000,
+      parent_position_code: "JBT0000080",
+      sort_order: 3,
+      description: "OB/OG",
+    },
+
+    // --- DIV0303001: Inbound Logistics ---
+    {
+      position_code: "JBT0000082",
+      division_code: "DIV0303001",
+      name: "Warehouse Head",
+      base_salary: 6500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Gudang",
+    },
+    {
+      position_code: "JBT0000083",
+      division_code: "DIV0303001",
+      name: "Receiving Officer",
+      base_salary: 4000000,
+      parent_position_code: "JBT0000082",
+      sort_order: 2,
+      description: "Penerima Barang",
+    },
+    {
+      position_code: "JBT0000084",
+      division_code: "DIV0303001",
+      name: "Warehouse Helper",
+      base_salary: 3000000,
+      parent_position_code: "JBT0000083",
+      sort_order: 3,
+      description: "Helper Gudang",
+    },
+
+    // --- DIV0303002: Inventory Control ---
+    {
+      position_code: "JBT0000085",
+      division_code: "DIV0303002",
+      name: "Inventory Supervisor",
+      base_salary: 5500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Pengawas Stok",
+    },
+    {
+      position_code: "JBT0000086",
+      division_code: "DIV0303002",
+      name: "Stock Admin",
+      base_salary: 3800000,
+      parent_position_code: "JBT0000085",
+      sort_order: 2,
+      description: "Admin Stok",
+    },
+    {
+      position_code: "JBT0000087",
+      division_code: "DIV0303002",
+      name: "Checker",
+      base_salary: 3000000,
+      parent_position_code: "JBT0000086",
+      sort_order: 3,
+      description: "Pengecek Barang",
+    },
+
+    // --- DIV0303003: Distribution ---
+    {
+      position_code: "JBT0000088",
+      division_code: "DIV0303003",
+      name: "Distribution Coord",
+      base_salary: 5500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Koordinator Kirim",
+    },
+    {
+      position_code: "JBT0000089",
+      division_code: "DIV0303003",
+      name: "Senior Driver",
+      base_salary: 4000000,
+      parent_position_code: "JBT0000088",
+      sort_order: 2,
+      description: "Supir Senior",
+    },
+    {
+      position_code: "JBT0000090",
+      division_code: "DIV0303003",
+      name: "Courier",
+      base_salary: 3200000,
+      parent_position_code: "JBT0000089",
+      sort_order: 3,
+      description: "Kurir",
+    },
+
+    // =================================================================
+    // 4. CABANG JAWA TENGAH (04) - Gaji Menengah
+    // =================================================================
+
+    // --- DIV0401001: Area Semarang ---
+    {
+      position_code: "JBT0000091",
+      division_code: "DIV0401001",
+      name: "Area Manager Semarang",
+      base_salary: 11000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Area Semarang",
+    },
+    {
+      position_code: "JBT0000092",
+      division_code: "DIV0401001",
+      name: "SPV Sales Semarang",
+      base_salary: 7500000,
+      parent_position_code: "JBT0000091",
+      sort_order: 2,
+      description: "SPV Sales",
+    },
+    {
+      position_code: "JBT0000093",
+      division_code: "DIV0401001",
+      name: "Sales Staff Semarang",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000092",
+      sort_order: 3,
+      description: "Salesman",
+    },
+
+    // --- DIV0401002: Area Solo ---
+    {
+      position_code: "JBT0000094",
+      division_code: "DIV0401002",
+      name: "Area Manager Solo",
+      base_salary: 11000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Area Solo",
+    },
+    {
+      position_code: "JBT0000095",
+      division_code: "DIV0401002",
+      name: "SPV Sales Solo",
+      base_salary: 7500000,
+      parent_position_code: "JBT0000094",
+      sort_order: 2,
+      description: "SPV Sales",
+    },
+    {
+      position_code: "JBT0000096",
+      division_code: "DIV0401002",
+      name: "Sales Staff Solo",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000095",
+      sort_order: 3,
+      description: "Salesman",
+    },
+
+    // --- DIV0401003: Sales Support ---
+    {
+      position_code: "JBT0000097",
+      division_code: "DIV0401003",
+      name: "Sales Support Lead",
+      base_salary: 7000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Support Sales",
+    },
+    {
+      position_code: "JBT0000098",
+      division_code: "DIV0401003",
+      name: "Sales Admin Jateng",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000097",
+      sort_order: 2,
+      description: "Admin Penjualan",
+    },
+    {
+      position_code: "JBT0000099",
+      division_code: "DIV0401003",
+      name: "Data Entry Sales",
+      base_salary: 3800000,
+      parent_position_code: "JBT0000098",
+      sort_order: 3,
+      description: "Input Data",
+    },
+
+    // --- DIV0402001: Building Management ---
+    {
+      position_code: "JBT0000100",
+      division_code: "DIV0402001",
+      name: "BM Manager",
+      base_salary: 9500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Pengelola Gedung",
+    },
+    {
+      position_code: "JBT0000101",
+      division_code: "DIV0402001",
+      name: "Facility Coordinator",
+      base_salary: 6000000,
+      parent_position_code: "JBT0000100",
+      sort_order: 2,
+      description: "Koordinator Fasilitas",
+    },
+    {
+      position_code: "JBT0000102",
+      division_code: "DIV0402001",
+      name: "Cleaning Staff",
+      base_salary: 3000000,
+      parent_position_code: "JBT0000101",
+      sort_order: 3,
+      description: "OB/Cleaning Service",
+    },
+
+    // --- DIV0402002: Transportation ---
+    {
+      position_code: "JBT0000103",
+      division_code: "DIV0402002",
+      name: "Fleet Manager",
+      base_salary: 9000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Kendaraan",
+    },
+    {
+      position_code: "JBT0000104",
+      division_code: "DIV0402002",
+      name: "Driver Coordinator",
+      base_salary: 5500000,
+      parent_position_code: "JBT0000103",
+      sort_order: 2,
+      description: "Koordinator Supir",
+    },
+    {
+      position_code: "JBT0000105",
+      division_code: "DIV0402002",
+      name: "Operational Driver",
+      base_salary: 3800000,
+      parent_position_code: "JBT0000104",
+      sort_order: 3,
+      description: "Supir Operasional",
+    },
+
+    // --- DIV0402003: Security & Safety ---
+    {
+      position_code: "JBT0000106",
+      division_code: "DIV0402003",
+      name: "Chief Security",
+      base_salary: 7500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Keamanan",
+    },
+    {
+      position_code: "JBT0000107",
+      division_code: "DIV0402003",
+      name: "Safety Officer",
+      base_salary: 5500000,
+      parent_position_code: "JBT0000106",
+      sort_order: 2,
+      description: "Petugas K3",
+    },
+    {
+      position_code: "JBT0000108",
+      division_code: "DIV0402003",
+      name: "Security Guard",
+      base_salary: 3500000,
+      parent_position_code: "JBT0000107",
+      sort_order: 3,
+      description: "Satpam",
+    },
+
+    // --- DIV0403001: Partnership ---
+    {
+      position_code: "JBT0000109",
+      division_code: "DIV0403001",
+      name: "Partnership Manager",
+      base_salary: 11000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Kemitraan",
+    },
+    {
+      position_code: "JBT0000110",
+      division_code: "DIV0403001",
+      name: "Partner Relations",
+      base_salary: 7500000,
+      parent_position_code: "JBT0000109",
+      sort_order: 2,
+      description: "Hubungan Mitra",
+    },
+    {
+      position_code: "JBT0000111",
+      division_code: "DIV0403001",
+      name: "Partnership Admin",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000110",
+      sort_order: 3,
+      description: "Admin Kemitraan",
+    },
+
+    // --- DIV0403002: Market Research ---
+    {
+      position_code: "JBT0000112",
+      division_code: "DIV0403002",
+      name: "Research Manager",
+      base_salary: 12000000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Riset",
+    },
+    {
+      position_code: "JBT0000113",
+      division_code: "DIV0403002",
+      name: "Data Analyst",
+      base_salary: 8000000,
+      parent_position_code: "JBT0000112",
+      sort_order: 2,
+      description: "Analis Data",
+    },
+    {
+      position_code: "JBT0000114",
+      division_code: "DIV0403002",
+      name: "Surveyor",
+      base_salary: 4500000,
+      parent_position_code: "JBT0000113",
+      sort_order: 3,
+      description: "Petugas Survei",
+    },
+
+    // --- DIV0403003: Product Expansion ---
+    {
+      position_code: "JBT0000115",
+      division_code: "DIV0403003",
+      name: "Expansion Manager",
+      base_salary: 12500000,
+      parent_position_code: null,
+      sort_order: 1,
+      description: "Kepala Ekspansi",
+    },
+    {
+      position_code: "JBT0000116",
+      division_code: "DIV0403003",
+      name: "Product Specialist",
+      base_salary: 8500000,
+      parent_position_code: "JBT0000115",
+      sort_order: 2,
+      description: "Spesialis Produk",
+    },
+    {
+      position_code: "JBT0000117",
+      division_code: "DIV0403003",
+      name: "Expansion Staff",
+      base_salary: 5000000,
+      parent_position_code: "JBT0000116",
+      sort_order: 3,
+      description: "Staf Ekspansi",
+    },
+  ];
+
   await knex("master_positions")
-    .insert([
-      // ==========================================
-      // LEADERS (Level 1)
-      // ==========================================
-      {
-        position_code: "JBT0000002",
-        division_code: "DIV0101001", // Software Engineering
-        name: "Senior Software Engineer",
-        base_salary: 12000000,
-        parent_position_code: null,
-        sort_order: 1,
-        description: "Lead Developer",
-      },
-      {
-        position_code: "JBT0000005",
-        division_code: "DIV0101002", // IT Infrastructure
-        name: "Network Administrator",
-        base_salary: 9000000,
-        parent_position_code: null,
-        sort_order: 1,
-        description: "Network Lead",
-      },
-      {
-        position_code: "JBT0000009",
-        division_code: "DIV0102002", // Employee Relations (Head of HR Ops)
-        name: "HR Manager",
-        base_salary: 13000000,
-        parent_position_code: null,
-        sort_order: 1,
-        description: "Manager HR",
-      },
-      {
-        position_code: "JBT0000011",
-        division_code: "DIV0104002", // Strategic Planning (BizDev context)
-        name: "Business Dev Manager",
-        base_salary: 14000000,
-        parent_position_code: null,
-        sort_order: 1,
-        description: "Manager BD",
-      },
-      {
-        position_code: "JBT0000013",
-        division_code: "DIV0104002", // Strategic Planning
-        name: "Senior Account Manager",
-        base_salary: 11000000,
-        parent_position_code: null,
-        sort_order: 2, // Urutan ke-2 di divisi yang sama
-        description: "Senior AM",
-      },
-      {
-        position_code: "JBT0000015",
-        division_code: "DIV0103001", // Accounting
-        name: "Senior Accountant",
-        base_salary: 12000000,
-        parent_position_code: null,
-        sort_order: 1,
-        description: "Senior Acc",
-      },
-
-      // ==========================================
-      // STAFF (Level 2 - Punya Parent)
-      // ==========================================
-
-      // --- Tim Software Engineering (DIV0101001) ---
-      {
-        position_code: "JBT0000001",
-        division_code: "DIV0101001",
-        name: "Software Engineer",
-        base_salary: 8000000,
-        parent_position_code: "JBT0000002", // Reports to Senior SE
-        sort_order: 2,
-        description: "Backend/Frontend",
-      },
-      {
-        position_code: "JBT0000003",
-        division_code: "DIV0101001",
-        name: "QA Engineer",
-        base_salary: 7000000,
-        parent_position_code: "JBT0000002", // Reports to Senior SE
-        sort_order: 3,
-        description: "Tester",
-      },
-
-      // --- Tim IT Infrastructure (DIV0101002) ---
-      {
-        position_code: "JBT0000004",
-        division_code: "DIV0101002",
-        name: "IT Support Specialist",
-        base_salary: 6000000,
-        parent_position_code: "JBT0000005", // Reports to Net Admin
-        sort_order: 2,
-        description: "Helpdesk Support",
-      },
-
-      // --- Tim HR Recruitment (DIV0102001) ---
-      // Parentnya HR Manager (beda divisi tidak masalah secara logika bisnis)
-      {
-        position_code: "JBT0000006",
-        division_code: "DIV0102001", // Recruitment
-        name: "Recruitment Officer",
-        base_salary: 6500000,
-        parent_position_code: "JBT0000009", // Reports to HR Manager
-        sort_order: 1,
-        description: "Recruiter",
-      },
-      {
-        position_code: "JBT0000007",
-        division_code: "DIV0102001", // Recruitment
-        name: "Talent Acquisition Spc",
-        base_salary: 8500000,
-        parent_position_code: "JBT0000009", // Reports to HR Manager
-        sort_order: 2,
-        description: "Headhunter",
-      },
-
-      // --- Tim HR Relations (DIV0102002) ---
-      {
-        position_code: "JBT0000008",
-        division_code: "DIV0102002", // Employee Relations
-        name: "HR Officer",
-        base_salary: 7000000,
-        parent_position_code: "JBT0000009", // Reports to HR Manager
-        sort_order: 2,
-        description: "General HR",
-      },
-
-      // --- Tim Strategic Planning / BizDev (DIV0104002) ---
-      {
-        position_code: "JBT0000010",
-        division_code: "DIV0104002",
-        name: "BizDev Officer",
-        base_salary: 7500000,
-        parent_position_code: "JBT0000011", // Reports to BizDev Manager
-        sort_order: 3,
-        description: "Partnership Staff",
-      },
-      {
-        position_code: "JBT0000012",
-        division_code: "DIV0104002",
-        name: "Account Executive",
-        base_salary: 7000000,
-        parent_position_code: "JBT0000013", // Reports to Senior AM
-        sort_order: 4,
-        description: "Junior Sales/AE",
-      },
-
-      // --- Tim Finance & Accounting ---
-      {
-        position_code: "JBT0000014",
-        division_code: "DIV0103001", // Accounting
-        name: "Accountant",
-        base_salary: 8000000,
-        parent_position_code: "JBT0000015", // Reports to Senior Acc
-        sort_order: 2,
-        description: "Staff Accounting",
-      },
-      {
-        position_code: "JBT0000016",
-        division_code: "DIV0103003", // Budgeting
-        name: "Financial Analyst",
-        base_salary: 9000000,
-        parent_position_code: "JBT0000015", // Reports to Senior Acc (Cross-div reporting)
-        sort_order: 1,
-        description: "Analyst",
-      },
-      {
-        position_code: "JBT0000017",
-        division_code: "DIV0103003", // Budgeting
-        name: "Budget Officer",
-        base_salary: 9500000,
-        parent_position_code: "JBT0000015", // Reports to Senior Acc
-        sort_order: 2,
-        description: "Budget Control",
-      },
-    ])
-    .onConflict("position_code") // Update berdasarkan kode jabatan
+    .insert(positions)
+    .onConflict("position_code")
     .merge();
 }
