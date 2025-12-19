@@ -70,6 +70,17 @@ export const getUsersById = async (id: number): Promise<GetUserById> =>
     .where({ [`${USER_TABLE}.id`]: id })
     .first();
 
+export const getUserByCode = async (code: string) => {
+  await db(USER_TABLE)
+    .select(
+      `${USER_TABLE}.id`,
+      `${USER_TABLE}.email`,
+      `${USER_TABLE}.role_code`,
+      `${USER_TABLE}.name as role_name`
+    )
+    .leftJoin(ROLE_TABLE, `${ROLE_TABLE}.role_code`, `${USER_TABLE}.role_code`);
+};
+
 /**
  * Creates new user.
  */
