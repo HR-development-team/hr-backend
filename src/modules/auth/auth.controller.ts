@@ -4,9 +4,13 @@ import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { generateToken } from "@utils/jwt.js";
 import { loginSchema } from "./auth.schema.js";
-import { findUserByEmail } from "./auth.model.js";
+import {
+  deleteUserSessionToken,
+  findUserByEmail,
+  updateUserSessionToken,
+} from "./auth.model.js";
 import { comparePassword } from "@utils/bcrypt.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { getMasterEmployeesByUserCode } from "@modules/employees/employee.model.js";
 import { getRoleByCode } from "@modules/roles/role.model.js";
 
@@ -70,6 +74,8 @@ export const loginUser = async (req: Request, res: Response) => {
       role_name: role?.name,
     };
     const token = await generateToken(userResponse);
+
+    await updateUserSessionToken(email, token);
 
     return successResponse(
       res,
@@ -138,7 +144,20 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
 /**
  * [DELETE] /api/v1/auth/logout - Logout User (Employee or Admin)
  */
-export const logoutUser = async (req: Request, res: Response) => {
+export const logoutUser = async (req: AuthenticatedRequest, res: Response) => {
+  const currentUser = req.user!;
+
+  if (!currentUser) {
+    return errorResponse(
+      res,
+      API_STATUS.UNAUTHORIZED,
+      "User tidak teridentifikasi",
+      401
+    );
+  }
+
+  await deleteUserSessionToken(currentUser.user_code);
+
   res.cookie("accessToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

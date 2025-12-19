@@ -10,7 +10,7 @@ import {
 } from "./leave-request.model.js";
 import { updateLeaveStatusSchema } from "./leave-request.schemas.js";
 import { deductLeaveBalance } from "@modules/leave-balances/leave-balance.model.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 
 /**
  * [GET] /leave-requests - Fetch all Leave Requests

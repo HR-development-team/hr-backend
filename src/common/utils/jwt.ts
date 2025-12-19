@@ -34,7 +34,9 @@ export const generateToken = async (payload: TokenPayload): Promise<string> => {
 /**
  * Verifies a token's signature and expiration, returning the decoded payload.
  */
-export const verifyToken = async (token: string): Promise<TokenPayload> => {
+export const verifyJwtSignature = async (
+  token: string
+): Promise<TokenPayload> => {
   const { payload } = await jwtVerify(token, secretKey, {
     algorithms: ["HS512"],
   });

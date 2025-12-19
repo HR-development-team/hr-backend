@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { verifyToken } from "@middleware/jwt.js";
 import {
   fetchEmployeeProfile,
   updateEmployeeProfile,
 } from "./profile.controller.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get("/", fetchEmployeeProfile);
 router.put("/", updateEmployeeProfile);

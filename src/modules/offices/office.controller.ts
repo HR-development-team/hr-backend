@@ -23,7 +23,7 @@ import {
   OfficeRawWithParent,
   OfficeTree,
 } from "./office.types.js";
-import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { checkOfficeScope, isOfficeExist } from "./office.helper.js";
 
 // --- HELPER FUNCTION (Logic Pohon) ---

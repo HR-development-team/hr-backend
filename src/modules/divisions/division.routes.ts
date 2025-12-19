@@ -7,10 +7,10 @@ import {
   fetchMasterDivisionsById,
   updateMasterDivisions,
 } from "./division.controller.js";
-import { verifyToken } from "@middleware/jwt.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 // get all
 router.get("/", fetchAllMasterDivisions);

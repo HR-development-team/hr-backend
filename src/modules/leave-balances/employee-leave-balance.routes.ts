@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { verifyToken } from "@middleware/jwt.js";
 import { fetchEmployeeLeaveBalance } from "./employee-leave-balance.controller.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get("/me", fetchEmployeeLeaveBalance);
 

@@ -4,10 +4,10 @@ import {
   checkOut,
   fetchEmployeeAttendance,
 } from "./employee-attendance.controller.js";
-import { verifyToken } from "@middleware/jwt.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.post("/check-in", checkIn);
 router.put("/check-out", checkOut);

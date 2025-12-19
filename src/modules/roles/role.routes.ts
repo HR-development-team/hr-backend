@@ -7,10 +7,10 @@ import {
   fetchRolesById,
   updateRoles,
 } from "./role.controller.js";
-import { verifyToken } from "@middleware/jwt.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get("/", fetchAllRoles);
 router.get("/:id", fetchRolesById);

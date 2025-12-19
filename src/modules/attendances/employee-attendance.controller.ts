@@ -11,7 +11,7 @@ import {
   recordCheckIn,
   recordCheckOut,
 } from "./attendance.model.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { getMasterEmployeesByCode } from "@modules/employees/employee.model.js";
 import { getAttendanceSessionsByDate } from "@modules/attendance-sessions/session.model.js";
 
