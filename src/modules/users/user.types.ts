@@ -3,7 +3,9 @@ export interface User {
   user_code: string;
   email: string;
   role_code: string;
+  session_token: string;
   password: string;
+  login_date: string;
   created_at: string;
   updated_at: string;
 }
@@ -14,6 +16,8 @@ export interface GetUserById {
   email: string;
   role_code: string;
   role_name: string;
+  session_token: string;
+  login_date: string;
   created_at: string;
   updated_at: string;
 }

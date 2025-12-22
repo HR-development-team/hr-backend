@@ -9,7 +9,7 @@ import {
 } from "./permission.model.js";
 import { getUsersById } from "@modules/users/user.model.js";
 import { UpdatePermissionSchema } from "./permission.schemas.js";
-import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { getRoleByCode } from "@modules/roles/role.model.js";
 
 /**

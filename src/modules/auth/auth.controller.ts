@@ -4,9 +4,14 @@ import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { generateToken } from "@utils/jwt.js";
 import { loginSchema } from "./auth.schema.js";
-import { findUserByEmail } from "./auth.model.js";
+import {
+  deleteUserSessionToken,
+  findUserByEmail,
+  updateUserLoginDate,
+  updateUserSessionToken,
+} from "./auth.model.js";
 import { comparePassword } from "@utils/bcrypt.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { getMasterEmployeesByUserCode } from "@modules/employees/employee.model.js";
 import { getRoleByCode } from "@modules/roles/role.model.js";
 
@@ -15,7 +20,7 @@ import { getRoleByCode } from "@modules/roles/role.model.js";
  */
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    // validation check
+    // Validation check
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
       return errorResponse(
@@ -30,8 +35,9 @@ export const loginUser = async (req: Request, res: Response) => {
       );
     }
 
-    // check wether the email exist or not
     const { email, password } = validation.data;
+
+    // Check if the user exists
     const user = await findUserByEmail(email);
     if (!user) {
       return errorResponse(
@@ -42,7 +48,27 @@ export const loginUser = async (req: Request, res: Response) => {
       );
     }
 
-    // check wether the password correct or wrong
+    // Check if session_token already exists
+    if (user.session_token) {
+      const MAX_IDLE_TIME = 15 * 60 * 1000; // 15 minutes
+
+      // Calculate how long since the last login/activity
+      const lastActive = new Date(user.login_date).getTime();
+      const now = new Date().getTime();
+      const timeDiff = now - lastActive;
+
+      // If the session is strictly active (less than 15 mins ago)
+      if (timeDiff < MAX_IDLE_TIME) {
+        return errorResponse(
+          res,
+          API_STATUS.FAILED,
+          "Anda sedang login di perangkat lain. Harap logout atau tunggu sesi berakhir (15 menit).",
+          403
+        );
+      }
+    }
+
+    // Check if the password is correct
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
       return errorResponse(
@@ -53,13 +79,11 @@ export const loginUser = async (req: Request, res: Response) => {
       );
     }
 
-    // get employee code based on user code
+    // Get employee and role details
     const employee = await getMasterEmployeesByUserCode(user.user_code);
-
-    // get role name based on role_code
     const role = await getRoleByCode(user.role_code);
 
-    // generate token phase
+    // Generate token phase
     const userResponse = {
       id: user.id,
       email: user.email,
@@ -70,6 +94,9 @@ export const loginUser = async (req: Request, res: Response) => {
       role_name: role?.name,
     };
     const token = await generateToken(userResponse);
+
+    // Update session token in DB
+    await updateUserSessionToken(user.user_code, token);
 
     return successResponse(
       res,
@@ -138,7 +165,20 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
 /**
  * [DELETE] /api/v1/auth/logout - Logout User (Employee or Admin)
  */
-export const logoutUser = async (req: Request, res: Response) => {
+export const logoutUser = async (req: AuthenticatedRequest, res: Response) => {
+  const currentUser = req.user!;
+
+  if (!currentUser) {
+    return errorResponse(
+      res,
+      API_STATUS.UNAUTHORIZED,
+      "User tidak teridentifikasi",
+      401
+    );
+  }
+
+  await deleteUserSessionToken(currentUser.user_code);
+
   res.cookie("accessToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -153,4 +193,30 @@ export const logoutUser = async (req: Request, res: Response) => {
     null,
     200
   );
+};
+
+/**
+ * [POST] /api/v1/auth/keep-alive
+ */
+export const keepSessionAlive = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { user_code } = req.user!;
+
+    // Update the login_date to NOW()
+    await updateUserLoginDate(user_code);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Session extended",
+      null,
+      200
+    );
+  } catch (error) {
+    appLogger.error(`Keep Alive Error: ${error}`);
+    return errorResponse(res, API_STATUS.FAILED, "Server error", 500);
+  }
 };

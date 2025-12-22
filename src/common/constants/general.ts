@@ -22,7 +22,6 @@ export const RESPONSE_DATA_KEYS = {
   FEATURES: "features",
   PERMISSIONS: "role_permissions",
   AUTH: "auth",
-  EMPLOYMENT_STATUSES: "employment_statuses",
   EMPLOYMENT_STATUS: "employment_status",
 
   // transaction Data
@@ -33,3 +32,26 @@ export const RESPONSE_DATA_KEYS = {
   PAYROLL_PERIODS: "payroll_periods",
   PAYROLLS: "payrolls",
 };
+
+export const FEATURES = {
+  USER_MANAGEMENT: "FTR0000001",
+  ROLE_MANAGEMENT: "FTR0000002",
+  EMPLOYEE_MANAGEMENT: "FTR0000003",
+  OFFICE_MANAGEMENT: "FTR0000004",
+  DEPARTMENT_MANAGEMENT: "FTR0000005",
+  DIVISION_MANAGEMENT: "FTR0000006",
+  POSITION_MANAGEMENT: "FTR0000007",
+  ORGANIZATION_MANAGEMENT: "FTR0000008",
+  LEAVE_REQUEST_MANAGEMENT: "FTR0000009",
+  LEAVE_BALANCE_MANAGEMENT: "FTR0000010",
+};
+
+export const PERMISSIONS = {
+  READ: "can_read",
+  CREATE: "can_create",
+  UPDATE: "can_update",
+  DELETE: "can_delete",
+  PRINT: "can_print",
+};
+
+

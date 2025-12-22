@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { verifyToken } from "@middleware/jwt.js";
 import { getMetrics } from "./employee-dashboard.controller.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get("/metrics", getMetrics);
 

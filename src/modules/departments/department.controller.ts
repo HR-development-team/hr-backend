@@ -16,7 +16,7 @@ import {
   updateMasterDepartmentsSchema,
 } from "./department.schemas.js";
 import { getMasterOfficeByCode } from "../offices/office.model.js";
-import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { checkOfficeScope } from "@modules/offices/office.helper.js";
 import {
   getDepartmentsById,

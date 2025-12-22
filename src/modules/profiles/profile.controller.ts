@@ -2,7 +2,7 @@ import { Response } from "express";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { errorResponse, successResponse } from "@utils/response.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import {
   editMasterEmployeesByCode,
   getMasterEmployeesByCode,

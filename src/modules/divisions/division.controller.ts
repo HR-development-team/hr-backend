@@ -15,7 +15,7 @@ import {
   addMasterDivisionsSchema,
   updateMasterDivisionsSchema,
 } from "./division.schemas.js";
-import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { checkOfficeScope } from "@modules/offices/office.helper.js";
 import { getMasterDepartmentByCode } from "@modules/departments/department.model.js";
 import { isDivisionNameExist } from "./division.helper.js";

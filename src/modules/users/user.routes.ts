@@ -6,15 +6,44 @@ import {
   fetchUsersById,
   updateUsers,
 } from "./user.controller.js";
-import { verifyToken } from "@middleware/jwt.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
+import { FEATURES, PERMISSIONS } from "@common/constants/general.js";
+import { checkPermission } from "@common/middleware/permissionMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
-router.get("/", fetchAllUsers);
-router.get("/:id", fetchUsersById);
-router.post("/", createUsers);
-router.put("/:id", updateUsers);
-router.delete("/:id", destroyUsers);
+const USER_FEATURE = FEATURES.USER_MANAGEMENT;
+
+// get all users
+router.get("/", checkPermission(USER_FEATURE, PERMISSIONS.READ), fetchAllUsers);
+
+// get by id
+router.get(
+  "/:id",
+  checkPermission(USER_FEATURE, PERMISSIONS.READ),
+  fetchUsersById
+);
+
+// post users
+router.post(
+  "/",
+  checkPermission(USER_FEATURE, PERMISSIONS.CREATE),
+  createUsers
+);
+
+// put users by id
+router.put(
+  "/:id",
+  checkPermission(USER_FEATURE, PERMISSIONS.UPDATE),
+  updateUsers
+);
+
+// delete users by id
+router.delete(
+  "/:id",
+  checkPermission(USER_FEATURE, PERMISSIONS.DELETE),
+  destroyUsers
+);
 
 export default router;

@@ -4,10 +4,10 @@ import {
   getPermissionByRoleCode,
   updatePermissionByRoleCode,
 } from "./permission.controller.js";
-import { verifyToken } from "@middleware/jwt.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get("/me", getCurrentUserPermission);
 router.get("/role/:role_code", getPermissionByRoleCode);

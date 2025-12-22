@@ -15,7 +15,7 @@ import {
   addAttendanceSessionsSchema,
   updateAttendanceSessionsSchema,
 } from "@modules/attendance-sessions/session.schemas.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { formatIndonesianDate } from "src/common/utils/formatDate.js";
 
 /**

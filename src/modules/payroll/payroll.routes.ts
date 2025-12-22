@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { verifyToken } from "@middleware/jwt.js";
 import {
   destroyPayrolls,
   fetchAllPayrolls,
@@ -7,9 +6,10 @@ import {
   generateAllPayroll,
   updatePayroll,
 } from "./payroll.controller.js";
+import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
 const router = Router();
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.post("/generate", generateAllPayroll);
 router.get("/", fetchAllPayrolls);

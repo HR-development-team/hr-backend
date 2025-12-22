@@ -2,7 +2,7 @@ import { Response } from "express";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { errorResponse, successResponse } from "@utils/response.js";
 import { appLogger } from "@utils/logger.js";
-import { AuthenticatedRequest } from "@middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { DatabaseError } from "@apptypes/error.types.js";
 import { calculateWorkdays } from "@utils/dateCalculations.js";
 import { getLeaveBalanceByEmployeeAndType } from "@modules/leave-balances/leave-balance.model.js";

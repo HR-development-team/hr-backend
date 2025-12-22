@@ -16,7 +16,7 @@ import {
   addMasterEmployeesSchema,
   updateMasterEmployeesSchema,
 } from "./employee.schemas.js";
-import { AuthenticatedRequest } from "@common/middleware/jwt.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { checkOfficeScope } from "@modules/offices/office.helper.js";
 
 /**
