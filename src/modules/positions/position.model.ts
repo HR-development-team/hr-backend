@@ -38,7 +38,8 @@ export const getPositionsByOffice = async (
       `${POSITION_TABLE}.name`,
       `${POSITION_TABLE}.parent_position_code`,
       `${EMPLOYEE_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.full_name as employee_name`
+      `${EMPLOYEE_TABLE}.full_name as employee_name`,
+      "parent_pos.name as parent_position_name"
     )
     .leftJoin(
       EMPLOYEE_TABLE,
@@ -59,6 +60,11 @@ export const getPositionsByOffice = async (
       OFFICE_TABLE,
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE} as parent_pos`,
+      `${POSITION_TABLE}.parent_position_code`,
+      "parent_pos.position_code"
     )
     .where(function () {
       this.where(`${OFFICE_TABLE}.office_code`, officeIdentifier).orWhere(
@@ -89,7 +95,8 @@ export const getAllPositions = async (
       `${DEPARTMENT_TABLE}.name as department_name`,
       `${DEPARTMENT_TABLE}.department_code`,
       `${DIVISION_TABLE}.name as division_name`,
-      `${DIVISION_TABLE}.division_code`
+      `${DIVISION_TABLE}.division_code`,
+      "parent_pos.name as parent_position_name"
     )
     .leftJoin(
       `${DIVISION_TABLE}`,
@@ -105,6 +112,11 @@ export const getAllPositions = async (
       `${OFFICE_TABLE}`,
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE} as parent_pos`,
+      `${POSITION_TABLE}.parent_position_code`,
+      "parent_pos.position_code"
     );
 
   if (userOfficeCode) {
@@ -146,23 +158,27 @@ export const getPositionById = async (id: number): Promise<GetPositionById> => {
       "ofc.office_code",
       "dept.name as department_name",
       "dept.department_code",
-      "div.name as division_name"
+      "div.name as division_name",
+      "div.division_code"
     )
     .leftJoin(
       `${POSITION_TABLE} as parent`,
       "pos.parent_position_code",
       "parent.position_code"
     )
+    // 2. Join Division
     .leftJoin(
       `${DIVISION_TABLE} as div`,
       "pos.division_code",
       "div.division_code"
     )
+    // 3. Join Department
     .leftJoin(
       `${DEPARTMENT_TABLE} as dept`,
       "div.department_code",
       "dept.department_code"
     )
+    // 4. Join Office
     .leftJoin(`${OFFICE_TABLE} as ofc`, "dept.office_code", "ofc.office_code")
     .where("pos.id", id)
     .first();
@@ -180,23 +196,27 @@ export const getPositionByCode = async (code: string) => {
       "ofc.office_code",
       "dept.name as department_name",
       "dept.department_code",
-      "div.name as division_name"
+      "div.name as division_name",
+      "div.division_code"
     )
     .leftJoin(
       `${POSITION_TABLE} as parent`,
       "pos.parent_position_code",
       "parent.position_code"
     )
+    // 2. Join Division
     .leftJoin(
       `${DIVISION_TABLE} as div`,
       "pos.division_code",
       "div.division_code"
     )
+    // 3. Join Department
     .leftJoin(
       `${DEPARTMENT_TABLE} as dept`,
       "div.department_code",
       "dept.department_code"
     )
+    // 4. Join Office
     .leftJoin(`${OFFICE_TABLE} as ofc`, "dept.office_code", "ofc.office_code")
     .where("pos.position_code", code)
     .first();
