@@ -8,7 +8,7 @@ import { JOSEError } from "jose/errors";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
 
 // Define your timeout constant (15 minutes)
-const MAX_IDLE_TIME = 1 * 60 * 1000;
+const MAX_IDLE_TIME = 15 * 60 * 1000;
 
 export const authMiddleware = async (
   req: AuthenticatedRequest,
