@@ -22,12 +22,21 @@ export const findUserById = async (id: number): Promise<User | null> => {
  * Update user session token
  */
 export const updateUserSessionToken = async (
-  email: string,
+  userCode: string,
   sessionToken: string
 ) => {
   await db(USER_TABLE)
-    .where({ email })
+    .where({ user_code: userCode })
     .update({ session_token: sessionToken, login_date: new Date() });
+};
+
+/**
+ * Update only the login_date (timestamp)
+ */
+export const updateUserLoginDate = async (userCode: string) => {
+  await db(USER_TABLE)
+    .where({ user_code: userCode })
+    .update({ login_date: new Date() });
 };
 
 export const deleteUserSessionToken = async (userCode: string) => {
