@@ -6,13 +6,40 @@ import {
   updateLeaveRequestStatus,
 } from "./admin-leave-request.controller.js";
 import { authMiddleware } from "@common/middleware/authMiddleware.js";
+import { FEATURES, PERMISSIONS } from "@common/constants/general.js";
+import { checkPermission } from "@common/middleware/permissionMiddleware.js";
 
 const router = Router();
 router.use(authMiddleware);
 
-router.get("/", fetchAllLeaveRequest);
-router.get("/:id", fetchLeaveRequestById);
-router.put("/:id/status", updateLeaveRequestStatus);
-router.delete("/:id", destroyLeaveRequest);
+const LEAVE_REQUEST_FEATURE = FEATURES.LEAVE_REQUEST_MANAGEMENT;
+
+// get all leave requests
+router.get(
+  "/",
+  checkPermission(LEAVE_REQUEST_FEATURE, PERMISSIONS.READ),
+  fetchAllLeaveRequest
+);
+
+// get leave request by id
+router.get(
+  "/:id",
+  checkPermission(LEAVE_REQUEST_FEATURE, PERMISSIONS.READ),
+  fetchLeaveRequestById
+);
+
+// update leave request status by id
+router.put(
+  "/:id/status",
+  checkPermission(LEAVE_REQUEST_FEATURE, PERMISSIONS.UPDATE),
+  updateLeaveRequestStatus
+);
+
+// delete leave request by id
+router.delete(
+  "/:id",
+  checkPermission(LEAVE_REQUEST_FEATURE, PERMISSIONS.DELETE),
+  destroyLeaveRequest
+);
 
 export default router;
