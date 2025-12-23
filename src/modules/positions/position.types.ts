@@ -19,8 +19,17 @@ export interface GetAllPosition extends Position {
   division_name: string;
 }
 
-export interface GetPositionById extends GetAllPosition {
+export interface GetAllPositionResponse {
+  data: GetAllPosition[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
 }
+
+export interface GetPositionById extends GetAllPosition {}
 
 export interface CreatePosition {
   division_code: string;

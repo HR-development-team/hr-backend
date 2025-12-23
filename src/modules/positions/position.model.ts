@@ -8,7 +8,7 @@ import {
 } from "@constants/database.js";
 import {
   CreatePosition,
-  GetAllPosition,
+  GetAllPositionResponse,
   GetPositionById,
   Position,
   PositionRaw,
@@ -84,20 +84,10 @@ export const getAllPositions = async (
   userOfficeCode: string | null,
   search: string,
   divCode: string
-): Promise<GetAllPosition[]> => {
+): Promise<GetAllPositionResponse> => {
   const offset = (page - 1) * limit;
 
   const query = db(POSITION_TABLE)
-    .select(
-      `${POSITION_TABLE}.*`,
-      `${OFFICE_TABLE}.name as office_name`,
-      `${OFFICE_TABLE}.office_code`,
-      `${DEPARTMENT_TABLE}.name as department_name`,
-      `${DEPARTMENT_TABLE}.department_code`,
-      `${DIVISION_TABLE}.name as division_name`,
-      `${DIVISION_TABLE}.division_code`,
-      "parent_pos.name as parent_position_name"
-    )
     .leftJoin(
       `${DIVISION_TABLE}`,
       `${POSITION_TABLE}.division_code`,
@@ -140,10 +130,41 @@ export const getAllPositions = async (
     });
   }
 
-  return query
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count(`${POSITION_TABLE}.position_code as total`)
+    .first();
+
+  const dataQuery = query
+    .select(
+      `${POSITION_TABLE}.*`,
+      `${OFFICE_TABLE}.name as office_name`,
+      `${OFFICE_TABLE}.office_code`,
+      `${DEPARTMENT_TABLE}.name as department_name`,
+      `${DEPARTMENT_TABLE}.department_code`,
+      `${DIVISION_TABLE}.name as division_name`,
+      `${DIVISION_TABLE}.division_code`,
+      "parent_pos.name as parent_position_name"
+    )
+    .orderBy(`${POSITION_TABLE}.sort_order`, "asc")
     .limit(limit)
-    .offset(offset)
-    .orderBy(`${POSITION_TABLE}.sort_order`, "asc");
+    .offset(offset);
+
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
 };
 
 /**
