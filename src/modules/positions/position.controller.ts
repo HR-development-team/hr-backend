@@ -78,13 +78,13 @@ export const fetchPositionList = async (
 ) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 100;
+    const limit = parseInt(req.query.limit as string) || 5;
     const search = (req.query.search as string) || "";
     const divCode = (req.query.division_code as string) || "";
 
     const currentUser = req.user!;
 
-    const positions = await getAllPositions(
+    const { data, meta } = await getAllPositions(
       page,
       limit,
       currentUser.office_code,
@@ -96,9 +96,10 @@ export const fetchPositionList = async (
       res,
       API_STATUS.SUCCESS,
       "Data Jabatan Berhasil Didapatkan",
-      positions,
+      data,
       200,
-      RESPONSE_DATA_KEYS.POSITIONS
+      RESPONSE_DATA_KEYS.POSITIONS,
+      meta
     );
   } catch (error) {
     const dbError = error as unknown;

@@ -10,7 +10,8 @@ export function successResponse(
   message: string,
   data: unknown,
   httpStatusCode: number = 200,
-  dataKey: string = "data"
+  dataKey: string = "data",
+  meta: unknown = null
 ) {
   const responseBody: Record<string, unknown> = {
     status: customStatus,
@@ -21,6 +22,10 @@ export function successResponse(
   // Add the data payload using the specified key
   if (data !== null && data !== undefined) {
     responseBody[dataKey] = data;
+  }
+
+  if (meta !== null && meta !== undefined) {
+    responseBody["meta"] = meta;
   }
 
   return res.status(httpStatusCode).json(responseBody);
