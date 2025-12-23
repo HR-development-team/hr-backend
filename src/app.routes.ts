@@ -30,6 +30,9 @@ import adminLeaveRequestRoutes from "@modules/leave-requests/admin-leave-request
 import adminLeaveBalanceRoutes from "@modules/leave-balances/admin-leave-balance.routes.js";
 import adminDashboardRoutes from "@modules/dashboard/admin-dashboard.routes.js";
 
+// Holiday Routes
+import holidayRoutes from "@modules/holidays/holidays.route.js";
+
 const router = Router();
 
 // ==========================
@@ -72,5 +75,10 @@ router.use("/admin/attendances", adminAttendanceRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
 router.use("/admin/leave-requests", adminLeaveRequestRoutes);
 router.use("/admin/leave-balances", adminLeaveBalanceRoutes);
+
+// ==========================
+// ||       Holidays       ||
+// ==========================
+router.use("/holidays", holidayRoutes);
 
 export default router;

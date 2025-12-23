@@ -15,6 +15,7 @@ export interface Employee {
   contact_phone: string | null;
   religion: string | null;
   maritial_status: string | null;
+  shift_code: string | null;
 
   join_date: string;
   resign_date: string | null;
@@ -54,6 +55,7 @@ export interface GetAllEmployee {
   office_code: string;
   office_name: string;
   user_code: string;
+  shift_code: string;
   email: string;
   employment_status: "aktif" | "inaktif";
 }
@@ -67,6 +69,7 @@ export interface CreateEmployee {
   join_date: string;
 
   // optional fields
+  shift_code?: string | null;
   ktp_number?: string | null;
   birth_place?: string | null;
   birth_date?: string | null;
@@ -95,6 +98,7 @@ export interface UpdateEmployee {
   join_date?: string;
 
   // optional fields
+  shift_code: string | null;
   ktp_number?: string | null;
   birth_place?: string | null;
   birth_date?: string | null;
@@ -122,6 +126,7 @@ export interface UpdateEmployeeByCode {
   join_date?: string;
 
   // optional fields
+  shift_code: string | null;
   ktp_number?: string | null;
   birth_place?: string | null;
   birth_date?: string | null;

@@ -31,6 +31,8 @@ export const RESPONSE_DATA_KEYS = {
   LEAVE_BALANCES: "leave_balances",
   PAYROLL_PERIODS: "payroll_periods",
   PAYROLLS: "payrolls",
+
+  HOLIDAYS: "holidays",
 };
 
 export const FEATURES = {
@@ -53,5 +55,3 @@ export const PERMISSIONS = {
   DELETE: "can_delete",
   PRINT: "can_print",
 };
-
-

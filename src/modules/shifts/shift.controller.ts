@@ -109,6 +109,7 @@ export const createMasterShift = async (req: Request, res: Response) => {
     }
 
     const {
+      office_code,
       name,
       start_time,
       end_time,
@@ -116,9 +117,11 @@ export const createMasterShift = async (req: Request, res: Response) => {
       check_in_limit_minutes,
       check_out_limit_minutes,
       is_overnight,
+      work_days,
     } = validation.data;
 
     const newShift = await addMasterShifts({
+      office_code,
       name,
       start_time,
       end_time,
@@ -126,6 +129,7 @@ export const createMasterShift = async (req: Request, res: Response) => {
       check_in_limit_minutes,
       check_out_limit_minutes,
       is_overnight,
+      work_days,
     });
 
     return successResponse(
@@ -201,6 +205,7 @@ export const updateMasterShift = async (req: Request, res: Response) => {
     }
 
     const {
+      office_code,
       name,
       start_time,
       end_time,
@@ -208,9 +213,11 @@ export const updateMasterShift = async (req: Request, res: Response) => {
       late_tolerance_minutes,
       check_in_limit_minutes,
       check_out_limit_minutes,
+      work_days,
     } = validation.data;
 
     const updatedShift = await editMasterShift({
+      office_code,
       id,
       name,
       start_time,
@@ -219,6 +226,7 @@ export const updateMasterShift = async (req: Request, res: Response) => {
       late_tolerance_minutes,
       check_in_limit_minutes,
       check_out_limit_minutes,
+      work_days,
     });
 
     if (!updatedShift) {
@@ -298,7 +306,7 @@ export const destroyMasterShift = async (req: Request, res: Response) => {
       return errorResponse(
         res,
         API_STATUS.CONFLICT,
-        "Tidak dapat menghapus shift karena sedang digunakan dalam sesi absensi atau jadwal aktif.",
+        "Tidak dapat menghapus shift karena sudah digunakan di data absensi atau data karyawan",
         409
       );
     }

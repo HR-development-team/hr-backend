@@ -7,6 +7,9 @@ export interface Attendance {
   check_out_time: Date | null;
   check_in_status: "in-time" | "late" | "absent";
   check_out_status: "in-time" | "early" | "overtime" | "missed";
+  shift_code: string
+  date: string
+  late_minutes: string
   created_at?: Date;
   updated_at?: Date;
 }
@@ -23,6 +26,9 @@ export interface GetAllAttendance {
   employee_name: string;
   session_status: string;
   session_date: Date;
+  shift_code: string
+  date: string
+  late_minutes: string
 }
 
 export interface CheckInPayload {

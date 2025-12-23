@@ -1,6 +1,7 @@
 export interface Shift {
   id: number;
   shift_code: string;
+  office_code: string;
   name: string;
   start_time: string;
   end_time: string;
@@ -8,6 +9,7 @@ export interface Shift {
   late_tolerance_minutes: number;
   check_in_limit_minutes: number;
   check_out_limit_minutes: number;
+  work_days: number[];
   created_at?: Date;
   updated_at?: Date;
 }
@@ -18,6 +20,7 @@ export interface GetAllShifts extends Shift {
 }
 
 export interface CreateShift {
+  office_code: string;
   name: string;
   start_time: string;
   end_time: string;
@@ -25,10 +28,12 @@ export interface CreateShift {
   late_tolerance_minutes: number;
   check_in_limit_minutes: number;
   check_out_limit_minutes: number;
+  work_days: number[];
 }
 
 export interface UpdateShift {
   id: number;
+  office_code?: string;
   name?: string;
   start_time?: string;
   end_time?: string;
@@ -36,4 +41,5 @@ export interface UpdateShift {
   late_tolerance_minutes?: number;
   check_in_limit_minutes?: number;
   check_out_limit_minutes?: number;
+  work_days?: number[];
 }

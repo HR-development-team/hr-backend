@@ -29,3 +29,6 @@ export const LEAVE_REQUEST_TABLE = "leave_requests";
 // Payroll Tables
 export const PAYROLL_PERIODS_TABLE = "payroll_periods";
 export const PAYROLLS_TABLE = "payrolls";
+
+// Holiday Table
+export const HOLIDAY_TABLE = "holidays";

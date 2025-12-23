@@ -2,6 +2,8 @@ import {
   ATTENDANCE_SESSION_TABLE,
   ATTENDANCE_TABLE,
   EMPLOYEE_TABLE,
+  HOLIDAY_TABLE,
+  SHIFT_TABLE,
 } from "@constants/database.js";
 import { db } from "@database/connection.js";
 import { Knex } from "knex";
@@ -134,6 +136,20 @@ export const getAttendanceById = async (id: number): Promise<Attendance[]> =>
     .first();
 
 /**
+ * Get attendance by date and employee code
+ */
+export const getAttendanceByDate = async (
+  connection: Knex | Knex.Transaction,
+  employeeCode: string,
+  date: string
+): Promise<Attendance> => {
+  return connection(ATTENDANCE_TABLE)
+    .where("employee_code", employeeCode)
+    .andWhere("date", date)
+    .first();
+};
+
+/**
  * Get all attendance that belong to an employee.
  */
 export const getEmployeeAttendances = async (
@@ -185,4 +201,35 @@ export const getTotalWorkDays = async (
     .first();
 
   return Number(result?.total_work_days || 0);
+};
+
+export const getEmployeeShift = async (
+  connection: Knex | Knex.Transaction,
+  employeeCode: string
+) => {
+  return connection(EMPLOYEE_TABLE)
+    .where("employee_code", employeeCode)
+    .select(
+      `${SHIFT_TABLE}.office_code`,
+      `${SHIFT_TABLE}.work_days`,
+      `${SHIFT_TABLE}.start_time`,
+      `${SHIFT_TABLE}.end_time`,
+      `${SHIFT_TABLE}.check_in_limit_minutes`,
+      `${SHIFT_TABLE}.late_tolerance_minutes`
+    )
+    .leftJoin(
+      `${SHIFT_TABLE}`,
+      `${EMPLOYEE_TABLE}.shift_code`,
+      `${SHIFT_TABLE}.shift_code`
+    )
+    .first();
+};
+
+export const getHolidayDate = async (date: string, officeCode: string) => {
+  return await db(HOLIDAY_TABLE)
+    .where("date", date)
+    .andWhere((builder) => {
+      builder.whereNull("office_code").orWhere("office_code", officeCode);
+    })
+    .first();
 };

@@ -419,6 +419,13 @@ export const updateMasterEmployees = async (
       );
     }
 
+    console.log(
+      "User Office Code:",
+      currentUser.office_code,
+      "| Tipe data user Office Code:",
+      typeof currentUser.office_code
+    );
+
     if (Object.keys(validation.data).length === 0) {
       return errorResponse(
         res,
@@ -428,10 +435,22 @@ export const updateMasterEmployees = async (
       );
     }
 
-    const parentOfficeCode = req.body.office_code;
+    const existingEmployee = await getMasterEmployeesById(id);
+
+    if (!existingEmployee) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Karyawan tidak ditemukan",
+        404
+      );
+    }
+
+    const parentOfficeCode =
+      req.body.office_code || existingEmployee.office_code;
 
     const hasAccess = await checkOfficeScope(
-      currentUser.office_code,
+      currentUser.office_code || "",
       parentOfficeCode
     );
 
@@ -446,20 +465,9 @@ export const updateMasterEmployees = async (
 
     const employeeData = validation.data;
 
-    const employee = await getMasterEmployeesById(id);
-
-    if (!employee) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "Karyawan tidak ditemukan",
-        404
-      );
-    }
-
     const isTargetAllowed = await checkOfficeScope(
       currentUser.office_code,
-      employee?.office_code
+      existingEmployee?.office_code
     );
 
     if (!isTargetAllowed) {

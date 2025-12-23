@@ -1,5 +1,5 @@
 import { db } from "@database/connection.js";
-import { SHIFT_TABLE } from "@constants/database.js";
+import { OFFICE_TABLE, SHIFT_TABLE } from "@constants/database.js";
 import {
   CreateShift,
   GetAllShifts,
@@ -33,23 +33,40 @@ async function generateShiftCode() {
  * Get all shift.
  */
 export const getAllMasterShifts = async (): Promise<GetAllShifts[]> =>
-  await db(SHIFT_TABLE).select(
-    `${SHIFT_TABLE}.id`,
-    `${SHIFT_TABLE}.shift_code`,
-    `${SHIFT_TABLE}.name`,
-    `${SHIFT_TABLE}.start_time`,
-    `${SHIFT_TABLE}.end_time`,
-    `${SHIFT_TABLE}.is_overnight`,
-    `${SHIFT_TABLE}.late_tolerance_minutes`,
-    `${SHIFT_TABLE}.check_in_limit_minutes`,
-    `${SHIFT_TABLE}.check_out_limit_minutes`
-  );
+  await db(SHIFT_TABLE)
+    .select(
+      `${SHIFT_TABLE}.id`,
+      `${SHIFT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.name as office_name`,
+      `${SHIFT_TABLE}.shift_code`,
+      `${SHIFT_TABLE}.name`,
+      `${SHIFT_TABLE}.start_time`,
+      `${SHIFT_TABLE}.end_time`,
+      `${SHIFT_TABLE}.is_overnight`,
+      `${SHIFT_TABLE}.late_tolerance_minutes`,
+      `${SHIFT_TABLE}.check_in_limit_minutes`,
+      `${SHIFT_TABLE}.check_out_limit_minutes`,
+      `${SHIFT_TABLE}.work_days`
+    )
+    .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${SHIFT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    );
 
 /**
  * Get shift by ID.
  */
 export const getMasterShiftsById = async (id: number): Promise<Shift> =>
-  await db(SHIFT_TABLE).where({ id }).select("*").first();
+  await db(SHIFT_TABLE)
+    .where(`${SHIFT_TABLE}.id`, id)
+    .select(`${SHIFT_TABLE}.*`, `${OFFICE_TABLE}.name as office_name`)
+    .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${SHIFT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    )
+    .first();
 
 /**
  * Creates new shift.
@@ -59,9 +76,18 @@ export const addMasterShifts = async (data: CreateShift): Promise<Shift> => {
   const shiftToInsert = {
     shift_code,
     ...data,
+    work_days: JSON.stringify(data.work_days),
   };
   const [id] = await db(SHIFT_TABLE).insert(shiftToInsert);
-  return db(SHIFT_TABLE).where({ id }).select("*").first();
+  return db(SHIFT_TABLE)
+    .where(`${SHIFT_TABLE}.id`, id)
+    .select(`${SHIFT_TABLE}.*`, `${OFFICE_TABLE}.name as office_name`)
+    .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${SHIFT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    )
+    .first();
 };
 
 /**
@@ -73,11 +99,19 @@ export const editMasterShift = async (
   const { id, ...updateData } = data;
 
   await db(SHIFT_TABLE).where({ id }).update(updateData);
-  return db(SHIFT_TABLE).where({ id }).first();
+  return db(SHIFT_TABLE)
+    .where(`${SHIFT_TABLE}.id`, id)
+    .select(`${SHIFT_TABLE}.*`, `${OFFICE_TABLE}.name as office_name`)
+    .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${SHIFT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    )
+    .first();
 };
 
 /**
  * Remove existing shift.
  */
 export const removeMasterShift = async (id: number): Promise<number> =>
-  await db(SHIFT_TABLE).where({ id }).delete();
+  await db(SHIFT_TABLE).where(`${SHIFT_TABLE}.id`, id).delete();
