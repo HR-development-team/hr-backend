@@ -30,14 +30,41 @@ export const getAllOffices = async (
 ): Promise<GetAllOfficesResponse> => {
   const offset = (page - 1) * limit;
 
-  // 1. Base Query
-  const query = officeHierarchyQuery(userOfficeCode!).leftJoin(
+  // Default: Root is the current user's office
+  let targetRoot = userOfficeCode;
+
+  // 1. HANDLE SUB-TREE FILTER
+  if (filterParent && userOfficeCode) {
+    // Security Check: Ensure the requested parent is within the user's scope
+    const isAllowed = await officeHierarchyQuery(userOfficeCode)
+      .where("office_tree.office_code", filterParent)
+      .first();
+
+    if (isAllowed) {
+      targetRoot = filterParent;
+    } else {
+      // User is trying to view an office outside their permission
+      return {
+        data: [],
+        meta: { page, limit, total: 0, total_page: 0 },
+      };
+    }
+  }
+
+  // 2. Build the Hierarchy Query
+  const query = officeHierarchyQuery(targetRoot!).leftJoin(
     `${OFFICE_TABLE} as parent`,
     "office_tree.parent_office_code",
     "parent.office_code"
   );
 
-  // 2. Search Logic
+  // 3. EXCLUSION LOGIC: Remove the selected parent from results
+  // We only do this if a specific filter was requested
+  if (filterParent) {
+    query.whereNot("office_tree.office_code", filterParent);
+  }
+
+  // 4. Search Logic
   if (search) {
     query.andWhere((builder) => {
       builder
@@ -46,19 +73,14 @@ export const getAllOffices = async (
     });
   }
 
-  // 3. Filter: Parent Office Code (Exact Match)
-  if (filterParent) {
-    query.where("office_tree.parent_office_code", filterParent);
-  }
-
-  // 4. Count Query
+  // 5. Count Query
   const countQuery = query
     .clone()
     .clearSelect()
     .count("office_tree.id as total")
     .first();
 
-  // 5. Data Query
+  // 6. Data Query
   const dataQuery = query
     .select("office_tree.*", "parent.name as parent_office_name")
     .orderBy("office_tree.sort_order", "asc")
@@ -66,7 +88,6 @@ export const getAllOffices = async (
     .limit(limit)
     .offset(offset);
 
-  // 6. Execute
   const [totalResult, rawData] = await Promise.all([countQuery, dataQuery]);
 
   const total = totalResult ? Number(totalResult.total) : 0;
