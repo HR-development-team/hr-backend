@@ -34,29 +34,34 @@ export const fetchAllMasterDivisions = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
     const search = (req.query.search as string) || "";
-    const deptCode = (req.query.department_code as string) || "";
+
+    // Filters
+    const filterDept = (req.query.department_code as string) || "";
+    const filterOffice = (req.query.office_code as string) || ""; // Added Office Filter
 
     const currentUser = req.user!;
 
-    const divisions = await getAllMasterDivision(
+    const { data, meta } = await getAllMasterDivision(
       page,
       limit,
       currentUser.office_code,
       search,
-      deptCode
+      filterDept,
+      filterOffice // Pass to service
     );
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Divisi berhasil di dapatkan",
-      divisions,
+      "Data Divisi berhasil didapatkan",
+      data,
       200,
-      RESPONSE_DATA_KEYS.DIVISIONS
+      RESPONSE_DATA_KEYS.DIVISIONS,
+      meta // Return meta
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching divisions:${dbError}`);
+    appLogger.error(`Error fetching divisions: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

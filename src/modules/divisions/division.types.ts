@@ -38,3 +38,13 @@ export interface UpdateDivision {
   department_code?: string;
   description?: string;
 }
+
+export interface GetAllDivisionResponse {
+  data: GetAllDivision[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}

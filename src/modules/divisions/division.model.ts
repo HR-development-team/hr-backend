@@ -7,7 +7,7 @@ import { db } from "@database/connection.js";
 import {
   CreateDivision,
   Division,
-  GetAllDivision,
+  GetAllDivisionResponse,
   GetDivisionByCode,
   GetDivisionById,
   UpdateDivision,
@@ -23,17 +23,13 @@ export const getAllMasterDivision = async (
   limit: number,
   userOfficeCode: string | null,
   search: string,
-  deptCode: string
-): Promise<GetAllDivision[]> => {
+  filterDept: string,
+  filterOffice: string
+): Promise<GetAllDivisionResponse> => {
   const offset = (page - 1) * limit;
 
+  // 1. Base Query (Joins)
   const query = db(DIVISION_TABLE)
-    .select(
-      `${DIVISION_TABLE}.*`,
-      `${DEPARTMENT_TABLE}.name as department_name`,
-      `${OFFICE_TABLE}.office_code`,
-      `${OFFICE_TABLE}.name as office_name`
-    )
     .leftJoin(
       `${DEPARTMENT_TABLE}`,
       `${DIVISION_TABLE}.department_code`,
@@ -45,6 +41,7 @@ export const getAllMasterDivision = async (
       `${OFFICE_TABLE}.office_code`
     );
 
+  // 2. Security Scope (User Hierarchy)
   if (userOfficeCode) {
     const allowedOfficesSubquery =
       officeHierarchyQuery(userOfficeCode).select("office_code");
@@ -52,6 +49,7 @@ export const getAllMasterDivision = async (
     query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
   }
 
+  // 3. Search Logic
   if (search) {
     query.andWhere((builder) => {
       builder
@@ -60,20 +58,50 @@ export const getAllMasterDivision = async (
     });
   }
 
-  if (deptCode) {
-    query.andWhere((builder) => {
-      builder.where(
-        `${DIVISION_TABLE}.department_code`,
-        "like",
-        `%${deptCode}%`
-      );
-    });
+  // 4. Filter: Department Code (Exact Match)
+  if (filterDept) {
+    query.where(`${DIVISION_TABLE}.department_code`, filterDept);
   }
 
-  return query
+  // 5. Filter: Office Code (Exact Match via Department table)
+  if (filterOffice) {
+    query.where(`${DEPARTMENT_TABLE}.office_code`, filterOffice);
+  }
+
+  // 6. Count Query
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count(`${DIVISION_TABLE}.id as total`)
+    .first();
+
+  // 7. Data Query
+  const dataQuery = query
+    .select(
+      `${DIVISION_TABLE}.*`,
+      `${DEPARTMENT_TABLE}.name as department_name`,
+      `${OFFICE_TABLE}.office_code`,
+      `${OFFICE_TABLE}.name as office_name`
+    )
+    .orderBy(`${DIVISION_TABLE}.id`, "asc")
     .limit(limit)
-    .offset(offset)
-    .orderBy(`${DIVISION_TABLE}.id`, "asc");
+    .offset(offset);
+
+  // 8. Execute in Parallel
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
 };
 
 /**
