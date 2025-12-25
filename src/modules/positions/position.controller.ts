@@ -80,7 +80,9 @@ export const fetchPositionList = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
     const search = (req.query.search as string) || "";
-    const divCode = (req.query.division_code as string) || "";
+    const filterOffice = (req.query.office_code as string) || "";
+    const filterDept = (req.query.department_code as string) || "";
+    const filterDiv = (req.query.division_code as string) || "";
 
     const currentUser = req.user!;
 
@@ -89,7 +91,9 @@ export const fetchPositionList = async (
       limit,
       currentUser.office_code,
       search,
-      divCode
+      filterOffice,
+      filterDept,
+      filterDiv
     );
 
     return successResponse(

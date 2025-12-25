@@ -83,7 +83,9 @@ export const getAllPositions = async (
   limit: number,
   userOfficeCode: string | null,
   search: string,
-  divCode: string
+  filterOffice: string,
+  filterDept: string,
+  filterDiv: string
 ): Promise<GetAllPositionResponse> => {
   const offset = (page - 1) * limit;
 
@@ -124,10 +126,19 @@ export const getAllPositions = async (
     });
   }
 
-  if (divCode) {
-    query.andWhere((builder) => {
-      builder.where(`${POSITION_TABLE}.division_code`, "like", `%${divCode}%`);
-    });
+  if (filterOffice) {
+    // We filter on the Department table's office_code column as it links to the Division
+    query.andWhere(`${DEPARTMENT_TABLE}.office_code`, filterOffice);
+  }
+
+  if (filterDept) {
+    // We filter on the Division table's department_code column (or Department table directly)
+    query.andWhere(`${DIVISION_TABLE}.department_code`, filterDept);
+  }
+
+  if (filterDiv) {
+    // Updated to use strict equality for code matching (safer than LIKE for codes)
+    query.andWhere(`${POSITION_TABLE}.division_code`, filterDiv);
   }
 
   const countQuery = query
