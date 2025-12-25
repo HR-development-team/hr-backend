@@ -3,41 +3,30 @@ import { DEPARTMENT_TABLE, OFFICE_TABLE } from "@constants/database.js";
 import {
   CreateDepartment,
   Department,
-  GetAllDepartment,
+  GetAllDepartmentResponse,
   UpdateDepartment,
   GetDepartmentDetail,
 } from "./department.types.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 import { generateDepartmentCode } from "./department.helper.js";
 
-
-/**
- * Get all master department.
- */
 export const getAllMasterDepartments = async (
   page: number,
   limit: number,
   userOfficeCode: string | null,
   search: string,
-  searchByOfficeCode: string
-): Promise<GetAllDepartment[]> => {
+  filterOffice: string
+): Promise<GetAllDepartmentResponse> => {
   const offset = (page - 1) * limit;
 
-  const query = db(DEPARTMENT_TABLE)
-    .select(
-      `${DEPARTMENT_TABLE}.id`,
-      `${DEPARTMENT_TABLE}.department_code`,
-      `${DEPARTMENT_TABLE}.office_code`, // <--- Ambil kode kantor
-      `${OFFICE_TABLE}.name as office_name`, // <--- Ambil nama kantor (Alias)
-      `${DEPARTMENT_TABLE}.name`,
-      `${DEPARTMENT_TABLE}.description` // <--- Ambil deskripsi
-    )
-    .leftJoin(
-      OFFICE_TABLE,
-      `${DEPARTMENT_TABLE}.office_code`,
-      `${OFFICE_TABLE}.office_code`
-    );
+  // 1. Base Query (Joins)
+  const query = db(DEPARTMENT_TABLE).leftJoin(
+    OFFICE_TABLE,
+    `${DEPARTMENT_TABLE}.office_code`,
+    `${OFFICE_TABLE}.office_code`
+  );
 
+  // 2. Security Scope (User Hierarchy)
   if (userOfficeCode) {
     const allowedOfficesSubquery =
       officeHierarchyQuery(userOfficeCode).select("office_code");
@@ -45,6 +34,7 @@ export const getAllMasterDepartments = async (
     query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
   }
 
+  // 3. Search Logic (Name or Code)
   if (search) {
     query.andWhere((builder) => {
       builder
@@ -53,20 +43,47 @@ export const getAllMasterDepartments = async (
     });
   }
 
-  if (searchByOfficeCode) {
-    query.andWhere((builder) => {
-      builder.where(
-        `${DEPARTMENT_TABLE}.office_code`,
-        "like",
-        `%${searchByOfficeCode}%`
-      );
-    });
+  // 4. Filter: Office Code (Exact Match)
+  if (filterOffice) {
+    query.where(`${DEPARTMENT_TABLE}.office_code`, filterOffice);
   }
 
-  return query
+  // 5. Count Query
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count(`${DEPARTMENT_TABLE}.id as total`)
+    .first();
+
+  // 6. Data Query
+  const dataQuery = query
+    .select(
+      `${DEPARTMENT_TABLE}.id`,
+      `${DEPARTMENT_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.name as office_name`,
+      `${DEPARTMENT_TABLE}.name`,
+      `${DEPARTMENT_TABLE}.description`
+    )
+    .orderBy(`${DEPARTMENT_TABLE}.id`, "asc")
     .limit(limit)
-    .offset(offset)
-    .orderBy(`${DEPARTMENT_TABLE}.id`, "asc");
+    .offset(offset);
+
+  // 7. Execute
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
 };
 /**
  * Get department by ID.
@@ -93,7 +110,6 @@ export const getMasterDepartmentsById = async (
     .where(`${DEPARTMENT_TABLE}.id`, id)
     .first();
 };
-
 
 export const getMasterDepartmentByCode = async (
   departmentCode: string
@@ -169,7 +185,6 @@ export const editMasterDepartments = async (
 export async function removeMasterDepartments(id: number): Promise<number> {
   return db(DEPARTMENT_TABLE).where({ id }).delete();
 }
-
 
 export const getMasterOfficeByCode = async (
   officeCode: string

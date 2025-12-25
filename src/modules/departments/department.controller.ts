@@ -25,6 +25,7 @@ import {
 import { isDuplicate } from "@common/utils/duplicateChecker.js";
 import { db } from "@database/connection.js";
 import { DEPARTMENT_TABLE } from "@common/constants/database.js";
+
 /**
  * [GET] /master-departments - Fetch all Departments
  */
@@ -36,29 +37,30 @@ export const fetchAllMasterDepartments = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
     const search = (req.query.search as string) || "";
-    const searchOfficeCode = (req.query.office_code as string) || "";
+    const filterOffice = (req.query.office_code as string) || "";
 
     const currentUser = req.user!;
 
-    const departments = await getAllMasterDepartments(
+    const { data, meta } = await getAllMasterDepartments(
       page,
       limit,
       currentUser.office_code,
       search,
-      searchOfficeCode
+      filterOffice
     );
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Departemen berhasil di dapatkan",
-      departments,
+      "Data Departemen berhasil didapatkan",
+      data,
       200,
-      RESPONSE_DATA_KEYS.DEPARTMENTS
+      RESPONSE_DATA_KEYS.DEPARTMENTS,
+      meta
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching departments:${dbError}`);
+    appLogger.error(`Error fetching departments: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

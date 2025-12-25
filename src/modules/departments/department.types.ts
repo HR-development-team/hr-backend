@@ -32,3 +32,13 @@ export interface UpdateDepartment {
 export interface GetDepartmentDetail extends Department {
   office_name: string;
 }
+
+export interface GetAllDepartmentResponse {
+  data: GetAllDepartment[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}
