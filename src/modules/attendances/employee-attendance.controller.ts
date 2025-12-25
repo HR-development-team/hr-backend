@@ -2,138 +2,76 @@ import { Response, Request } from "express";
 import { errorResponse, successResponse } from "@utils/response.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
-import { formatDate } from "@utils/formatDate.js";
-import { DatabaseError } from "@apptypes/error.types.js";
-import { checkInSchema, checkOutSchema } from "./attendance.schema.js";
 import {
   getAttendanceById,
   getEmployeeAttendances,
-  recordCheckIn,
-  recordCheckOut,
 } from "./attendance.model.js";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
-import { getMasterEmployeesByCode } from "@modules/employees/employee.model.js";
-import { getAttendanceSessionsByDate } from "@modules/attendance-sessions/session.model.js";
+import { db } from "@database/connection.js";
+import { processCheckIn, processCheckOut } from "./attendance.service.js";
 
 /**
  * [POST] /attendances/check-in - Record Employee Check-In
  */
 export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
-  const employeeCode = req.user!.employee_code;
-
-  if (!employeeCode) {
-    return errorResponse(
-      res,
-      API_STATUS.UNAUTHORIZED,
-      "Akun ini tidak terhubung dengan data pegawai.",
-      401
-    );
-  }
-
+  const trx = await db.transaction();
   try {
-    // validate the request first
-    const validation = checkInSchema.safeParse(req.body);
-    if (!validation.success) {
+    const currentUser = req.user!;
+    const employeeCode = currentUser.employee_code;
+
+    const { latitude, longitude } = req.body;
+
+    if (!employeeCode) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini tidak terhubung dengan data karyawan",
+        401
+      );
+    }
+
+    if (!latitude || !longitude) {
+      await trx.rollback();
       return errorResponse(
         res,
         API_STATUS.BAD_REQUEST,
-        "Validasi gagal",
-        400,
-        validation.error.errors.map((err) => ({
-          field: err.path[0],
-          message: err.message,
-        }))
+        "Gagal mendeteksi lokasi. Pastikan GPS aktif",
+        400
       );
     }
 
-    // check if the employee exist or not in database
-    const profile = await getMasterEmployeesByCode(employeeCode);
-    if (!profile) {
-      appLogger.error(
-        `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
-      );
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Profil pegawai tidak ditemukan.",
-        404
-      );
-    }
-
-    // check if the attendance session exist or not
-    const dateNow = formatDate();
-    const attendanceSession = await getAttendanceSessionsByDate(dateNow);
-    if (!attendanceSession) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Sesi absensi untuk sekarang belum ada. Coba lagi nanti",
-        404
-      );
-    }
-
-    // Compare current time with session open time
-    const now = new Date();
-    const openTime = new Date(
-      `${dateNow}T${attendanceSession.open_time}+07:00`
+    const result = await processCheckIn(
+      trx,
+      employeeCode,
+      parseFloat(latitude),
+      parseFloat(longitude)
     );
-    if (now < openTime) {
+
+    if (!result.success) {
+      await trx.rollback();
       return errorResponse(
         res,
-        API_STATUS.FAILED,
-        "Sesi absensi untuk sekarang belum ada. Coba lagi nanti",
-        403
+        API_STATUS.BAD_REQUEST,
+        result.message,
+        result.statusCode,
+        result.data
       );
     }
 
-    // check if the session is already closed
-    if (attendanceSession.status === "closed") {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Sesi absensi untuk hari ini sudah ditutup.",
-        403
-      );
-    }
-
-    // Determine check-in status (late or in-time)
-    const startTime = new Date(`${dateNow}T${attendanceSession.cutoff_time}`);
-    const checkInStatus = now > startTime ? "late" : "in-time";
-
-    // Record check-in data
-    const checkInData = await recordCheckIn({
-      employee_code: employeeCode,
-      session_code: attendanceSession.session_code,
-      check_in_time: now,
-      check_in_status: checkInStatus,
-    });
-
+    await trx.commit();
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      `Berhasil check-in, Selamat bekerja ${profile!.full_name}`,
-      checkInData,
-      201,
-      RESPONSE_DATA_KEYS.ATTENDANCES
+      result.message,
+      result.data
     );
   } catch (error) {
-    const dbError = error as DatabaseError;
-
-    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
-      appLogger.warn(`Employee ${employeeCode} attempted duplicate check-in.`);
-      return errorResponse(
-        res,
-        API_STATUS.FAILED,
-        "Anda sudah melakukan check-in hari ini. Tidak dapat check-in ganda.",
-        409
-      );
-    }
-
-    appLogger.error(`Error creating departments:${dbError}`);
+    await trx.rollback();
+    console.error("Error Checking Attendance Session:", error);
     return errorResponse(
       res,
       API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
+      "Terjadi kesalahan di server",
       500
     );
   }
@@ -143,116 +81,182 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
  * [PUT] /attendances/check-out - Record Employee Check-Out
  */
 export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
-  const employeeCode = req.user!.employee_code;
-
-  if (!employeeCode) {
-    return errorResponse(
-      res,
-      API_STATUS.UNAUTHORIZED,
-      "Akun ini tidak terhubung dengan data pegawai.",
-      401
-    );
-  }
+  const trx = await db.transaction();
   try {
-    // validate the request first
-    const validation = checkOutSchema.safeParse(req.body);
-    if (!validation.success) {
+    const currentUser = req.user!;
+    const employeeCode = currentUser.employee_code;
+
+    const { latitude, longitude } = req.body;
+
+    if (!latitude || !longitude) {
+      await trx.rollback();
       return errorResponse(
         res,
         API_STATUS.BAD_REQUEST,
-        "Validasi gagal",
-        400,
-        validation.error.errors.map((err) => ({
-          field: err.path[0],
-          message: err.message,
-        }))
+        "Gagal mendeteksi lokasi. Pastikan GPS aktif",
+        400
       );
     }
 
-    const profile = await getMasterEmployeesByCode(employeeCode);
-    if (!profile) {
-      appLogger.error(
-        `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
-      );
+    if (!employeeCode) {
+      await trx.rollback();
       return errorResponse(
         res,
-        API_STATUS.NOT_FOUND,
-        "Profil pegawai tidak ditemukan.",
-        404
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini tidak terhubung data karyawan",
+        401
       );
     }
 
-    // check if the attendance session exist or not
-    const dateNow = formatDate();
-    const attendanceSession = await getAttendanceSessionsByDate(dateNow);
-    if (!attendanceSession) {
+    const result = await processCheckOut(
+      trx,
+      employeeCode,
+      latitude,
+      longitude
+    );
+
+    if (!result.success) {
+      await trx.rollback();
       return errorResponse(
         res,
-        API_STATUS.NOT_FOUND,
-        "Sesi absensi untuk sekarang belum ada. Coba lagi nanti",
-        404
+        API_STATUS.BAD_REQUEST,
+        result.message,
+        result.statusCode
       );
     }
 
-    // check if the session is already closed
-    if (attendanceSession.status === "closed") {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Sesi absensi untuk hari ini sudah ditutup.",
-        403
-      );
-    }
-
-    // Determine check-out status (in-time, early, overtime)
-    const now = new Date();
-    const endTime = new Date(`${dateNow}T${attendanceSession.cutoff_time}`);
-    const closeTime = new Date(`${dateNow}T${attendanceSession.close_time}`);
-
-    let checkOutStatus: "early" | "in-time" | "overtime" | "missed" = "in-time";
-
-    if (now < endTime) checkOutStatus = "early";
-    else if (now > closeTime) checkOutStatus = "overtime";
-
-    // save the check out data to database
-    const checkOutData = await recordCheckOut({
-      employee_code: employeeCode,
-      session_code: attendanceSession.session_code,
-      check_out_time: now,
-      check_out_status: checkOutStatus,
-    });
-
-    if (!checkOutData) {
-      appLogger.warn(
-        `Employee ${employeeCode} attempted check-out, but no open record was found (Possible duplicate check-out).`
-      );
-      return errorResponse(
-        res,
-        API_STATUS.CONFLICT,
-        "Anda belum check-in hari ini atau sudah melakukan check-out sebelumnya.",
-        409
-      );
-    }
+    await trx.commit();
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      `Berhasil check-out, Selamat beristirahat ${profile!.full_name}`,
-      checkOutData,
-      200,
-      RESPONSE_DATA_KEYS.ATTENDANCES
+      result.message,
+      result.data,
+      200
     );
   } catch (error) {
-    const dbError = error as unknown;
-    appLogger.error(`Error creating departments:${dbError}`);
+    await trx.rollback();
+    console.error("Error Clock Out", error);
     return errorResponse(
       res,
       API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
+      "Terjadi kesalahan server",
       500
     );
   }
 };
+
+// export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
+//   const employeeCode = req.user!.employee_code;
+
+//   if (!employeeCode) {
+//     return errorResponse(
+//       res,
+//       API_STATUS.UNAUTHORIZED,
+//       "Akun ini tidak terhubung dengan data pegawai.",
+//       401
+//     );
+//   }
+//   try {
+//     // validate the request first
+//     const validation = checkOutSchema.safeParse(req.body);
+//     if (!validation.success) {
+//       return errorResponse(
+//         res,
+//         API_STATUS.BAD_REQUEST,
+//         "Validasi gagal",
+//         400,
+//         validation.error.errors.map((err) => ({
+//           field: err.path[0],
+//           message: err.message,
+//         }))
+//       );
+//     }
+
+//     const profile = await getMasterEmployeesByCode(employeeCode);
+//     if (!profile) {
+//       appLogger.error(
+//         `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
+//       );
+//       return errorResponse(
+//         res,
+//         API_STATUS.NOT_FOUND,
+//         "Profil pegawai tidak ditemukan.",
+//         404
+//       );
+//     }
+
+//     // check if the attendance session exist or not
+//     const dateNow = formatDate();
+//     const attendanceSession = await getAttendanceSessionsByDate(dateNow);
+//     if (!attendanceSession) {
+//       return errorResponse(
+//         res,
+//         API_STATUS.NOT_FOUND,
+//         "Sesi absensi untuk sekarang belum ada. Coba lagi nanti",
+//         404
+//       );
+//     }
+
+//     // check if the session is already closed
+//     if (attendanceSession.status === "closed") {
+//       return errorResponse(
+//         res,
+//         API_STATUS.NOT_FOUND,
+//         "Sesi absensi untuk hari ini sudah ditutup.",
+//         403
+//       );
+//     }
+
+//     // Determine check-out status (in-time, early, overtime)
+//     const now = new Date();
+//     const endTime = new Date(`${dateNow}T${attendanceSession.cutoff_time}`);
+//     const closeTime = new Date(`${dateNow}T${attendanceSession.close_time}`);
+
+//     let checkOutStatus: "early" | "in-time" | "overtime" | "missed" = "in-time";
+
+//     if (now < endTime) checkOutStatus = "early";
+//     else if (now > closeTime) checkOutStatus = "overtime";
+
+//     // save the check out data to database
+//     const checkOutData = await recordCheckOut({
+//       employee_code: employeeCode,
+//       session_code: attendanceSession.session_code,
+//       check_out_time: now,
+//       check_out_status: checkOutStatus,
+//     });
+
+//     if (!checkOutData) {
+//       appLogger.warn(
+//         `Employee ${employeeCode} attempted check-out, but no open record was found (Possible duplicate check-out).`
+//       );
+//       return errorResponse(
+//         res,
+//         API_STATUS.CONFLICT,
+//         "Anda belum check-in hari ini atau sudah melakukan check-out sebelumnya.",
+//         409
+//       );
+//     }
+
+//     return successResponse(
+//       res,
+//       API_STATUS.SUCCESS,
+//       `Berhasil check-out, Selamat beristirahat ${profile!.full_name}`,
+//       checkOutData,
+//       200,
+//       RESPONSE_DATA_KEYS.ATTENDANCES
+//     );
+//   } catch (error) {
+//     const dbError = error as unknown;
+//     appLogger.error(`Error creating departments:${dbError}`);
+//     return errorResponse(
+//       res,
+//       API_STATUS.FAILED,
+//       "Terjadi kesalahan pada server",
+//       500
+//     );
+//   }
+// };
 
 /**
  * [GET] /attendances/:id - Fetch Attendance by id

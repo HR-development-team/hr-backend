@@ -419,6 +419,15 @@ export const updateMasterEmployees = async (
       );
     }
 
+    console.log(
+      "User Office Code:",
+      currentUser.office_code,
+      "| Tipe data user Office Code:",
+      typeof currentUser.office_code,
+      "| Kode jabatan:",
+      req.body.position_code
+    );
+
     if (Object.keys(validation.data).length === 0) {
       return errorResponse(
         res,
@@ -428,10 +437,22 @@ export const updateMasterEmployees = async (
       );
     }
 
-    const parentOfficeCode = req.body.office_code;
+    const existingEmployee = await getMasterEmployeesById(id);
+
+    if (!existingEmployee) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Karyawan tidak ditemukan",
+        404
+      );
+    }
+
+    const parentOfficeCode =
+      req.body.office_code || existingEmployee.office_code;
 
     const hasAccess = await checkOfficeScope(
-      currentUser.office_code,
+      currentUser.office_code || "",
       parentOfficeCode
     );
 
@@ -446,20 +467,9 @@ export const updateMasterEmployees = async (
 
     const employeeData = validation.data;
 
-    const employee = await getMasterEmployeesById(id);
-
-    if (!employee) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "Karyawan tidak ditemukan",
-        404
-      );
-    }
-
     const isTargetAllowed = await checkOfficeScope(
       currentUser.office_code,
-      employee?.office_code
+      existingEmployee?.office_code
     );
 
     if (!isTargetAllowed) {
@@ -567,17 +577,93 @@ export const updateMasterEmployees = async (
       }
     }
 
-    //  Check if the position code exist or not
     if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
-      appLogger.warn("Employee creation failed: position_code does not exist.");
+      const errorMessage = dbError.sqlMessage || dbError.message || "";
 
+      // Cek apakah error disebabkan oleh shift_code
+      if (errorMessage.includes("shift_code")) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Validasi gagal",
+          400,
+          [
+            {
+              field: "shift_code",
+              message: "Kode shift tidak ditemukan di master shift.",
+            },
+          ]
+        );
+      }
+
+      // Cek apakah error disebabkan oleh office_code
+      if (errorMessage.includes("office_code")) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Validasi gagal",
+          400,
+          [
+            {
+              field: "office_code",
+              message: "Kode kantor tidak ditemukan.",
+            },
+          ]
+        );
+      }
+
+      // Cek apakah error disebabkan oleh user_code
+      if (errorMessage.includes("user_code")) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Validasi gagal",
+          400,
+          [
+            {
+              field: "user_code",
+              message: "Kode user tidak ditemukan.",
+            },
+          ]
+        );
+      }
+
+      // Defaultnya baru menyalahkan position_code (atau cek spesifik juga)
+      if (errorMessage.includes("position_code")) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Validasi gagal",
+          400,
+          [
+            {
+              field: "position_code",
+              message: "Kode posisi tidak ditemukan.",
+            },
+          ]
+        );
+      }
+
+      // Jika tidak tahu kolom mana (fallback)
       return errorResponse(res, API_STATUS.BAD_REQUEST, "Validasi gagal", 400, [
         {
-          field: "position_code",
-          message: "Kode posisi tidak ditemukan.",
+          field: "unknown",
+          message: "Terjadi kesalahan referensi data (Foreign Key Error).",
         },
       ]);
     }
+
+    // //  Check if the position code exist or not
+    // if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
+    //   appLogger.warn("Employee creation failed: position_code does not exist.");
+
+    //   return errorResponse(res, API_STATUS.BAD_REQUEST, "Validasi gagal", 400, [
+    //     {
+    //       field: "position_code",
+    //       message: "Kode posisi tidak ditemukan.",
+    //     },
+    //   ]);
+    // }
 
     appLogger.error(`Error editing employees:${error}`);
     return errorResponse(

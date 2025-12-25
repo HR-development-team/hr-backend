@@ -84,6 +84,7 @@ export const updateProfileSchema = z
       .max(50, "Nomor rekening maksimal 50 karakter")
       .nullable()
       .optional(),
+    shift_code: z.string().nullable(),
   })
   .strict("Terdapat field yang tidak diperbolehkan.") // Disallows extra fields
   .refine((data) => Object.keys(data).length > 0, {

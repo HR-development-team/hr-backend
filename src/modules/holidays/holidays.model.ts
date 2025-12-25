@@ -14,6 +14,7 @@ export const getAllHolidays = async (
 ): Promise<GetAllHolidays[]> => {
   const query = db(HOLIDAY_TABLE).select(
     `${HOLIDAY_TABLE}.id`,
+    `${HOLIDAY_TABLE}.office_code`,
     `${HOLIDAY_TABLE}.date`,
     `${HOLIDAY_TABLE}.description`
   );
@@ -35,6 +36,18 @@ export const getHolidayByDate = async (
   return await db(HOLIDAY_TABLE)
     .where(`${HOLIDAY_TABLE}.date`, date)
     .select("*")
+    .first();
+};
+
+export const getHolidayDateAndOffice = async (
+  date: string,
+  officeCode: string
+) => {
+  return await db(HOLIDAY_TABLE)
+    .where("date", date)
+    .andWhere((builder) => {
+      builder.whereNull("office_code").orWhere("office_code", officeCode);
+    })
     .first();
 };
 
