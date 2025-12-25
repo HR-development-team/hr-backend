@@ -25,12 +25,12 @@ export const getAllOffices = async (
   page: number,
   limit: number,
   userOfficeCode: string | null,
-  search: string
+  search: string,
+  filterParent: string
 ): Promise<GetAllOfficesResponse> => {
   const offset = (page - 1) * limit;
 
-  // 1. Base Query (Joins only)
-  // We use the hierarchy query to scope results to the user's permissions
+  // 1. Base Query
   const query = officeHierarchyQuery(userOfficeCode!).leftJoin(
     `${OFFICE_TABLE} as parent`,
     "office_tree.parent_office_code",
@@ -46,14 +46,19 @@ export const getAllOffices = async (
     });
   }
 
-  // 3. Count Query (Cloned from base to get total count safely)
+  // 3. Filter: Parent Office Code (Exact Match)
+  if (filterParent) {
+    query.where("office_tree.parent_office_code", filterParent);
+  }
+
+  // 4. Count Query
   const countQuery = query
     .clone()
     .clearSelect()
     .count("office_tree.id as total")
     .first();
 
-  // 4. Data Query (Cloned from base + Selects/Sorts/Limits)
+  // 5. Data Query
   const dataQuery = query
     .select("office_tree.*", "parent.name as parent_office_name")
     .orderBy("office_tree.sort_order", "asc")
@@ -61,10 +66,9 @@ export const getAllOffices = async (
     .limit(limit)
     .offset(offset);
 
-  // 5. Execute in Parallel
+  // 6. Execute
   const [totalResult, rawData] = await Promise.all([countQuery, dataQuery]);
 
-  // 6. Calculate Meta & Format Data
   const total = totalResult ? Number(totalResult.total) : 0;
   const totalPage = Math.ceil(total / limit);
   const data = rawData.map(formatOfficeLocation);

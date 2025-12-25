@@ -54,8 +54,9 @@ export const fetchOfficeList = async (
 ) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 100; // Default limit for offices
+    const limit = parseInt(req.query.limit as string) || 100;
     const search = (req.query.search as string) || "";
+    const filterParent = (req.query.parent_office_code as string) || "";
 
     const currentUser = req.user!;
 
@@ -63,7 +64,8 @@ export const fetchOfficeList = async (
       page,
       limit,
       currentUser.office_code,
-      search
+      search,
+      filterParent
     );
 
     return successResponse(
