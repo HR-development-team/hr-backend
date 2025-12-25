@@ -2,7 +2,7 @@ import { db } from "@database/connection.js";
 import { OFFICE_TABLE } from "@constants/database.js";
 import {
   CreateOffice,
-  GetAllOffices,
+  GetAllOfficesResponse,
   GetOfficeById,
   Office,
   OfficeReference,
@@ -13,48 +13,71 @@ import {
   generateOfficeCode,
   officeHierarchyQuery,
 } from "./office.helper.js";
-import { Knex } from "knex";
 
 // ==========================================================================
 // 3. MAIN EXPORTED FUNCTIONS
 // ==========================================================================
 
 /**
- * [BARU] Mengambil list kantor dengan PAGINATION
+ * Service to get all offices with pagination and search
  */
-export const getPaginatedOffices = async (
+export const getAllOffices = async (
   page: number,
   limit: number,
   userOfficeCode: string | null,
-  search?: string
-): Promise<GetAllOffices[]> => {
+  search: string
+): Promise<GetAllOfficesResponse> => {
   const offset = (page - 1) * limit;
 
-  if (!userOfficeCode) return [];
+  // 1. Base Query (Joins only)
+  // We use the hierarchy query to scope results to the user's permissions
+  const query = officeHierarchyQuery(userOfficeCode!).leftJoin(
+    `${OFFICE_TABLE} as parent`,
+    "office_tree.parent_office_code",
+    "parent.office_code"
+  );
 
-  let query: Knex.QueryBuilder = officeHierarchyQuery(userOfficeCode)
-    .select("office_tree.*", "parent.name as parent_office_name")
-    .leftJoin(
-      `${OFFICE_TABLE} as parent`,
-      "office_tree.parent_office_code",
-      "parent.office_code"
-    );
-
+  // 2. Search Logic
   if (search) {
-    query = query.where((builder) => {
+    query.andWhere((builder) => {
       builder
-        .where("office_code", "like", `%${search}%`)
-        .orWhere("name", "like", `%${search}%`);
+        .where("office_tree.office_code", "like", `%${search}%`)
+        .orWhere("office_tree.name", "like", `%${search}%`);
     });
   }
 
-  const result = await query
-    .limit(limit)
-    .offset(offset)
-    .orderBy("sort_order", "asc")
-    .orderBy("id", "asc");
+  // 3. Count Query (Cloned from base to get total count safely)
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count("office_tree.id as total")
+    .first();
 
-  return result.map(formatOfficeLocation);
+  // 4. Data Query (Cloned from base + Selects/Sorts/Limits)
+  const dataQuery = query
+    .select("office_tree.*", "parent.name as parent_office_name")
+    .orderBy("office_tree.sort_order", "asc")
+    .orderBy("office_tree.id", "asc")
+    .limit(limit)
+    .offset(offset);
+
+  // 5. Execute in Parallel
+  const [totalResult, rawData] = await Promise.all([countQuery, dataQuery]);
+
+  // 6. Calculate Meta & Format Data
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+  const data = rawData.map(formatOfficeLocation);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
 };
 
 /**

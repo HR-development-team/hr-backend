@@ -70,3 +70,13 @@ export interface OfficeReference {
   name: string;
   office_code: string;
 }
+
+export interface GetAllOfficesResponse {
+  data: GetAllOffices[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}

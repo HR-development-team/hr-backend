@@ -8,7 +8,7 @@ import {
   editMasterOffice,
   getMasterOfficeById,
   removeMasterOffice,
-  getPaginatedOffices,
+  getAllOffices,
   getAllOfficesOrganization,
   getMasterOfficeByCode,
   hasChildOffices,
@@ -46,7 +46,7 @@ const buildTreeRecursive = (
 };
 
 /**
- * [GET] /master-offices - Fetch all Offices (With Pagination)
+ * [GET] /master-offices - Fetch all Offices
  */
 export const fetchOfficeList = async (
   req: AuthenticatedRequest,
@@ -54,12 +54,12 @@ export const fetchOfficeList = async (
 ) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 100;
-    const search = (req.query.search as string) || undefined;
+    const limit = parseInt(req.query.limit as string) || 100; // Default limit for offices
+    const search = (req.query.search as string) || "";
 
     const currentUser = req.user!;
 
-    const offices = await getPaginatedOffices(
+    const { data, meta } = await getAllOffices(
       page,
       limit,
       currentUser.office_code,
@@ -70,9 +70,10 @@ export const fetchOfficeList = async (
       res,
       API_STATUS.SUCCESS,
       "Data Kantor Berhasil Didapatkan",
-      offices,
+      data,
       200,
-      RESPONSE_DATA_KEYS.OFFICES
+      RESPONSE_DATA_KEYS.OFFICES,
+      meta
     );
   } catch (error) {
     const dbError = error as unknown;
