@@ -1,8 +1,7 @@
 import {
-  ATTENDANCE_SESSION_TABLE,
   ATTENDANCE_TABLE,
   EMPLOYEE_TABLE,
-  HOLIDAY_TABLE,
+  OFFICE_TABLE,
   SHIFT_TABLE,
 } from "@constants/database.js";
 import { db } from "@database/connection.js";
@@ -13,43 +12,37 @@ import {
   CheckInPayload,
   CheckOutPayload,
   GetAllAttendance,
+  GetEmployeeShift,
 } from "./attendance.types.js";
+import { format } from "date-fns";
 
 /**
  * Function for generating attendance code
  */
-async function generateAttendanceCode() {
-  const PREFIX = "ABS";
-  const PAD_LENGTH = 7;
+const generateAttendanceCode = async (
+  employeeCode: string
+): Promise<string> => {
+  const now = new Date();
+  const dateCode = format(now, "yyyyMMdd");
+  const newAttendanceCode = `ATT-${dateCode}-${employeeCode}`;
 
-  const lastRow = await db(ATTENDANCE_TABLE)
-    .select("attendance_code")
-    .orderBy("id", "desc")
-    .first();
-
-  if (!lastRow) {
-    return PREFIX + String(1).padStart(PAD_LENGTH, "0");
-  }
-
-  const lastCode = lastRow.attendance_code;
-  const lastNumber = parseInt(lastCode.replace(PREFIX, ""), 10);
-  const newNumber = lastNumber + 1;
-  return PREFIX + String(newNumber).padStart(PAD_LENGTH, "0");
-}
+  return newAttendanceCode;
+};
 
 /**
  * Creates a new attendance record (check-in).
  */
 export const recordCheckIn = async (
+  connection: Knex.Transaction,
   data: CheckInPayload
 ): Promise<Attendance> => {
-  const attendance_code = await generateAttendanceCode();
+  const attendance_code = await generateAttendanceCode(data.employee_code);
   const attendanceToInsert = {
     ...data,
     attendance_code,
   };
 
-  const [id] = await db(ATTENDANCE_TABLE).insert(attendanceToInsert);
+  const [id] = await connection(ATTENDANCE_TABLE).insert(attendanceToInsert);
   return db(ATTENDANCE_TABLE).where({ id }).first();
 };
 
@@ -57,21 +50,15 @@ export const recordCheckIn = async (
  * Updates the existing attendance record (check-out) for the current day.
  */
 export const recordCheckOut = async (
+  connection: Knex.Transaction,
+  id: number,
   data: CheckOutPayload
 ): Promise<Attendance | null> => {
-  const { session_code, employee_code, check_out_time, check_out_status } =
-    data;
+  await connection(ATTENDANCE_TABLE)
+    .where(`${ATTENDANCE_TABLE}.id`, id)
+    .update({ ...data });
 
-  const updateCount = await db(ATTENDANCE_TABLE)
-    .where({ employee_code, session_code })
-    .whereNull("check_out_time")
-    .update({ check_out_time, check_out_status, updated_at: new Date() });
-
-  if (updateCount === 0) {
-    return null;
-  }
-
-  return db(ATTENDANCE_TABLE).where({ employee_code, session_code }).first();
+  return db(ATTENDANCE_TABLE).where(`${ATTENDANCE_TABLE}.id`, id).first();
 };
 
 /**
@@ -83,29 +70,20 @@ export const getAllAttendances = async (): Promise<GetAllAttendanceSession[]> =>
       `${ATTENDANCE_TABLE}.id`,
       `${ATTENDANCE_TABLE}.attendance_code`,
       `${ATTENDANCE_TABLE}.employee_code`,
-      `${ATTENDANCE_TABLE}.session_code`,
       `${ATTENDANCE_TABLE}.check_in_time`,
       `${ATTENDANCE_TABLE}.check_out_time`,
       `${ATTENDANCE_TABLE}.check_in_status`,
       `${ATTENDANCE_TABLE}.check_out_status`,
 
       // Employee Fields
-      `${EMPLOYEE_TABLE}.full_name as employee_name`,
-
-      // Session Fields
-      `${ATTENDANCE_SESSION_TABLE}.status as session_status`,
-      `${ATTENDANCE_SESSION_TABLE}.date as session_date`
+      `${EMPLOYEE_TABLE}.full_name as employee_name`
     )
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
       `${ATTENDANCE_TABLE}.employee_code`,
       `${EMPLOYEE_TABLE}.employee_code`
     )
-    .leftJoin(
-      `${ATTENDANCE_SESSION_TABLE}`,
-      `${ATTENDANCE_TABLE}.session_code`,
-      `${ATTENDANCE_SESSION_TABLE}.session_code`
-    );
+    .orderBy("attendance_code", "asc");
 
 /**
  * Get attendance by id.
@@ -116,21 +94,12 @@ export const getAttendanceById = async (id: number): Promise<Attendance[]> =>
       `${ATTENDANCE_TABLE}.*`,
 
       // Employee Fields
-      `${EMPLOYEE_TABLE}.full_name as employee_name`,
-
-      // Session Fields
-      `${ATTENDANCE_SESSION_TABLE}.status as session_status`,
-      `${ATTENDANCE_SESSION_TABLE}.date as session_date`
+      `${EMPLOYEE_TABLE}.full_name as employee_name`
     )
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
       `${ATTENDANCE_TABLE}.employee_code`,
       `${EMPLOYEE_TABLE}.employee_code`
-    )
-    .leftJoin(
-      `${ATTENDANCE_SESSION_TABLE}`,
-      `${ATTENDANCE_TABLE}.session_code`,
-      `${ATTENDANCE_SESSION_TABLE}.session_code`
     )
     .where({ "attendances.id": id })
     .first();
@@ -160,30 +129,31 @@ export const getEmployeeAttendances = async (
       `${ATTENDANCE_TABLE}.id`,
       `${ATTENDANCE_TABLE}.attendance_code`,
       `${ATTENDANCE_TABLE}.employee_code`,
-      `${ATTENDANCE_TABLE}.session_code`,
       `${ATTENDANCE_TABLE}.check_in_time`,
       `${ATTENDANCE_TABLE}.check_out_time`,
       `${ATTENDANCE_TABLE}.check_in_status`,
       `${ATTENDANCE_TABLE}.check_out_status`,
 
       // Employee Fields
-      `${EMPLOYEE_TABLE}.full_name as employee_name`,
-
-      // Session Fields
-      `${ATTENDANCE_SESSION_TABLE}.status as session_status`,
-      `${ATTENDANCE_SESSION_TABLE}.date as session_date`
+      `${EMPLOYEE_TABLE}.full_name as employee_name`
     )
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
       `${ATTENDANCE_TABLE}.employee_code`,
       `${EMPLOYEE_TABLE}.employee_code`
     )
-    .leftJoin(
-      `${ATTENDANCE_SESSION_TABLE}`,
-      `${ATTENDANCE_TABLE}.session_code`,
-      `${ATTENDANCE_SESSION_TABLE}.session_code`
-    )
     .where({ "attendances.employee_code": employeeCode });
+
+export const getActiveAttendanceSession = async (
+  connection: Knex.Transaction,
+  employeeCode: string
+): Promise<Attendance> => {
+  return await connection(ATTENDANCE_TABLE)
+    .where("employee_code", employeeCode)
+    .whereNull("check_out_time")
+    .orderBy("created_at", "desc")
+    .first();
+};
 
 /**
  * Get total work days for an employee in a given date range.
@@ -204,32 +174,35 @@ export const getTotalWorkDays = async (
 };
 
 export const getEmployeeShift = async (
-  connection: Knex | Knex.Transaction,
-  employeeCode: string
-) => {
+  connection: Knex.Transaction,
+  empOrShiftCode: string
+): Promise<GetEmployeeShift> => {
   return connection(EMPLOYEE_TABLE)
-    .where("employee_code", employeeCode)
+    .where("employee_code", empOrShiftCode)
+    .orWhere(`${SHIFT_TABLE}.shift_code`, empOrShiftCode)
     .select(
       `${SHIFT_TABLE}.office_code`,
+      `${SHIFT_TABLE}.shift_code`,
       `${SHIFT_TABLE}.work_days`,
       `${SHIFT_TABLE}.start_time`,
       `${SHIFT_TABLE}.end_time`,
       `${SHIFT_TABLE}.check_in_limit_minutes`,
-      `${SHIFT_TABLE}.late_tolerance_minutes`
+      `${SHIFT_TABLE}.late_tolerance_minutes`,
+
+      // office table
+      `${OFFICE_TABLE}.latitude as office_lat`,
+      `${OFFICE_TABLE}.longitude as office_long`,
+      `${OFFICE_TABLE}.radius_meters`
     )
     .leftJoin(
       `${SHIFT_TABLE}`,
       `${EMPLOYEE_TABLE}.shift_code`,
       `${SHIFT_TABLE}.shift_code`
     )
-    .first();
-};
-
-export const getHolidayDate = async (date: string, officeCode: string) => {
-  return await db(HOLIDAY_TABLE)
-    .where("date", date)
-    .andWhere((builder) => {
-      builder.whereNull("office_code").orWhere("office_code", officeCode);
-    })
+    .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${EMPLOYEE_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    )
     .first();
 };

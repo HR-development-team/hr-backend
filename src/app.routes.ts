@@ -17,6 +17,7 @@ import roleRoutes from "@modules/roles/role.routes.js";
 import featureRoutes from "@modules/features/feature.routes.js";
 import permissionRoutes from "@modules/permissions/permission.routes.js";
 import employmentStatusRoutes from "@modules/employee-status/status.routes.js";
+import employeePhotoRoutes from "@modules/employee_photos/employeePhoto.routes.js";
 
 // Employee Specific Routes
 import employeeAttendanceRoutes from "@modules/attendances/employee-attendance.routes.js";
@@ -58,8 +59,8 @@ router.use("/profiles", profileRoutes);
 router.use("/attendance-sessions", attendanceSessionRoutes);
 router.use("/payroll-periods", payrollPeriodRoutes);
 router.use("/payrolls", payrollRoutes);
-router.use("/employment-statuses", employmentStatusRoutes);
-
+router.use("/employment_statuses", employmentStatusRoutes);
+router.use("/employee-photos", employeePhotoRoutes);
 // ==========================
 // ||   Employee Portal    ||
 // ==========================

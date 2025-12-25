@@ -98,7 +98,7 @@ export interface UpdateEmployee {
   join_date?: string;
 
   // optional fields
-  shift_code: string | null;
+  shift_code?: string | null;
   ktp_number?: string | null;
   birth_place?: string | null;
   birth_date?: string | null;

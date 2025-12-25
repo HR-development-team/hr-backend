@@ -32,6 +32,7 @@ export const RESPONSE_DATA_KEYS = {
   PAYROLL_PERIODS: "payroll_periods",
   PAYROLLS: "payrolls",
 
+  // holidays data
   HOLIDAYS: "holidays",
 };
 

@@ -71,6 +71,7 @@ Table master_leave_types {
 Table master_shifts {
   id int [pk, increment]
   shift_code varchar(10) [unique, not null]
+  office_code varchar(10) [not null]
   name varchar(100) [not null]
   start_time time [not null]
   end_time time [not null]
@@ -78,6 +79,7 @@ Table master_shifts {
   late_tolerance_minutes int [not null, default: 15]
   check_in_limit_minutes int [not null, default: 240]
   check_out_limit_minutes int [not null, default: 120]
+  work_days json [not null]
   created_at timestamp [default: `CURRENT_TIMESTAMP`]
   updated_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
@@ -89,6 +91,7 @@ Table master_employees {
   position_code varchar(10) [not null]          // FK → master_positions.position_code
   office_code varchar(10)                       // FK → master_offices.office_code
   employment_status_code varchar(20) [not null] // FK => employment_status.status_code
+  shift_code varchar(10) [not null]             // FK => master_shifts.shift_code
   full_name varchar(100) [not null]
   ktp_number varchar(16) [unique]
   birth_place varchar(100)
@@ -134,11 +137,14 @@ Table attendances {
   id int [pk, increment]
   attendance_code varchar(10) [unique, not null]
   employee_code varchar(10) [not null]       // FK → master_employees.employee_code
-  session_code varchar(10) [not null]        // FK → attendance_sessions.session_code
+  shift_code varchar(10) [not null]
   check_in_time datetime [not null]
   check_out_time datetime
   check_in_status enum('in-time', 'late', 'absent') [not null]
   check_out_status enum('in-time', 'early', 'overtime', 'missed')
+  date date [not null]
+  late_minutes integer [null]
+  overtime_minutes integer [null]
   created_at timestamp [default: `CURRENT_TIMESTAMP`]
   updated_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
@@ -213,6 +219,19 @@ Table employment_statuses {
 }
 
 //////////////////////////////////////////////////////
+// ATTENDANCE
+//////////////////////////////////////////////////////
+Table holidays {
+  id int [pk, increment]
+  office_code varchar(10) [null]      // FK -> master_offices.office_code
+  department_code varchar(10) [null]  // FK -> master_departments.department_code
+  date date [not null]
+  description varchar [null]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRTENT_TIMESTAMP`]
+}
+
+//////////////////////////////////////////////////////
 // REFERENCES
 //////////////////////////////////////////////////////
 
@@ -225,7 +244,7 @@ Ref: master_employees.office_code > master_offices.office_code
 
 Ref: attendance_sessions.created_by > users.user_code
 Ref: attendances.employee_code > master_employees.employee_code
-Ref: attendances.session_code > attendance_sessions.session_code
+Ref: attendances.shift_code > master_shifts.shift_code
 
 Ref: leave_balances.employee_code > master_employees.employee_code
 Ref: leave_balances.type_code > master_leave_types.type_code
@@ -239,3 +258,10 @@ Ref: payrolls.employee_id > master_employees.id
 Ref: attendance_sessions.shift_code > master_shifts.shift_code
 
 Ref: master_employees.employment_status_code > employment_statuses.status_code
+
+Ref: master_shifts.office_code > master_offices.office_code
+
+Ref: master_employees.shift_code > master_shifts.shift_code
+
+Ref: holidays.office_code > master_offices.office_code
+Ref: holidays.department_code > master_departments.department_code

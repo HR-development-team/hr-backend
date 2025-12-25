@@ -6,6 +6,7 @@ import {
   EMPLOYMENT_STATUS_TABLE,
   OFFICE_TABLE,
   POSITION_TABLE,
+  SHIFT_TABLE,
 } from "@constants/database.js";
 import {
   CreateEmployee,
@@ -35,6 +36,9 @@ export const getAllMasterEmployees = async (
   const query = db(EMPLOYEE_TABLE)
     .select(
       `${EMPLOYEE_TABLE}.*`,
+
+      // shift table
+      `${SHIFT_TABLE}.name as shift_name`,
 
       // Employment status fields
       `${EMPLOYMENT_STATUS_TABLE}.status_code as employment_status_code`,
@@ -83,6 +87,11 @@ export const getAllMasterEmployees = async (
       `${EMPLOYMENT_STATUS_TABLE}`,
       `${EMPLOYEE_TABLE}.employment_status_code`,
       `${EMPLOYMENT_STATUS_TABLE}.status_code`
+    )
+    .leftJoin(
+      `${SHIFT_TABLE}`,
+      `${EMPLOYEE_TABLE}.shift_code`,
+      `${SHIFT_TABLE}.shift_code`
     );
 
   if (userOfficeCode) {

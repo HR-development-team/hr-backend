@@ -43,3 +43,8 @@ export interface UpdateShift {
   check_out_limit_minutes?: number;
   work_days?: number[];
 }
+
+export interface StartEndShift {
+  start_time: string;
+  end_time: string;
+}

@@ -7,6 +7,9 @@ import { db } from "@database/connection.js";
 import { JOSEError } from "jose/errors";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
 
+// Define your timeout constant (15 minutes)
+const MAX_IDLE_TIME = 15 * 60 * 1000;
+
 export const authMiddleware = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -41,11 +44,28 @@ export const authMiddleware = async (
       );
     }
 
+    // 1. Check if token matches (Single Session Rule)
     if (user.session_token !== token) {
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
         "Sesi kadaluarsa atau login di perangkat lain",
+        401
+      );
+    }
+
+    // Check if the session is "stale" (Inactivity Timeout)
+    const lastActive = user.login_date
+      ? new Date(user.login_date).getTime()
+      : 0;
+    const now = Date.now();
+
+    // If (Current Time - Last Active Time) > 15 minutes
+    if (now - lastActive > MAX_IDLE_TIME) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Sesi berakhir karena tidak ada aktivitas (Timeout)",
         401
       );
     }
@@ -78,7 +98,7 @@ export const authMiddleware = async (
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
-        "Token rusak/tidak valid (tanda tangan salah atau format rusak)",
+        "Token rusak/tidak valid",
         401
       );
     }
