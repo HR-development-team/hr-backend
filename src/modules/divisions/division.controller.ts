@@ -7,6 +7,7 @@ import {
   addMasterDivisions,
   editMasterDivisions,
   getAllMasterDivision,
+  getDivisionOptions,
   getMasterDivisionsByCode,
   getMasterDivisionsById,
   removeMasterDivision,
@@ -183,6 +184,49 @@ export const fetchMasterDivisionByCode = async (
     const dbError = error as unknown;
     appLogger.error(`Error fetching division by code: ${dbError}`);
 
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /master-divisions/options - Lightweight list for dropdowns
+ */
+export const fetchDivisionOptions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const search = (req.query.search as string) || "";
+
+    // Filters for Cascading Dropdowns
+    const filterDept = (req.query.department_code as string) || "";
+    const filterOffice = (req.query.office_code as string) || "";
+
+    const currentUser = req.user!;
+
+    const options = await getDivisionOptions(
+      currentUser.office_code,
+      search,
+      filterDept,
+      filterOffice
+    );
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "List Divisi berhasil didapatkan",
+      options,
+      200,
+      RESPONSE_DATA_KEYS.DIVISIONS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching division options: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

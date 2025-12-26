@@ -39,6 +39,11 @@ export interface UpdateDivision {
   description?: string;
 }
 
+export interface DivisionOption {
+  division_code: string;
+  name: string;
+}
+
 export interface GetAllDivisionResponse {
   data: GetAllDivision[];
   meta: {

@@ -3,6 +3,7 @@ import {
   createMasterDivisions,
   destroyMasterDivisions,
   fetchAllMasterDivisions,
+  fetchDivisionOptions,
   fetchMasterDivisionByCode,
   fetchMasterDivisionsById,
   updateMasterDivisions,
@@ -21,6 +22,13 @@ router.get(
   "/",
   checkPermission(DIV_FEATURE, PERMISSIONS.READ),
   fetchAllMasterDivisions
+);
+
+// get division options
+router.get(
+  "/options",
+  checkPermission(DIV_FEATURE, PERMISSIONS.READ),
+  fetchDivisionOptions
 );
 
 // get by id

@@ -7,6 +7,7 @@ import { db } from "@database/connection.js";
 import {
   CreateDivision,
   Division,
+  DivisionOption,
   GetAllDivisionResponse,
   GetDivisionByCode,
   GetDivisionById,
@@ -152,6 +153,53 @@ export const getMasterDivisionsByCode = async (
     )
     .where({ "master_divisions.division_code": divisionCode })
     .first();
+
+export const getDivisionOptions = async (
+  userOfficeCode: string | null,
+  search: string,
+  filterDept: string,
+  filterOffice: string
+): Promise<DivisionOption[]> => {
+  // 1. Base Query (Must join Department to see Office info)
+  const query = db(DIVISION_TABLE)
+    .leftJoin(
+      `${DEPARTMENT_TABLE}`,
+      `${DIVISION_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.department_code`
+    )
+    .select(`${DIVISION_TABLE}.division_code`, `${DIVISION_TABLE}.name`);
+
+  // 2. SECURITY SCOPE: User's Hierarchy
+  // Ensure the division belongs to an office the user is allowed to see.
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  // 3. FILTER: Office (Cascading Level 1)
+  if (filterOffice) {
+    query.where(`${DEPARTMENT_TABLE}.office_code`, filterOffice);
+  }
+
+  // 4. FILTER: Department (Cascading Level 2)
+  if (filterDept) {
+    query.where(`${DIVISION_TABLE}.department_code`, filterDept);
+  }
+
+  // 5. SEARCH: Autocomplete
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${DIVISION_TABLE}.division_code`, "like", `%${search}%`)
+        .orWhere(`${DIVISION_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  // 6. Order & Execute
+  return query.orderBy(`${DIVISION_TABLE}.name`, "asc");
+};
 
 /**
  * Creates new division.
