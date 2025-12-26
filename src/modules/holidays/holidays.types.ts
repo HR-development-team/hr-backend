@@ -1,7 +1,7 @@
 export interface Holiday {
   id: number;
   office_code?: string;
-  department_code?: string;
+  // department_code?: string;
   date: string;
   description?: string;
   created_at: string;
@@ -11,7 +11,7 @@ export interface Holiday {
 export interface GetAllHolidays {
   id: number;
   office_code?: string;
-  department_code?: string;
+  // department_code?: string;
   date: string;
   description?: string;
 }
@@ -24,15 +24,15 @@ export interface GetHolidayById extends Holiday {
 export interface GetHolidayByDate extends GetHolidayById {}
 
 export interface CreateHoliday {
-  office_code?: string;
-  department_code?: string;
+  office_code?: string | null;
+  // department_code?: string | null;
   date: string;
-  description?: string;
+  description?: string | null;
 }
 
 export interface UpdateHoliday {
-  office_code?: string;
-  department_code?: string;
+  office_code?: string | null;
+  // department_code?: string;
   date?: string;
-  description?: string;
+  description?: string | null;
 }

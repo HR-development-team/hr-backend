@@ -8,7 +8,11 @@ import {
   UpdateHoliday,
 } from "./holidays.types.js";
 import { HOLIDAY_TABLE } from "@common/constants/database.js";
+import { Knex } from "knex";
 
+/**
+ * Get all holiday
+ */
 export const getAllHolidays = async (
   officeCode?: string
 ): Promise<GetAllHolidays[]> => {
@@ -26,10 +30,16 @@ export const getAllHolidays = async (
   return query.orderBy("date", "asc");
 };
 
+/**
+ * Get holiday by id
+ */
 export const getHolidayById = async (id: number): Promise<GetHolidayById> => {
   return await db(HOLIDAY_TABLE).where({ id }).select("*").first();
 };
 
+/**
+ * Get holiday by date
+ */
 export const getHolidayByDate = async (
   date: string
 ): Promise<GetHolidayByDate> => {
@@ -39,6 +49,9 @@ export const getHolidayByDate = async (
     .first();
 };
 
+/**
+ * Get holiday by date and office code
+ */
 export const getHolidayDateAndOffice = async (
   date: string,
   officeCode: string
@@ -51,12 +64,17 @@ export const getHolidayDateAndOffice = async (
     .first();
 };
 
-export const addHolidays = async (data: CreateHoliday): Promise<Holiday> => {
-  const { office_code, department_code, date, description } = data;
+/**
+ * Create holiday
+ */
+export const addHolidays = async (
+  connection: Knex.Transaction,
+  data: CreateHoliday
+): Promise<Holiday> => {
+  const { office_code, date, description } = data;
 
-  const [id] = await db(HOLIDAY_TABLE).insert({
+  const [id] = await connection(HOLIDAY_TABLE).insert({
     office_code,
-    department_code,
     date,
     description,
   });
@@ -64,12 +82,18 @@ export const addHolidays = async (data: CreateHoliday): Promise<Holiday> => {
   return await getHolidayById(id);
 };
 
-export const editHolidays = async (id: number, data: UpdateHoliday) => {
-  const { office_code, department_code, date, description } = data;
+/**
+ * Update holiday
+ */
+export const editHolidays = async (
+  connection: Knex.Transaction,
+  id: number,
+  data: UpdateHoliday
+) => {
+  const { office_code, date, description } = data;
 
-  await db(HOLIDAY_TABLE).where({ id }).update({
+  await connection(HOLIDAY_TABLE).where({ id }).update({
     office_code,
-    department_code,
     date,
     description,
   });
@@ -77,6 +101,12 @@ export const editHolidays = async (id: number, data: UpdateHoliday) => {
   return await getHolidayById(id);
 };
 
-export const deleteHolidays = async (id: number) => {
-  return await db(HOLIDAY_TABLE).where({ id }).del();
+/**
+ * Update holiday
+ */
+export const removeHolidays = async (
+  connection: Knex.Transaction,
+  id: number
+) => {
+  return await connection(HOLIDAY_TABLE).where({ id }).del();
 };
