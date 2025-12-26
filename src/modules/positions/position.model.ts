@@ -11,6 +11,7 @@ import {
   GetAllPositionResponse,
   GetPositionById,
   Position,
+  PositionOption,
   PositionRaw,
 } from "./position.types.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
@@ -293,6 +294,66 @@ export const generateNextPositionCode = async () => {
   const nextNumber = lastNumber + 1;
 
   return `JBT${nextNumber.toString().padStart(7, "0")}`;
+};
+
+export const getPositionOptions = async (
+  userOfficeCode: string | null,
+  search: string,
+  filterOffice: string,
+  filterDept: string,
+  filterDiv: string
+): Promise<PositionOption[]> => {
+  // 1. Base Query with Joins (Needed for filtering up the chain)
+  const query = db(POSITION_TABLE)
+    .leftJoin(
+      `${DIVISION_TABLE}`,
+      `${POSITION_TABLE}.division_code`,
+      `${DIVISION_TABLE}.division_code`
+    )
+    .leftJoin(
+      `${DEPARTMENT_TABLE}`,
+      `${DIVISION_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.department_code`
+    )
+    .select(`${POSITION_TABLE}.position_code`, `${POSITION_TABLE}.name`);
+
+  // 2. SECURITY SCOPE: User's Hierarchy
+  // Check the office_code found in the Department table
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  // 3. FILTER: Office (Cascading Level 1)
+  if (filterOffice) {
+    query.where(`${DEPARTMENT_TABLE}.office_code`, filterOffice);
+  }
+
+  // 4. FILTER: Department (Cascading Level 2)
+  if (filterDept) {
+    query.where(`${DIVISION_TABLE}.department_code`, filterDept);
+  }
+
+  // 5. FILTER: Division (Cascading Level 3)
+  if (filterDiv) {
+    query.where(`${POSITION_TABLE}.division_code`, filterDiv);
+  }
+
+  // 6. SEARCH: Autocomplete
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${POSITION_TABLE}.position_code`, "like", `%${search}%`)
+        .orWhere(`${POSITION_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  // 7. Order & Execute
+  return query
+    .orderBy(`${POSITION_TABLE}.sort_order`, "asc") // Respect sort_order first
+    .orderBy(`${POSITION_TABLE}.name`, "asc");
 };
 
 /**

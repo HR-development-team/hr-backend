@@ -7,6 +7,7 @@ import {
   createMasterPositions,
   updateMasterPosition,
   destroyMasterPositions,
+  fetchPositionOptions,
 } from "./position.controller.js";
 import { authMiddleware } from "@common/middleware/authMiddleware.js";
 import { FEATURES, PERMISSIONS } from "@common/constants/general.js";
@@ -30,6 +31,13 @@ router.get(
   "/",
   checkPermission(POS_FEATURE, PERMISSIONS.READ),
   fetchPositionList
+);
+
+// get positions options
+router.get(
+  "/options",
+  checkPermission(POS_FEATURE, PERMISSIONS.READ),
+  fetchPositionOptions
 );
 
 // get position by id

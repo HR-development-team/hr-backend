@@ -48,6 +48,11 @@ export interface UpdatePosition {
   description?: string;
 }
 
+export interface PositionOption {
+  position_code: string;
+  name: string;
+}
+
 // Tipe data mentah dari database (Flat)
 export interface PositionRaw {
   position_code: string;

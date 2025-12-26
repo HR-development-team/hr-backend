@@ -12,6 +12,7 @@ import {
   countChildPositionsByCode,
   deletePositionById,
   addMasterPosition,
+  getPositionOptions,
 } from "./position.model.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@common/constants/general.js";
 import { errorResponse, successResponse } from "@common/utils/response.js";
@@ -233,6 +234,51 @@ export const fetchPositionByCode = async (
     const dbError = error as unknown;
     appLogger.error(`Error fetching position by code: ${dbError}`);
 
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /master-positions/options - Lightweight list for dropdowns
+ */
+export const fetchPositionOptions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const search = (req.query.search as string) || "";
+
+    // Filters for Cascading Dropdowns
+    const filterOffice = (req.query.office_code as string) || "";
+    const filterDept = (req.query.department_code as string) || "";
+    const filterDiv = (req.query.division_code as string) || "";
+
+    const currentUser = req.user!;
+
+    const options = await getPositionOptions(
+      currentUser.office_code,
+      search,
+      filterOffice,
+      filterDept,
+      filterDiv
+    );
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "List Jabatan berhasil didapatkan",
+      options,
+      200,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching position options: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
