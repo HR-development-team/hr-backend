@@ -33,6 +33,11 @@ export interface GetDepartmentDetail extends Department {
   office_name: string;
 }
 
+export interface DepartmentOption {
+  department_code: string;
+  name: string;
+}
+
 export interface GetAllDepartmentResponse {
   data: GetAllDepartment[];
   meta: {

@@ -6,6 +6,7 @@ import {
   GetAllDepartmentResponse,
   UpdateDepartment,
   GetDepartmentDetail,
+  DepartmentOption,
 } from "./department.types.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 import { generateDepartmentCode } from "./department.helper.js";
@@ -85,6 +86,46 @@ export const getAllMasterDepartments = async (
     },
   };
 };
+
+export const getDepartmentOptions = async (
+  userOfficeCode: string | null,
+  search: string,
+  filterOffice: string
+): Promise<DepartmentOption[]> => {
+  // 1. Base Query
+  const query = db(DEPARTMENT_TABLE).select(
+    `${DEPARTMENT_TABLE}.department_code`,
+    `${DEPARTMENT_TABLE}.name`
+  );
+
+  // 2. SECURITY SCOPE: User's Hierarchy
+  // Even if they request a specific office, we must ensure it's in their hierarchy.
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  // 3. FILTER: Specific Office (Optional)
+  // Used when the frontend selects an Office first
+  if (filterOffice) {
+    query.where(`${DEPARTMENT_TABLE}.office_code`, filterOffice);
+  }
+
+  // 4. SEARCH: Autocomplete
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${DEPARTMENT_TABLE}.department_code`, "like", `%${search}%`)
+        .orWhere(`${DEPARTMENT_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  // 5. Order & Execute
+  return query.orderBy(`${DEPARTMENT_TABLE}.name`, "asc");
+};
+
 /**
  * Get department by ID.
  */

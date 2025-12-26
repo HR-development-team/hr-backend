@@ -6,6 +6,7 @@ import {
   fetchMasterDepartmentsById,
   updateMasterDepartments,
   fetchMasterDepartmentByCode,
+  fetchDepartmentOptions,
 } from "./department.controller.js";
 import { authMiddleware } from "@common/middleware/authMiddleware.js";
 import { checkPermission } from "@common/middleware/permissionMiddleware.js";
@@ -28,6 +29,13 @@ router.get(
   "/code/:department_code",
   checkPermission(DEPT_FEATURE, PERMISSIONS.READ),
   fetchMasterDepartmentByCode
+);
+
+// get department option
+router.get(
+  "/options",
+  checkPermission(DEPT_FEATURE, PERMISSIONS.READ),
+  fetchDepartmentOptions
 );
 
 // get by dept id

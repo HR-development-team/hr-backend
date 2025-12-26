@@ -10,6 +10,7 @@ import {
   getMasterDepartmentsById,
   removeMasterDepartments,
   getMasterDepartmentByCode,
+  getDepartmentOptions,
 } from "./department.model.js";
 import {
   addMasterDepartmentsSchema,
@@ -128,6 +129,46 @@ export const fetchMasterDepartmentsById = async (
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching department by id: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /master-departments/options - Lightweight list for dropdowns
+ */
+export const fetchDepartmentOptions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const search = (req.query.search as string) || "";
+    // Frontend can pass this to filter departments by a specific office
+    const filterOffice = (req.query.office_code as string) || "";
+
+    const currentUser = req.user!;
+
+    const options = await getDepartmentOptions(
+      currentUser.office_code,
+      search,
+      filterOffice
+    );
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "List Departemen berhasil didapatkan",
+      options,
+      200,
+      RESPONSE_DATA_KEYS.DEPARTMENTS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching department options: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
