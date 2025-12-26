@@ -12,7 +12,7 @@ import {
   getAllOfficesOrganization,
   getMasterOfficeByCode,
   hasChildOffices,
-  getOfficeReference, // Pastikan ini ada di office.model.ts Anda
+  getOfficeOptions, // Pastikan ini ada di office.model.ts Anda
 } from "./office.model.js";
 import {
   addMasterOfficeSchema,
@@ -90,27 +90,30 @@ export const fetchOfficeList = async (
   }
 };
 
-export const fetchOfficeReference = async (
+/**
+ * [GET] /master-offices/options - Fetch lightweight office list for dropdowns
+ */
+export const fetchOfficeOptions = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
+    const search = (req.query.search as string) || "";
     const currentUser = req.user!;
 
-    const officeReference = await getOfficeReference(currentUser.office_code);
+    const options = await getOfficeOptions(currentUser.office_code, search);
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data referensi kantor berhasil didapatkan",
-      officeReference,
+      "List Kantor Berhasil Didapatkan",
+      options,
       200,
       RESPONSE_DATA_KEYS.OFFICES
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching office reference: ${dbError}`);
-
+    appLogger.error(`Error fetching office options: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

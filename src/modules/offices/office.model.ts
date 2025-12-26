@@ -5,8 +5,8 @@ import {
   GetAllOfficesResponse,
   GetOfficeById,
   Office,
-  OfficeReference,
   UpdateOffice,
+  OfficeOption,
 } from "./office.types.js";
 import {
   formatOfficeLocation,
@@ -105,6 +105,33 @@ export const getAllOffices = async (
   };
 };
 
+export const getOfficeOptions = async (
+  userOfficeCode: string | null,
+  search: string
+): Promise<OfficeOption[]> => {
+  if (!userOfficeCode) return [];
+
+  const query = officeHierarchyQuery(userOfficeCode);
+
+  // 2. Search Logic (Optional, for autocomplete dropdowns)
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where("office_tree.office_code", "like", `%${search}%`)
+        .orWhere("office_tree.name", "like", `%${search}%`);
+    });
+  }
+
+  // 3. Select ONLY what is needed
+  // No limit, no offset, no count query.
+  const results = await query
+    .select("office_tree.office_code", "office_tree.name")
+    .orderBy("office_tree.sort_order", "asc")
+    .orderBy("office_tree.name", "asc");
+
+  return results;
+};
+
 /**
  * Get office by ID.
  */
@@ -142,19 +169,6 @@ export const getMasterOfficeByCode = async (
     .first();
 
   return formatOfficeLocation(result);
-};
-
-export const getOfficeReference = async (
-  officeCode: string | null
-): Promise<OfficeReference[]> => {
-  if (!officeCode) return [];
-
-  const result = await officeHierarchyQuery(officeCode)
-    .select("name", "office_code")
-    .orderBy("sort_order", "asc")
-    .orderBy("name", "asc");
-
-  return result;
 };
 
 /**

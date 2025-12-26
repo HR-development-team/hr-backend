@@ -7,7 +7,7 @@ import {
   updateMasterOffice,
   fetchOrganizationTree,
   fetchMasterOfficeByCode,
-  fetchOfficeReference,
+  fetchOfficeOptions,
 } from "./office.controller.js";
 import { authMiddleware } from "@common/middleware/authMiddleware.js";
 import { FEATURES, PERMISSIONS } from "@common/constants/general.js";
@@ -33,8 +33,12 @@ router.get(
   fetchOfficeList
 );
 
-// office reference
-router.get("/reference", fetchOfficeReference);
+// office options
+router.get(
+  "/options",
+  fetchOfficeOptions,
+  checkPermission(OFFICE_FEATURE, PERMISSIONS.READ)
+);
 
 // 3. Get By Code
 router.get(

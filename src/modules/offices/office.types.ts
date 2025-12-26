@@ -66,11 +66,6 @@ export interface UserScope {
   office_code: string | null;
 }
 
-export interface OfficeReference {
-  name: string;
-  office_code: string;
-}
-
 export interface GetAllOfficesResponse {
   data: GetAllOffices[];
   meta: {
@@ -79,4 +74,9 @@ export interface GetAllOfficesResponse {
     total: number;
     total_page: number;
   };
+}
+
+export interface OfficeOption {
+  office_code: string;
+  name: string;
 }
