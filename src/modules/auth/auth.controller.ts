@@ -20,7 +20,7 @@ import { getRoleByCode } from "@modules/roles/role.model.js";
  */
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    // Validation check
+    // 1. Validation check
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
       return errorResponse(
@@ -37,7 +37,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const { email, password } = validation.data;
 
-    // Check if the user exists
+    // 2. Check if the user exists
     const user = await findUserByEmail(email);
     if (!user) {
       return errorResponse(
@@ -48,27 +48,24 @@ export const loginUser = async (req: Request, res: Response) => {
       );
     }
 
-    // Check if session_token already exists
+    // 3. Check session limits (15 min rule)
     if (user.session_token) {
       const MAX_IDLE_TIME = 15 * 60 * 1000; // 15 minutes
-
-      // Calculate how long since the last login/activity
       const lastActive = new Date(user.login_date).getTime();
       const now = new Date().getTime();
       const timeDiff = now - lastActive;
 
-      // If the session is strictly active (less than 15 mins ago)
       if (timeDiff < MAX_IDLE_TIME) {
         return errorResponse(
           res,
           API_STATUS.FAILED,
-          "Anda sedang login di perangkat lain. Harap logout atau tunggu sesi berakhir (15 menit).",
+          "Anda sedang login di perangkat lain. Harap logout atau tunggu sesi berakhir.",
           403
         );
       }
     }
 
-    // Check if the password is correct
+    // 4. Verify Password
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
       return errorResponse(
@@ -79,11 +76,10 @@ export const loginUser = async (req: Request, res: Response) => {
       );
     }
 
-    // Get employee and role details
+    // 5. Get details & Generate Token
     const employee = await getMasterEmployeesByUserCode(user.user_code);
     const role = await getRoleByCode(user.role_code);
 
-    // Generate token phase
     const userResponse = {
       id: user.id,
       email: user.email,
@@ -93,11 +89,26 @@ export const loginUser = async (req: Request, res: Response) => {
       role_code: user.role_code,
       role_name: role?.name,
     };
+
+    // Note: Your generateToken sets expiration to "1d"
     const token = await generateToken(userResponse);
 
-    // Update session token in DB
+    // 6. Update DB
     await updateUserSessionToken(user.user_code, token);
 
+    // ==========================================
+    // 7. SET COOKIE (NEW CODE)
+    // ==========================================
+    res.cookie("accessToken", token, {
+      httpOnly: true, // Prevents JS access (Security against XSS)
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      sameSite: "strict", // Protects against CSRF
+      path: "/", // Available for all routes
+      maxAge: 24 * 60 * 60 * 1000, // 1 Day (Matches your JWT expiration)
+    });
+
+    // 8. Send Response
+    // We still return the token in the body for the frontend to use immediately if needed
     return successResponse(
       res,
       API_STATUS.SUCCESS,
