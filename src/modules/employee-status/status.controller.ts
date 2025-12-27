@@ -11,6 +11,7 @@ import {
   addEmploymentStatus,
   editEmploymentStatus,
   removeEmploymentStatus,
+  getEmploymentStatusOptions,
 } from "./status.model.js";
 import {
   addEmploymentStatusSchema,
@@ -27,20 +28,55 @@ export const fetchAllEmploymentStatuses = async (
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.search as string) || "";
 
-    const statuses = await getAllEmploymentStatuses(page, limit);
+    // Destructure data and meta
+    const { data, meta } = await getAllEmploymentStatuses(page, limit, search);
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data status karyawan berhasil didapatkan",
-      statuses,
+      data,
+      200,
+      RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS,
+      meta
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching employment statuses: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /api/v1/employment_statuses/options - Lightweight list for dropdowns
+ */
+export const fetchEmploymentStatusOptions = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const search = (req.query.search as string) || "";
+
+    const options = await getEmploymentStatusOptions(search);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "List status karyawan berhasil didapatkan",
+      options,
       200,
       RESPONSE_DATA_KEYS.EMPLOYMENT_STATUS
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching employment statuses: ${dbError}`);
+    appLogger.error(`Error fetching employment status options: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

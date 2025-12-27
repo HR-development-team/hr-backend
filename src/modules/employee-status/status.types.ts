@@ -29,3 +29,18 @@ export interface UpdateEmploymentStatus {
   name?: string;
   description?: string | null;
 }
+
+export interface GetAllEmploymentStatusResponse {
+  data: GetAllEmploymentStatus[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}
+
+export interface EmploymentStatusOption {
+  status_code: string;
+  name: string;
+}

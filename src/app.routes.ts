@@ -59,7 +59,7 @@ router.use("/profiles", profileRoutes);
 router.use("/attendance-sessions", attendanceSessionRoutes);
 router.use("/payroll-periods", payrollPeriodRoutes);
 router.use("/payrolls", payrollRoutes);
-router.use("/employment_statuses", employmentStatusRoutes);
+router.use("/employment-status", employmentStatusRoutes);
 router.use("/employee-photos", employeePhotoRoutes);
 // ==========================
 // ||   Employee Portal    ||

@@ -3,7 +3,8 @@ import { db } from "@database/connection.js";
 import { EMPLOYMENT_STATUS_TABLE } from "@constants/database.js";
 import {
   CreateEmploymentStatus,
-  GetAllEmploymentStatus,
+  EmploymentStatusOption,
+  GetAllEmploymentStatusResponse,
   GetEmploymentStatusById,
   GetEmploymentStatusByCode,
   UpdateEmploymentStatus,
@@ -39,15 +40,66 @@ async function generateStatusCode(): Promise<string> {
  */
 export const getAllEmploymentStatuses = async (
   page: number,
-  limit: number
-): Promise<GetAllEmploymentStatus[]> => {
+  limit: number,
+  search: string
+): Promise<GetAllEmploymentStatusResponse> => {
   const offset = (page - 1) * limit;
 
-  return await db(EMPLOYMENT_STATUS_TABLE)
+  // 1. Base Query
+  const query = db(EMPLOYMENT_STATUS_TABLE);
+
+  // 2. Search Logic
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where("name", "like", `%${search}%`)
+        .orWhere("status_code", "like", `%${search}%`);
+    });
+  }
+
+  // 3. Count Query
+  const countQuery = query.clone().clearSelect().count("id as total").first();
+
+  // 4. Data Query
+  const dataQuery = query
     .select("id", "status_code", "name", "description")
     .limit(limit)
     .offset(offset)
     .orderBy("created_at", "desc");
+
+  // 5. Execute in Parallel
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
+};
+
+export const getEmploymentStatusOptions = async (
+  search: string
+): Promise<EmploymentStatusOption[]> => {
+  const query = db(EMPLOYMENT_STATUS_TABLE).select("status_code", "name");
+
+  // Search Logic (Autocomplete)
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where("name", "like", `%${search}%`)
+        .orWhere("status_code", "like", `%${search}%`);
+    });
+  }
+
+  // Order alphabetically for dropdowns
+  return query.orderBy("name", "asc");
 };
 
 /**
