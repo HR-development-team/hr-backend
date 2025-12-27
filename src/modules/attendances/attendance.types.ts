@@ -17,14 +17,25 @@ export interface GetAllAttendance {
   id: number;
   attendance_code: string;
   employee_code: string;
-  check_in_time: Date;
-  check_out_time: Date | null;
+  check_in_time: string;
+  check_out_time: string | null;
   check_in_status: "in-time" | "late" | "absent";
   check_out_status: "in-time" | "early" | "overtime" | "missed";
   employee_name: string;
   shift_code: string;
   date: string;
   late_minutes: string;
+  overtime_minutes: number;
+}
+
+export interface GetAllAttendanceResponse {
+  data: GetAllAttendance[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
 }
 
 export interface CheckInPayload {
