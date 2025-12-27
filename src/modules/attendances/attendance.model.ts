@@ -15,6 +15,7 @@ import {
   GetEmployeeShift,
 } from "./attendance.types.js";
 import { format } from "date-fns";
+import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 
 /**
  * Function for generating attendance code
@@ -67,6 +68,7 @@ export const recordCheckOut = async (
 export const getAllAttendances = async (
   page: number,
   limit: number,
+  userOfficeCode: string,
   filterStartDate?: string,
   filterEndDate?: string,
   filterOfficeCode?: string,
@@ -86,6 +88,13 @@ export const getAllAttendances = async (
       `${EMPLOYEE_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
     );
+
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${EMPLOYEE_TABLE}.office_code`, allowedOfficesSubquery);
+  }
 
   // We filter on the Office table's office_code column as it links to the Employees
   if (filterOfficeCode) {
