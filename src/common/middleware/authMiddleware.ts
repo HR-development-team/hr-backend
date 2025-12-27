@@ -7,8 +7,13 @@ import { db } from "@database/connection.js";
 import { JOSEError } from "jose/errors";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
 
-// Define your timeout constant (15 minutes)
+// Session Timeout: 15 Minutes
 const MAX_IDLE_TIME = 15 * 60 * 1000;
+
+// Debounce Update: 1 Minute
+// We only update the DB if the last update was more than 1 minute ago.
+// This prevents spamming UPDATE queries on every single request.
+const UPDATE_THRESHOLD = 60 * 1000;
 
 export const authMiddleware = async (
   req: AuthenticatedRequest,
@@ -17,37 +22,33 @@ export const authMiddleware = async (
 ) => {
   try {
     // ============================================================
-    // 1. DUAL TOKEN EXTRACTION STRATEGY
+    // 1. DUAL TOKEN EXTRACTION (Header vs Cookie)
     // ============================================================
-
     let token: string | null = null;
 
-    // STRATEGY A: Check Authorization Header (Priority for Mobile/API)
+    // Strategy A: Authorization Header (Priority for Mobile/API/Postman)
     const header = req.headers["authorization"];
     if (header && header.startsWith("Bearer ")) {
       token = header.split(" ")[1];
     }
 
-    // STRATEGY B: Check Cookies (Priority for Web Browser)
-    // If header didn't provide a token, try to read the HTTP-Only cookie
+    // Strategy B: Cookies (Priority for Web Browser)
     if (!token && req.cookies && req.cookies.accessToken) {
       token = req.cookies.accessToken;
     }
 
-    // If both strategies fail:
     if (!token) {
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
-        "Akses Ditolak: Token tidak tersedia (Header atau Cookie)",
+        "Akses Ditolak: Token tidak tersedia",
         401
       );
     }
 
     // ============================================================
-    // 2. VERIFICATION & DB CHECKS (Existing Logic)
+    // 2. VERIFY TOKEN & USER
     // ============================================================
-
     const payload = await verifyJwtSignature(token);
 
     const user = await db(USER_TABLE)
@@ -63,11 +64,9 @@ export const authMiddleware = async (
       );
     }
 
-    // Check Single Session Rule
+    // 3. SINGLE SESSION CHECK (Prevent multiple logins)
     if (user.session_token !== token) {
-      // Optional: Clear cookie if session is invalid to avoid infinite loops on frontend
-      res.clearCookie("accessToken");
-
+      res.clearCookie("accessToken"); // Clear invalid cookie
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
@@ -76,15 +75,19 @@ export const authMiddleware = async (
       );
     }
 
-    // Check Inactivity Timeout
+    // ============================================================
+    // 4. CHECK TIMEOUT & UPDATE SESSION (Sliding Window)
+    // ============================================================
+
+    // Convert DB date to milliseconds
     const lastActive = user.login_date
       ? new Date(user.login_date).getTime()
       : 0;
     const now = Date.now();
 
+    // A. Check if user has been idle too long
     if (now - lastActive > MAX_IDLE_TIME) {
-      res.clearCookie("accessToken"); // Clear cookie on timeout
-
+      res.clearCookie("accessToken");
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
@@ -93,7 +96,18 @@ export const authMiddleware = async (
       );
     }
 
-    // Attach user to request
+    // B. "Touch" the session (Refresh the timer)
+    // We only update the DB if > 1 minute has passed since the last update
+    // to improve performance.
+    if (now - lastActive > UPDATE_THRESHOLD) {
+      await db(USER_TABLE).where({ user_code: user.user_code }).update({
+        login_date: new Date(), // Sets to CURRENT_TIMESTAMP
+      });
+    }
+
+    // ============================================================
+    // 5. ATTACH USER TO REQUEST
+    // ============================================================
     req.user = {
       ...payload,
       id: user.id,
@@ -105,14 +119,14 @@ export const authMiddleware = async (
   } catch (error) {
     const joseError = error as JOSEError;
 
-    // Helper to clear cookie on error so browser knows to ask for login again
-    const clearCookieAndReturn = (msg: string) => {
+    // Helper to clear cookie and return error
+    const rejectAuth = (message: string) => {
       res.clearCookie("accessToken");
-      return errorResponse(res, API_STATUS.UNAUTHORIZED, msg, 401);
+      return errorResponse(res, API_STATUS.UNAUTHORIZED, message, 401);
     };
 
     if (joseError.code === "ERR_JWT_EXPIRED") {
-      return clearCookieAndReturn("Token kedaluwarsa");
+      return rejectAuth("Token kedaluwarsa");
     }
 
     if (
@@ -120,9 +134,10 @@ export const authMiddleware = async (
         joseError.code
       )
     ) {
-      return clearCookieAndReturn("Token rusak/tidak valid");
+      return rejectAuth("Token rusak atau tidak valid");
     }
 
+    // Generic error
     return errorResponse(
       res,
       API_STATUS.FAILED,
