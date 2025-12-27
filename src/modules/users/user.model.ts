@@ -2,10 +2,11 @@ import { db } from "@database/connection.js";
 import { EMPLOYEE_TABLE, ROLE_TABLE, USER_TABLE } from "@constants/database.js";
 import {
   CreateUserData,
-  GetAllUser,
+  GetAllUserResponse,
   GetUserById,
   UpdateUserData,
   User,
+  UserOption,
 } from "./user.types.js";
 
 /**
@@ -33,16 +34,16 @@ async function generateUserCode() {
 /**
  * Get all user.
  */
-export const getAllUsers = async (): Promise<GetAllUser[]> =>
-  await db(USER_TABLE)
-    .select(
-      `${USER_TABLE}.id`,
-      `${USER_TABLE}.user_code`,
-      `${USER_TABLE}.email`,
-      `${USER_TABLE}.role_code`,
-      `${ROLE_TABLE}.name as role_name`,
-      `${EMPLOYEE_TABLE}.full_name as employee_name`
-    )
+export const getAllUsers = async (
+  page: number,
+  limit: number,
+  search: string,
+  roleCode: string
+): Promise<GetAllUserResponse> => {
+  const offset = (page - 1) * limit;
+
+  // 1. Base Query (Joins)
+  const query = db(USER_TABLE)
     .leftJoin(
       `${EMPLOYEE_TABLE}`,
       `${EMPLOYEE_TABLE}.user_code`,
@@ -53,6 +54,60 @@ export const getAllUsers = async (): Promise<GetAllUser[]> =>
       `${ROLE_TABLE}.role_code`,
       `${USER_TABLE}.role_code`
     );
+
+  // 2. Search Logic (Email, User Code, or Employee Name)
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${USER_TABLE}.email`, "like", `%${search}%`)
+        .orWhere(`${USER_TABLE}.user_code`, "like", `%${search}%`)
+        .orWhere(`${EMPLOYEE_TABLE}.full_name`, "like", `%${search}%`);
+    });
+  }
+
+  // 3. Filter: Role
+  if (roleCode) {
+    query.where(`${USER_TABLE}.role_code`, roleCode);
+  }
+
+  // 4. Count Query
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count(`${USER_TABLE}.id as total`)
+    .first();
+
+  // 5. Data Query
+  const dataQuery = query
+    .select(
+      `${USER_TABLE}.id`,
+      `${USER_TABLE}.user_code`,
+      `${USER_TABLE}.email`,
+      `${USER_TABLE}.role_code`,
+      `${ROLE_TABLE}.name as role_name`,
+      `${EMPLOYEE_TABLE}.full_name as employee_name`,
+      `${USER_TABLE}.login_date` // Useful to show "Last Login"
+    )
+    .orderBy(`${USER_TABLE}.id`, "asc")
+    .limit(limit)
+    .offset(offset);
+
+  // 6. Execute
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
+};
 
 /**
  * Get user by ID.
@@ -79,6 +134,40 @@ export const getUserByCode = async (code: string) => {
       `${USER_TABLE}.name as role_name`
     )
     .leftJoin(ROLE_TABLE, `${ROLE_TABLE}.role_code`, `${USER_TABLE}.role_code`);
+};
+
+export const getUserOptions = async (
+  search: string,
+  roleCode: string
+): Promise<UserOption[]> => {
+  // 1. Base Query
+  const query = db(USER_TABLE)
+    .leftJoin(
+      `${ROLE_TABLE}`,
+      `${ROLE_TABLE}.role_code`,
+      `${USER_TABLE}.role_code`
+    )
+    .select(
+      `${USER_TABLE}.user_code`,
+      `${USER_TABLE}.email`,
+      `${ROLE_TABLE}.name as role_name`
+    );
+
+  // 2. FILTER: Role (e.g., Get only "Admin" users)
+  if (roleCode) {
+    query.where(`${USER_TABLE}.role_code`, roleCode);
+  }
+
+  // 3. SEARCH: Autocomplete (Email, Name, or Code)
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${USER_TABLE}.email`, "like", `%${search}%`)
+        .orWhere(`${USER_TABLE}.user_code`, "like", `%${search}%`);
+    });
+  }
+
+  return query.orderBy(`${USER_TABLE}.email`, "asc");
 };
 
 /**

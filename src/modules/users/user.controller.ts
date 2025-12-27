@@ -8,29 +8,73 @@ import {
   addUsers,
   editUsers,
   getAllUsers,
+  getUserOptions,
   getUsersById,
   removeUsers,
 } from "./user.model.js";
 import { addUsersSchema, updateUsersSchema } from "./user.schemas.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 
 /**
  * [GET] /users - Fetch all Users
  */
-export const fetchAllUsers = async (req: Request, res: Response) => {
+export const fetchAllUsers = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const users = await getAllUsers();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.search as string) || "";
+    const roleCode = (req.query.role_code as string) || "";
+
+    const { data, meta } = await getAllUsers(page, limit, search, roleCode);
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data User berhasil di dapatkan",
-      users,
+      "Data User berhasil didapatkan",
+      data,
+      200,
+      RESPONSE_DATA_KEYS.USERS,
+      meta
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching users: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /users/options - Lightweight list for dropdowns
+ */
+export const fetchUserOptions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const search = (req.query.search as string) || "";
+    const roleCode = (req.query.role_code as string) || "";
+
+    const options = await getUserOptions(search, roleCode);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "List User berhasil didapatkan",
+      options,
       200,
       RESPONSE_DATA_KEYS.USERS
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching users:${dbError}`);
+    appLogger.error(`Error fetching user options: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

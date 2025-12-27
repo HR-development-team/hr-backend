@@ -43,3 +43,20 @@ export interface UpdateUserData {
   password?: string;
   role_code?: string;
 }
+
+export interface GetAllUserResponse {
+  data: GetAllUser[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}
+
+export interface UserOption {
+  user_code: string;
+  email: string;
+  employee_name: string | null;
+  role_name: string;
+}

@@ -3,6 +3,7 @@ import {
   createUsers,
   destroyUsers,
   fetchAllUsers,
+  fetchUserOptions,
   fetchUsersById,
   updateUsers,
 } from "./user.controller.js";
@@ -17,6 +18,13 @@ const USER_FEATURE = FEATURES.USER_MANAGEMENT;
 
 // get all users
 router.get("/", checkPermission(USER_FEATURE, PERMISSIONS.READ), fetchAllUsers);
+
+// get all users options
+router.get(
+  "/options",
+  checkPermission(USER_FEATURE, PERMISSIONS.READ),
+  fetchUserOptions
+);
 
 // get by id
 router.get(
