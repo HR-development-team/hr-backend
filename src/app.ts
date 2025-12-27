@@ -4,13 +4,14 @@ import { httpLogger } from "@utils/logger.js";
 import { setResponseHeader } from "@middleware/set-headers.js";
 import { corsOptions } from "@config/cors.js";
 import router from "./app.routes.js";
-//import officeRoutes from "./modules/offices/office.routes.js"; // <--- Pastikan di-import
+import cookieParser from "cookie-parser";
 
 const app: Application = express();
 
 app.use(cors(corsOptions));
 app.use(httpLogger);
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 
 // Health Check (Root)

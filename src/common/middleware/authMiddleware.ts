@@ -16,18 +16,37 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    const header = req.headers["authorization"];
-    const token =
-      header && header.startsWith("Bearer ") ? header.split(" ")[1] : null;
+    // ============================================================
+    // 1. DUAL TOKEN EXTRACTION STRATEGY
+    // ============================================================
 
+    let token: string | null = null;
+
+    // STRATEGY A: Check Authorization Header (Priority for Mobile/API)
+    const header = req.headers["authorization"];
+    if (header && header.startsWith("Bearer ")) {
+      token = header.split(" ")[1];
+    }
+
+    // STRATEGY B: Check Cookies (Priority for Web Browser)
+    // If header didn't provide a token, try to read the HTTP-Only cookie
+    if (!token && req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
+    // If both strategies fail:
     if (!token) {
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
-        "Akses Ditolak: Token tidak tersedia",
+        "Akses Ditolak: Token tidak tersedia (Header atau Cookie)",
         401
       );
     }
+
+    // ============================================================
+    // 2. VERIFICATION & DB CHECKS (Existing Logic)
+    // ============================================================
 
     const payload = await verifyJwtSignature(token);
 
@@ -44,8 +63,11 @@ export const authMiddleware = async (
       );
     }
 
-    // 1. Check if token matches (Single Session Rule)
+    // Check Single Session Rule
     if (user.session_token !== token) {
+      // Optional: Clear cookie if session is invalid to avoid infinite loops on frontend
+      res.clearCookie("accessToken");
+
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
@@ -54,14 +76,15 @@ export const authMiddleware = async (
       );
     }
 
-    // Check if the session is "stale" (Inactivity Timeout)
+    // Check Inactivity Timeout
     const lastActive = user.login_date
       ? new Date(user.login_date).getTime()
       : 0;
     const now = Date.now();
 
-    // If (Current Time - Last Active Time) > 15 minutes
     if (now - lastActive > MAX_IDLE_TIME) {
+      res.clearCookie("accessToken"); // Clear cookie on timeout
+
       return errorResponse(
         res,
         API_STATUS.UNAUTHORIZED,
@@ -70,6 +93,7 @@ export const authMiddleware = async (
       );
     }
 
+    // Attach user to request
     req.user = {
       ...payload,
       id: user.id,
@@ -81,13 +105,14 @@ export const authMiddleware = async (
   } catch (error) {
     const joseError = error as JOSEError;
 
+    // Helper to clear cookie on error so browser knows to ask for login again
+    const clearCookieAndReturn = (msg: string) => {
+      res.clearCookie("accessToken");
+      return errorResponse(res, API_STATUS.UNAUTHORIZED, msg, 401);
+    };
+
     if (joseError.code === "ERR_JWT_EXPIRED") {
-      return errorResponse(
-        res,
-        API_STATUS.UNAUTHORIZED,
-        "Token kedaluwarsa",
-        401
-      );
+      return clearCookieAndReturn("Token kedaluwarsa");
     }
 
     if (
@@ -95,12 +120,7 @@ export const authMiddleware = async (
         joseError.code
       )
     ) {
-      return errorResponse(
-        res,
-        API_STATUS.UNAUTHORIZED,
-        "Token rusak/tidak valid",
-        401
-      );
+      return clearCookieAndReturn("Token rusak/tidak valid");
     }
 
     return errorResponse(
