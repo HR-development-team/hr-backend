@@ -12,6 +12,6 @@ const router = Router();
 router.post("/login", loginUser);
 router.get("/me", authMiddleware, getProfile);
 router.post("/keep-alive", authMiddleware, keepSessionAlive);
-router.delete("/logout", authMiddleware, logoutUser);
+router.delete("/logout", logoutUser);
 
 export default router;

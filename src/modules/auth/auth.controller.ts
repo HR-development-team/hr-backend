@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { errorResponse, successResponse } from "@utils/response.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
-import { generateToken } from "@utils/jwt.js";
+import { generateToken, verifyJwtSignature } from "@utils/jwt.js";
 import { loginSchema } from "./auth.schema.js";
 import {
   deleteUserSessionToken,
@@ -165,31 +165,42 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
 /**
  * [DELETE] /api/v1/auth/logout - Logout User (Employee or Admin)
  */
-export const logoutUser = async (req: AuthenticatedRequest, res: Response) => {
-  const currentUser = req.user!;
-
-  if (!currentUser) {
-    return errorResponse(
-      res,
-      API_STATUS.UNAUTHORIZED,
-      "User tidak teridentifikasi",
-      401
-    );
-  }
-
-  await deleteUserSessionToken(currentUser.user_code);
-
+export const logoutUser = async (req: Request, res: Response) => {
+  // 1. ALWAYS clear the cookie first.
+  // This is the most critical step to prevent "Zombie Cookies".
   res.cookie("accessToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     expires: new Date(0),
+    path: "/",
   });
 
+  // 2. Manual Token Extraction ("Best Effort" logic)
+  // Since we removed authMiddleware, we must parse the header manually.
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+
+    try {
+      // Use your existing 'jose' helper to verify and decode
+      const payload = await verifyJwtSignature(token);
+
+      // If valid, remove the session from the database
+      if (payload && payload.user_code) {
+        await deleteUserSessionToken(payload.user_code);
+      }
+    } catch (error) {
+      console.warn("Logout with invalid/expired token - skipping DB deletion");
+    }
+  }
+
+  // 4. Always return success
   return successResponse(
     res,
     API_STATUS.SUCCESS,
-    "Logout berhasil. Sesi telah diakhiri.",
+    "Logout berhasil.",
     null,
     200
   );
