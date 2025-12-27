@@ -36,3 +36,18 @@ export interface UpdateRole {
   name?: string;
   description?: string;
 }
+
+export interface GetAllRoleResponse {
+  data: GetAllRole[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}
+
+export interface RoleOption {
+  role_code: string;
+  name: string;
+}

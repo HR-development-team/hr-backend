@@ -7,10 +7,11 @@ import {
 import {
   CreateRole,
   Role,
-  GetAllRole,
+  GetAllRoleResponse,
   UpdateRole,
   RolePermission,
   GetRoleById,
+  RoleOption,
 } from "./role.types.js";
 import { Knex } from "knex";
 
@@ -40,10 +41,50 @@ async function generateRoleCode(): Promise<string> {
 /**
  * Get all roles.
  */
-export const getAllRoles = async (): Promise<GetAllRole[]> => {
-  return db(ROLE_TABLE)
+export const getAllRoles = async (
+  page: number,
+  limit: number,
+  search: string
+): Promise<GetAllRoleResponse> => {
+  const offset = (page - 1) * limit;
+
+  // 1. Base Query
+  const query = db(ROLE_TABLE);
+
+  // 2. Search Logic
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where("name", "like", `%${search}%`)
+        .orWhere("role_code", "like", `%${search}%`);
+    });
+  }
+
+  // 3. Count Query (Clone strategy)
+  const countQuery = query.clone().clearSelect().count("id as total").first();
+
+  // 4. Data Query
+  const dataQuery = query
     .select("id", "role_code", "name", "description")
+    .limit(limit)
+    .offset(offset)
     .orderBy("id", "asc");
+
+  // 5. Execute in Parallel
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
 };
 
 /**
@@ -51,6 +92,22 @@ export const getAllRoles = async (): Promise<GetAllRole[]> => {
  */
 export const getRoleById = async (id: number): Promise<GetRoleById | null> =>
   await db(ROLE_TABLE).select("*").where({ id }).first();
+
+export const getRoleOptions = async (search: string): Promise<RoleOption[]> => {
+  const query = db(ROLE_TABLE).select("role_code", "name");
+
+  // Search Logic (Autocomplete)
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where("name", "like", `%${search}%`)
+        .orWhere("role_code", "like", `%${search}%`);
+    });
+  }
+
+  // Order alphabetically for dropdowns
+  return query.orderBy("name", "asc");
+};
 
 /**
  * Get role by Code.

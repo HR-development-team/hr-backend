@@ -9,6 +9,7 @@ import {
   getAllRoles,
   getRoleByCode,
   getRoleById,
+  getRoleOptions,
   removeRole,
 } from "./role.model.js";
 import { addRolesSchema, UpdateRoleSchema } from "./role.schemas.js";
@@ -18,19 +19,53 @@ import { addRolesSchema, UpdateRoleSchema } from "./role.schemas.js";
  */
 export const fetchAllRoles = async (req: Request, res: Response) => {
   try {
-    const roles = await getAllRoles();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+    const search = (req.query.search as string) || "";
+
+    const { data, meta } = await getAllRoles(page, limit, search);
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Role berhasil di dapatkan",
-      roles,
+      "Data Role berhasil didapatkan",
+      data,
+      200,
+      RESPONSE_DATA_KEYS.ROLES,
+      meta
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching roles: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /roles/options - Lightweight list for dropdowns
+ */
+export const fetchRoleOptions = async (req: Request, res: Response) => {
+  try {
+    const search = (req.query.search as string) || "";
+
+    const options = await getRoleOptions(search);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "List Role berhasil didapatkan",
+      options,
       200,
       RESPONSE_DATA_KEYS.ROLES
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching roles:${dbError}`);
+    appLogger.error(`Error fetching role options: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
