@@ -10,7 +10,7 @@ import {
 } from "@constants/database.js";
 import {
   CreateEmployee,
-  GetAllEmployee,
+  GetAllEmployeeResponse,
   UpdateEmployee,
   Employee,
   GetEmployeeById,
@@ -19,50 +19,20 @@ import {
 import { generateEmployeeCode } from "./employee.helper.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 
-/**
- * Get all master employees.
- */
 export const getAllMasterEmployees = async (
   page: number,
   limit: number,
-  userOfficeCode: string | "",
+  userOfficeCode: string,
   search: string,
-  officeCodeFilter: string | "",
-  divisionCodeFilter: string | "",
-  positionCodeFilter: string | ""
-): Promise<GetAllEmployee[]> => {
+  filterOffice: string,
+  filterDept: string,
+  filterDiv: string,
+  filterPos: string
+): Promise<GetAllEmployeeResponse> => {
   const offset = (page - 1) * limit;
 
+  // 1. Base Query (Joins only)
   const query = db(EMPLOYEE_TABLE)
-    .select(
-      `${EMPLOYEE_TABLE}.*`,
-
-      // shift table
-      `${SHIFT_TABLE}.name as shift_name`,
-
-      // Employment status fields
-      `${EMPLOYMENT_STATUS_TABLE}.status_code as employment_status_code`,
-      `${EMPLOYMENT_STATUS_TABLE}.name as employment_status`,
-
-      // Office fields
-      `${OFFICE_TABLE}.office_code`,
-      `${OFFICE_TABLE}.name as office_name`,
-
-      // Position fields
-      `${POSITION_TABLE}.position_code`,
-      `${POSITION_TABLE}.name as position_name`,
-
-      // Division fields
-      `${DIVISION_TABLE}.division_code`,
-      `${DIVISION_TABLE}.name as division_name`,
-
-      // Department fields
-      `${DEPARTMENT_TABLE}.department_code`,
-      `${DEPARTMENT_TABLE}.name as department_name`,
-
-      // Office fields
-      `${OFFICE_TABLE}.name as office_name`
-    )
     .leftJoin(
       `${POSITION_TABLE}`,
       `${EMPLOYEE_TABLE}.position_code`,
@@ -94,6 +64,7 @@ export const getAllMasterEmployees = async (
       `${SHIFT_TABLE}.shift_code`
     );
 
+  // 2. SECURITY SCOPE: User's Hierarchy
   if (userOfficeCode) {
     const allowedOfficesSubquery =
       officeHierarchyQuery(userOfficeCode).select("office_code");
@@ -101,6 +72,7 @@ export const getAllMasterEmployees = async (
     query.whereIn(`${EMPLOYEE_TABLE}.office_code`, allowedOfficesSubquery);
   }
 
+  // 3. SEARCH (Name or Code)
   if (search) {
     query.andWhere((builder) => {
       builder
@@ -109,37 +81,73 @@ export const getAllMasterEmployees = async (
     });
   }
 
-  if (officeCodeFilter) {
-    query.andWhere((builder) => {
-      builder.where(
-        `${EMPLOYEE_TABLE}.office_code`,
-        "like",
-        `%${officeCodeFilter}%`
-      );
-    });
+  // 4. FILTERS (Exact Match)
+  if (filterOffice) {
+    query.where(`${EMPLOYEE_TABLE}.office_code`, filterOffice);
   }
 
-  if (divisionCodeFilter) {
-    query.andWhere((builder) => {
-      builder.where(
-        `${DIVISION_TABLE}.division_code`,
-        "like",
-        `%${divisionCodeFilter}%`
-      );
-    });
+  if (filterDept) {
+    // Note: Employees don't usually have department_code directly,
+    // so we filter on the joined Department table
+    query.where(`${DEPARTMENT_TABLE}.department_code`, filterDept);
   }
 
-  if (positionCodeFilter) {
-    query.andWhere((builder) => {
-      builder.where(
-        `${POSITION_TABLE}.position_code`,
-        "like",
-        `%${positionCodeFilter}%`
-      );
-    });
+  if (filterDiv) {
+    // Note: Filter on the joined Division table (via Position)
+    query.where(`${DIVISION_TABLE}.division_code`, filterDiv);
   }
 
-  return query.limit(limit).offset(offset).orderBy("id", "asc");
+  if (filterPos) {
+    query.where(`${EMPLOYEE_TABLE}.position_code`, filterPos);
+  }
+
+  // 5. Count Query (Clone strategy)
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count(`${EMPLOYEE_TABLE}.id as total`)
+    .first();
+
+  // 6. Data Query
+  const dataQuery = query
+    .select(
+      `${EMPLOYEE_TABLE}.*`,
+
+      // Shift
+      `${SHIFT_TABLE}.name as shift_name`,
+
+      // Employment Status
+      `${EMPLOYMENT_STATUS_TABLE}.status_code as employment_status_code`,
+      `${EMPLOYMENT_STATUS_TABLE}.name as employment_status`,
+
+      // Hierarchy Names
+      `${OFFICE_TABLE}.name as office_name`,
+      `${DEPARTMENT_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.name as department_name`,
+      `${DIVISION_TABLE}.division_code`,
+      `${DIVISION_TABLE}.name as division_name`,
+      `${POSITION_TABLE}.position_code`,
+      `${POSITION_TABLE}.name as position_name`
+    )
+    .orderBy(`${EMPLOYEE_TABLE}.id`, "asc") // Consistent ordering
+    .limit(limit)
+    .offset(offset);
+
+  // 7. Execute in Parallel
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
 };
 
 /**

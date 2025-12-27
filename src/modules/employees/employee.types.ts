@@ -145,3 +145,13 @@ export interface UpdateEmployeeByCode {
   npwp?: string | null;
   bank_account?: string | null;
 }
+
+export interface GetAllEmployeeResponse {
+  data: GetAllEmployee[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}

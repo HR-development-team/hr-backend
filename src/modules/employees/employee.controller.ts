@@ -30,33 +30,38 @@ export const fetchAllMasterEmployees = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;
     const search = (req.query.search as string) || "";
-    const officeCodeFilter = (req.query.office_code as string) || "";
-    const division_code = (req.query.division_code as string) || "";
-    const position_code = (req.query.position_code as string) || "";
+
+    // Filters
+    const filterOffice = (req.query.office_code as string) || "";
+    const filterDept = (req.query.department_code as string) || ""; // Added for completeness
+    const filterDiv = (req.query.division_code as string) || "";
+    const filterPos = (req.query.position_code as string) || "";
 
     const currentUser = req.user!;
 
-    const employees = await getAllMasterEmployees(
+    const { data, meta } = await getAllMasterEmployees(
       page,
       limit,
       currentUser.office_code || "",
       search,
-      officeCodeFilter,
-      division_code,
-      position_code
+      filterOffice,
+      filterDept,
+      filterDiv,
+      filterPos
     );
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data Karyawan berhasil di dapatkan",
-      employees,
+      "Data Karyawan berhasil didapatkan",
+      data,
       200,
-      RESPONSE_DATA_KEYS.EMPLOYEES
+      RESPONSE_DATA_KEYS.EMPLOYEES,
+      meta
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching employees:${dbError}`);
+    appLogger.error(`Error fetching employees: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
