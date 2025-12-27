@@ -98,7 +98,12 @@ export const editMasterShift = async (
 ): Promise<Shift | null> => {
   const { id, ...updateData } = data;
 
-  await db(SHIFT_TABLE).where({ id }).update(updateData);
+  const shiftToUpdate = {
+    ...updateData,
+    work_days: JSON.stringify(updateData.work_days),
+  };
+
+  await db(SHIFT_TABLE).where({ id }).update(shiftToUpdate);
   return db(SHIFT_TABLE)
     .where(`${SHIFT_TABLE}.id`, id)
     .select(`${SHIFT_TABLE}.*`, `${OFFICE_TABLE}.name as office_name`)

@@ -1,5 +1,56 @@
-import { addDays, addMinutes, isBefore, set, subMinutes } from "date-fns";
-import { GetEmployeeShift, ShiftTimes } from "./attendance.types.js";
+import {
+  addDays,
+  addMinutes,
+  format,
+  isBefore,
+  set,
+  subMinutes,
+} from "date-fns";
+import {
+  GetAllAttendance,
+  GetEmployeeShift,
+  ShiftTimes,
+} from "./attendance.types.js";
+
+const safeDateFormat = (dateValue: string | Date | null): string => {
+  if (!dateValue) {
+    return "-";
+  }
+
+  let dateObj: Date;
+
+  if (dateValue instanceof Date) {
+    dateObj = dateValue;
+  } else if (dateValue === "string") {
+    const cleaningString = dateValue.replace(" ", "T");
+    dateObj = new Date(cleaningString);
+  } else {
+    return "-";
+  }
+
+  if (isNaN(dateObj.getTime())) {
+    return "-";
+  }
+
+  return format(dateObj, "yyyy-MM-dd HH:mm:ss");
+};
+
+export const toAttendanceSimpleResponse = (
+  attendance: GetAllAttendance
+): GetAllAttendance => ({
+  id: attendance.id,
+  attendance_code: attendance.attendance_code,
+  employee_code: attendance.employee_code,
+  check_in_time: safeDateFormat(attendance.check_in_time),
+  check_out_time: safeDateFormat(attendance.check_out_time),
+  check_in_status: attendance.check_in_status,
+  check_out_status: attendance.check_out_status,
+  employee_name: attendance.employee_name,
+  shift_code: attendance.shift_code,
+  date: format(attendance.date, "yyyy-MM-dd"),
+  late_minutes: attendance.late_minutes,
+  overtime_minutes: attendance.overtime_minutes,
+});
 
 export const calculateShiftTimes = (
   now: Date,

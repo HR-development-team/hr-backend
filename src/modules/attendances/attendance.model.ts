@@ -6,12 +6,12 @@ import {
 } from "@constants/database.js";
 import { db } from "@database/connection.js";
 import { Knex } from "knex";
-import { GetAllAttendanceSession } from "@modules/attendance-sessions/session.types.js";
 import {
   Attendance,
   CheckInPayload,
   CheckOutPayload,
   GetAllAttendance,
+  GetAllAttendanceResponse,
   GetEmployeeShift,
 } from "./attendance.types.js";
 import { format } from "date-fns";
@@ -64,8 +64,64 @@ export const recordCheckOut = async (
 /**
  * Get all attendance.
  */
-export const getAllAttendances = async (): Promise<GetAllAttendanceSession[]> =>
-  await db(ATTENDANCE_TABLE)
+export const getAllAttendances = async (
+  page: number,
+  limit: number,
+  filterStartDate?: string,
+  filterEndDate?: string,
+  filterOfficeCode?: string,
+  search?: string,
+  filterStatus?: string
+): Promise<GetAllAttendanceResponse> => {
+  const offset = (page - 1) * limit;
+
+  const query = db(ATTENDANCE_TABLE)
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ATTENDANCE_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${EMPLOYEE_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    );
+
+  // We filter on the Office table's office_code column as it links to the Employees
+  if (filterOfficeCode) {
+    query.andWhere(`${EMPLOYEE_TABLE}.office_code`, filterOfficeCode);
+  }
+
+  // We filter the date column based on the start date and end date
+  if (filterStartDate && filterEndDate) {
+    query.andWhereBetween(`${ATTENDANCE_TABLE}.date`, [
+      filterStartDate,
+      filterEndDate,
+    ]);
+  } else if (filterStartDate) {
+    query.andWhere(`${ATTENDANCE_TABLE}.date`, filterStartDate);
+  }
+
+  //  We filter the check_in_status column based on the status
+  if (filterStatus) {
+    query.andWhere(`${ATTENDANCE_TABLE}.check_in_status`, filterStatus);
+  }
+
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${EMPLOYEE_TABLE}.full_name`, "like", `%${search}%`)
+        .orWhere(`${EMPLOYEE_TABLE}.employee_code`, "like", `%${search}%`);
+    });
+  }
+
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count(`${ATTENDANCE_TABLE}.attendance_code as total`)
+    .first();
+
+  const dataQuery = query
     .select(
       `${ATTENDANCE_TABLE}.id`,
       `${ATTENDANCE_TABLE}.attendance_code`,
@@ -74,16 +130,31 @@ export const getAllAttendances = async (): Promise<GetAllAttendanceSession[]> =>
       `${ATTENDANCE_TABLE}.check_out_time`,
       `${ATTENDANCE_TABLE}.check_in_status`,
       `${ATTENDANCE_TABLE}.check_out_status`,
-
+      `${ATTENDANCE_TABLE}.date`,
+      `${ATTENDANCE_TABLE}.late_minutes`,
+      `${ATTENDANCE_TABLE}.overtime_minutes`,
       // Employee Fields
       `${EMPLOYEE_TABLE}.full_name as employee_name`
     )
-    .leftJoin(
-      `${EMPLOYEE_TABLE}`,
-      `${ATTENDANCE_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.employee_code`
-    )
-    .orderBy("attendance_code", "asc");
+    .orderBy(`${ATTENDANCE_TABLE}.created_at`, "desc")
+    .limit(limit)
+    .offset(offset);
+
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalpage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalpage,
+    },
+  };
+};
 
 /**
  * Get attendance by id.
