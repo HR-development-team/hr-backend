@@ -277,9 +277,10 @@ export const addMasterEmployees = async (
  * edit an existing position record.
  */
 export const editMasterEmployees = async (
+  id: number,
   data: UpdateEmployee
 ): Promise<Employee | null> => {
-  const { id, ...updateData } = data;
+  const { ...updateData } = data;
 
   await db(EMPLOYEE_TABLE).where({ id }).update(updateData);
   return db(EMPLOYEE_TABLE).where({ id }).first();
@@ -289,9 +290,10 @@ export const editMasterEmployees = async (
  * edit an existing position record by code.
  */
 export const editMasterEmployeesByCode = async (
+  employee_code: string,
   data: UpdateEmployeeByCode
 ): Promise<Employee | null> => {
-  const { employee_code, ...updateData } = data;
+  const { ...updateData } = data;
 
   await db(EMPLOYEE_TABLE).where({ employee_code }).update(updateData);
   return db(EMPLOYEE_TABLE).where({ employee_code }).first();

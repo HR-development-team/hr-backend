@@ -38,11 +38,7 @@ export const updateProfileSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal resign harus YYYY-MM-DD")
       .nullable()
       .optional(),
-    employment_status: z
-      .enum(["aktif", "inaktif"])
-      .default("aktif")
-      .nullable()
-      .optional(),
+    employment_status: z.string().nullable().optional(),
     education: z
       .string()
       .min(2, "Pendidikan minimal 2 karakter")

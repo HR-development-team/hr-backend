@@ -5,7 +5,9 @@ import {
   GetAllShifts,
   UpdateShift,
   Shift,
+  ShiftOptions,
 } from "./shift.types.js";
+import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 
 /**
  * Function for generating shift code
@@ -53,6 +55,39 @@ export const getAllMasterShifts = async (): Promise<GetAllShifts[]> =>
       `${SHIFT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
     );
+
+/**
+ * Get shift options
+ */
+export const getMasterShiftOptions = async (
+  userOfficeCode: string,
+  search: string
+): Promise<ShiftOptions[]> => {
+  const query = db(SHIFT_TABLE).select(
+    `${SHIFT_TABLE}.shift_code`,
+    `${SHIFT_TABLE}.name`,
+    `${SHIFT_TABLE}.start_time`,
+    `${SHIFT_TABLE}.end_time`,
+    `${SHIFT_TABLE}.office_code`
+  );
+
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${SHIFT_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${SHIFT_TABLE}.shift_code`, "like", `%${search}%`)
+        .orWhere(`${SHIFT_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  return query.orderBy(`${SHIFT_TABLE}.name`, "asc");
+};
 
 /**
  * Get shift by ID.

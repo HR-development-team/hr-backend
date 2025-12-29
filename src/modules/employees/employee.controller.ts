@@ -4,8 +4,6 @@ import { API_STATUS, RESPONSE_DATA_KEYS } from "@constants/general.js";
 import { appLogger } from "@utils/logger.js";
 import { DatabaseError } from "@apptypes/error.types.js";
 import {
-  addMasterEmployees,
-  editMasterEmployees,
   getAllMasterEmployees,
   getMasterEmployeesByCode,
   getMasterEmployeesById,
@@ -18,6 +16,15 @@ import {
 } from "./employee.schemas.js";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { checkOfficeScope } from "@modules/offices/office.helper.js";
+import {
+  createEmployeeService,
+  updateEmployeeService,
+} from "./employee.service.js";
+import {
+  getEmployeeServiceErrorDetails,
+  handleEmployeesDatabaseError,
+  isEmployeeServiceError,
+} from "./employee.helper.js";
 
 /**
  * [GET] /master-employees - Fetch all Employees
@@ -263,128 +270,31 @@ export const createMasterEmployees = async (
       );
     }
 
-    const parentOffice = validation.data.office_code;
-
-    const hasAccess = await checkOfficeScope(
+    const result = await createEmployeeService(
       currentUser.office_code,
-      parentOffice
+      validation.data
     );
-
-    if (!hasAccess) {
-      return errorResponse(
-        res,
-        API_STATUS.UNAUTHORIZED,
-        "Anda tidak memiliki akses ke kantor ini",
-        403
-      );
-    }
-
-    const employeeData = validation.data;
-    const masterEmployees = await addMasterEmployees(employeeData);
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
-      "Data master karyawan berhasil dibuat",
-      masterEmployees,
+      "Data karyawan berhasil ditambahkan",
+      result,
       201,
       RESPONSE_DATA_KEYS.EMPLOYEES
     );
   } catch (error) {
-    const dbError = error as DatabaseError;
+    if (isEmployeeServiceError(error)) {
+      const { status, apiStatus, message } =
+        getEmployeeServiceErrorDetails(error);
 
-    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
-      const errorMessage = dbError.sqlMessage || dbError.message;
-      const validationErrors = [];
-
-      // --- Duplicate Employee CODE ---
-      if (
-        errorMessage &&
-        (errorMessage.includes("employee_code") ||
-          errorMessage.includes("uni_employee_code"))
-      ) {
-        validationErrors.push({
-          field: "employee_code",
-          message: "Kode karyawan yang dimasukkan sudah ada.",
-        });
-      }
-
-      // Duplicate user code
-      if (errorMessage && errorMessage.includes("user_code")) {
-        validationErrors.push({
-          field: "user_code",
-          message:
-            "Akun user yang dimasukkan sudah digunakan oleh karyawan lain",
-        });
-      }
-
-      // --- Duplicate KTP Number ---
-      if (errorMessage && errorMessage.includes("ktp_number")) {
-        validationErrors.push({
-          field: "ktp_number",
-          message: "Nomor KTP yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Duplicate BPJS Ketenagakerjaan ---
-      if (errorMessage && errorMessage.includes("bpjs_ketenagakerjaan")) {
-        validationErrors.push({
-          field: "bpjs_ketenagakerjaan",
-          message:
-            "Nomor BPJS Ketenagakerjaan yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Duplicate BPJS Kesehatan ---
-      if (errorMessage && errorMessage.includes("bpjs_kesehatan")) {
-        validationErrors.push({
-          field: "bpjs_kesehatan",
-          message: "Nomor BPJS Kesehatan yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Duplicate NPWP ---
-      if (errorMessage && errorMessage.includes("npwp")) {
-        validationErrors.push({
-          field: "npwp",
-          message: "Nomor NPWP yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Send Duplicate Entry Response if any unique field failed ---
-      if (validationErrors.length > 0) {
-        appLogger.warn(
-          "Employee creation failed: Duplicate entry detected for unique field(s)."
-        );
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          validationErrors
-        );
-      }
+      return errorResponse(res, apiStatus, message, status);
     }
 
-    //  Check if the position code exist or not
-    if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
-      appLogger.warn("Employee creation failed: position_code does not exist.");
+    const { status, apiStatus, message, errors } =
+      handleEmployeesDatabaseError(error);
 
-      return errorResponse(res, API_STATUS.BAD_REQUEST, "Validasi gagal", 400, [
-        {
-          field: "position_code",
-          message: "Kode posisi tidak ditemukan.",
-        },
-      ]);
-    }
-
-    appLogger.error(`Error creating employees:${dbError}`);
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
+    return errorResponse(res, apiStatus, message, status, errors);
   }
 };
 
@@ -424,15 +334,6 @@ export const updateMasterEmployees = async (
       );
     }
 
-    console.log(
-      "User Office Code:",
-      currentUser.office_code,
-      "| Tipe data user Office Code:",
-      typeof currentUser.office_code,
-      "| Kode jabatan:",
-      req.body.position_code
-    );
-
     if (Object.keys(validation.data).length === 0) {
       return errorResponse(
         res,
@@ -442,241 +343,32 @@ export const updateMasterEmployees = async (
       );
     }
 
-    const existingEmployee = await getMasterEmployeesById(id);
-
-    if (!existingEmployee) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "Karyawan tidak ditemukan",
-        404
-      );
-    }
-
-    const parentOfficeCode =
-      req.body.office_code || existingEmployee.office_code;
-
-    const hasAccess = await checkOfficeScope(
-      currentUser.office_code || "",
-      parentOfficeCode
-    );
-
-    if (!hasAccess) {
-      return errorResponse(
-        res,
-        API_STATUS.UNAUTHORIZED,
-        "Anda tidak memiliki wewenang menaruh karyawan di kantor ini",
-        403
-      );
-    }
-
-    const employeeData = validation.data;
-
-    const isTargetAllowed = await checkOfficeScope(
+    const result = await updateEmployeeService(
+      id,
       currentUser.office_code,
-      existingEmployee?.office_code
+      validation.data
     );
-
-    if (!isTargetAllowed) {
-      return errorResponse(
-        res,
-        API_STATUS.UNAUTHORIZED,
-        "Anda tidak memiliki akses untuk mengubah karyawan ini",
-        403
-      );
-    }
-
-    const masterEmployees = await editMasterEmployees({ id, ...employeeData });
-
-    // Validate employee not found
-    if (!masterEmployees) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Data Karyawan tidak ditemukan",
-        404
-      );
-    }
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data master karyawan berhasil diperbarui",
-      masterEmployees,
+      result,
       200,
       RESPONSE_DATA_KEYS.EMPLOYEES
     );
   } catch (error) {
-    const dbError = error as DatabaseError;
+    if (isEmployeeServiceError(error)) {
+      const { status, apiStatus, message } =
+        getEmployeeServiceErrorDetails(error);
 
-    if (dbError.code === "ER_DUP_ENTRY" || dbError.errno === 1062) {
-      const errorMessage = dbError.sqlMessage || dbError.message;
-      const validationErrors = [];
-
-      // --- Duplicate Employee CODE ---
-      if (
-        errorMessage &&
-        (errorMessage.includes("employee_code") ||
-          errorMessage.includes("uni_employee_code"))
-      ) {
-        validationErrors.push({
-          field: "employee_code",
-          message: "Kode karyawan yang dimasukkan sudah ada.",
-        });
-      }
-
-      // Duplicate user code
-      if (errorMessage && errorMessage.includes("user_code")) {
-        validationErrors.push({
-          field: "user_code",
-          message:
-            "Akun user yang dimasukkan sudah digunakan oleh karyawan lain",
-        });
-      }
-
-      // --- Duplicate KTP Number ---
-      if (errorMessage && errorMessage.includes("ktp_number")) {
-        validationErrors.push({
-          field: "ktp_number",
-          message: "Nomor KTP yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Duplicate BPJS Ketenagakerjaan ---
-      if (errorMessage && errorMessage.includes("bpjs_ketenagakerjaan")) {
-        validationErrors.push({
-          field: "bpjs_ketenagakerjaan",
-          message:
-            "Nomor BPJS Ketenagakerjaan yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Duplicate BPJS Kesehatan ---
-      if (errorMessage && errorMessage.includes("bpjs_kesehatan")) {
-        validationErrors.push({
-          field: "bpjs_kesehatan",
-          message: "Nomor BPJS Kesehatan yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Duplicate NPWP ---
-      if (errorMessage && errorMessage.includes("npwp")) {
-        validationErrors.push({
-          field: "npwp",
-          message: "Nomor NPWP yang dimasukkan sudah terdaftar.",
-        });
-      }
-
-      // --- Send Duplicate Entry Response if any unique field failed ---
-      if (validationErrors.length > 0) {
-        appLogger.warn(
-          "Employee creation failed: Duplicate entry detected for unique field(s)."
-        );
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          validationErrors
-        );
-      }
+      return errorResponse(res, apiStatus, message, status);
     }
 
-    if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
-      const errorMessage = dbError.sqlMessage || dbError.message || "";
+    const { status, apiStatus, message, errors } =
+      handleEmployeesDatabaseError(error);
 
-      // Cek apakah error disebabkan oleh shift_code
-      if (errorMessage.includes("shift_code")) {
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "shift_code",
-              message: "Kode shift tidak ditemukan di master shift.",
-            },
-          ]
-        );
-      }
-
-      // Cek apakah error disebabkan oleh office_code
-      if (errorMessage.includes("office_code")) {
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "office_code",
-              message: "Kode kantor tidak ditemukan.",
-            },
-          ]
-        );
-      }
-
-      // Cek apakah error disebabkan oleh user_code
-      if (errorMessage.includes("user_code")) {
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "user_code",
-              message: "Kode user tidak ditemukan.",
-            },
-          ]
-        );
-      }
-
-      // Defaultnya baru menyalahkan position_code (atau cek spesifik juga)
-      if (errorMessage.includes("position_code")) {
-        return errorResponse(
-          res,
-          API_STATUS.BAD_REQUEST,
-          "Validasi gagal",
-          400,
-          [
-            {
-              field: "position_code",
-              message: "Kode posisi tidak ditemukan.",
-            },
-          ]
-        );
-      }
-
-      // Jika tidak tahu kolom mana (fallback)
-      return errorResponse(res, API_STATUS.BAD_REQUEST, "Validasi gagal", 400, [
-        {
-          field: "unknown",
-          message: "Terjadi kesalahan referensi data (Foreign Key Error).",
-        },
-      ]);
-    }
-
-    // //  Check if the position code exist or not
-    // if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
-    //   appLogger.warn("Employee creation failed: position_code does not exist.");
-
-    //   return errorResponse(res, API_STATUS.BAD_REQUEST, "Validasi gagal", 400, [
-    //     {
-    //       field: "position_code",
-    //       message: "Kode posisi tidak ditemukan.",
-    //     },
-    //   ]);
-    // }
-
-    appLogger.error(`Error editing employees:${error}`);
-    return errorResponse(
-      res,
-      API_STATUS.FAILED,
-      "Terjadi kesalahan pada server",
-      500
-    );
+    return errorResponse(res, apiStatus, message, status, errors);
   }
 };
 
