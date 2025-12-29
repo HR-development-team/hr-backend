@@ -3,6 +3,7 @@ import {
   checkIn,
   checkOut,
   fetchEmployeeAttendance,
+  getTodayAttendanceStatus,
 } from "./employee-attendance.controller.js";
 import { authMiddleware } from "@common/middleware/authMiddleware.js";
 
@@ -12,5 +13,6 @@ router.use(authMiddleware);
 router.post("/check-in", checkIn);
 router.put("/check-out", checkOut);
 router.get("/", fetchEmployeeAttendance);
+router.get("/today-status", getTodayAttendanceStatus);
 
 export default router;

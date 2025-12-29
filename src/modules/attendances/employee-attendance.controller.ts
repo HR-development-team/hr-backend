@@ -8,7 +8,12 @@ import {
 } from "./attendance.model.js";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { db } from "@database/connection.js";
-import { processCheckIn, processCheckOut } from "./attendance.service.js";
+import {
+  getDailyAttendanceStatusService,
+  processCheckIn,
+  processCheckOut,
+} from "./attendance.service.js";
+import { DatabaseError } from "@common/types/error.types.js";
 
 /**
  * [POST] /attendances/check-in - Record Employee Check-In
@@ -67,7 +72,8 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
     );
   } catch (error) {
     await trx.rollback();
-    console.error("Error Checking Attendance Session:", error);
+    const dbError = error as DatabaseError;
+    appLogger.error(`Error Checking Attendance Session: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -136,7 +142,8 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
     );
   } catch (error) {
     await trx.rollback();
-    console.error("Error Clock Out", error);
+    const dbError = error as DatabaseError;
+    appLogger.error(`Error Check Out: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -145,118 +152,6 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
     );
   }
 };
-
-// export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
-//   const employeeCode = req.user!.employee_code;
-
-//   if (!employeeCode) {
-//     return errorResponse(
-//       res,
-//       API_STATUS.UNAUTHORIZED,
-//       "Akun ini tidak terhubung dengan data pegawai.",
-//       401
-//     );
-//   }
-//   try {
-//     // validate the request first
-//     const validation = checkOutSchema.safeParse(req.body);
-//     if (!validation.success) {
-//       return errorResponse(
-//         res,
-//         API_STATUS.BAD_REQUEST,
-//         "Validasi gagal",
-//         400,
-//         validation.error.errors.map((err) => ({
-//           field: err.path[0],
-//           message: err.message,
-//         }))
-//       );
-//     }
-
-//     const profile = await getMasterEmployeesByCode(employeeCode);
-//     if (!profile) {
-//       appLogger.error(
-//         `FATAL: User Code ${req.user!.user_code} has no linked Employee profile.`
-//       );
-//       return errorResponse(
-//         res,
-//         API_STATUS.NOT_FOUND,
-//         "Profil pegawai tidak ditemukan.",
-//         404
-//       );
-//     }
-
-//     // check if the attendance session exist or not
-//     const dateNow = formatDate();
-//     const attendanceSession = await getAttendanceSessionsByDate(dateNow);
-//     if (!attendanceSession) {
-//       return errorResponse(
-//         res,
-//         API_STATUS.NOT_FOUND,
-//         "Sesi absensi untuk sekarang belum ada. Coba lagi nanti",
-//         404
-//       );
-//     }
-
-//     // check if the session is already closed
-//     if (attendanceSession.status === "closed") {
-//       return errorResponse(
-//         res,
-//         API_STATUS.NOT_FOUND,
-//         "Sesi absensi untuk hari ini sudah ditutup.",
-//         403
-//       );
-//     }
-
-//     // Determine check-out status (in-time, early, overtime)
-//     const now = new Date();
-//     const endTime = new Date(`${dateNow}T${attendanceSession.cutoff_time}`);
-//     const closeTime = new Date(`${dateNow}T${attendanceSession.close_time}`);
-
-//     let checkOutStatus: "early" | "in-time" | "overtime" | "missed" = "in-time";
-
-//     if (now < endTime) checkOutStatus = "early";
-//     else if (now > closeTime) checkOutStatus = "overtime";
-
-//     // save the check out data to database
-//     const checkOutData = await recordCheckOut({
-//       employee_code: employeeCode,
-//       session_code: attendanceSession.session_code,
-//       check_out_time: now,
-//       check_out_status: checkOutStatus,
-//     });
-
-//     if (!checkOutData) {
-//       appLogger.warn(
-//         `Employee ${employeeCode} attempted check-out, but no open record was found (Possible duplicate check-out).`
-//       );
-//       return errorResponse(
-//         res,
-//         API_STATUS.CONFLICT,
-//         "Anda belum check-in hari ini atau sudah melakukan check-out sebelumnya.",
-//         409
-//       );
-//     }
-
-//     return successResponse(
-//       res,
-//       API_STATUS.SUCCESS,
-//       `Berhasil check-out, Selamat beristirahat ${profile!.full_name}`,
-//       checkOutData,
-//       200,
-//       RESPONSE_DATA_KEYS.ATTENDANCES
-//     );
-//   } catch (error) {
-//     const dbError = error as unknown;
-//     appLogger.error(`Error creating departments:${dbError}`);
-//     return errorResponse(
-//       res,
-//       API_STATUS.FAILED,
-//       "Terjadi kesalahan pada server",
-//       500
-//     );
-//   }
-// };
 
 /**
  * [GET] /attendances/:id - Fetch Attendance by id
@@ -295,7 +190,7 @@ export const fetchAttendanceById = async (req: Request, res: Response) => {
     );
   } catch (error) {
     const dbError = error as unknown;
-    appLogger.error(`Error fetching employees:${dbError}`);
+    appLogger.error(`Error fetching attendance by id: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,
@@ -337,6 +232,47 @@ export const fetchEmployeeAttendance = async (
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching attendance:${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+export const getTodayAttendanceStatus = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const currentUser = req.user!;
+    const employeeCode = currentUser.employee_code;
+
+    if (!employeeCode) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini tidak terhubung ke data karyawan",
+        403
+      );
+    }
+
+    const statusData = await getDailyAttendanceStatusService(employeeCode);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Status absensi hari ini",
+      statusData,
+      200
+    );
+  } catch (error) {
+    const dbError = error as DatabaseError;
+    appLogger.error(
+      `Error fetching current employee attendance status: ${dbError}`
+    );
+
     return errorResponse(
       res,
       API_STATUS.FAILED,

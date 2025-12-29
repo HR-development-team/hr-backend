@@ -188,11 +188,10 @@ export const getAttendanceById = async (id: number): Promise<Attendance[]> =>
  * Get attendance by date and employee code
  */
 export const getAttendanceByDate = async (
-  connection: Knex | Knex.Transaction,
   employeeCode: string,
   date: string
 ): Promise<Attendance> => {
-  return connection(ATTENDANCE_TABLE)
+  return db(ATTENDANCE_TABLE)
     .where("employee_code", employeeCode)
     .andWhere("date", date)
     .first();
@@ -254,14 +253,14 @@ export const getTotalWorkDays = async (
 };
 
 export const getEmployeeShift = async (
-  connection: Knex.Transaction,
   empOrShiftCode: string
 ): Promise<GetEmployeeShift> => {
-  return connection(EMPLOYEE_TABLE)
+  return db(EMPLOYEE_TABLE)
     .where("employee_code", empOrShiftCode)
     .orWhere(`${SHIFT_TABLE}.shift_code`, empOrShiftCode)
     .select(
       `${SHIFT_TABLE}.office_code`,
+      `${SHIFT_TABLE}.name as shift_name`,
       `${SHIFT_TABLE}.shift_code`,
       `${SHIFT_TABLE}.work_days`,
       `${SHIFT_TABLE}.start_time`,

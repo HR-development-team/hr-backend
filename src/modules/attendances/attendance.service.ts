@@ -1,5 +1,9 @@
 import { Knex } from "knex";
-import { CheckInResult, CheckOutResult } from "./attendance.types.js";
+import {
+  AttendanceUIState,
+  CheckInResult,
+  CheckOutResult,
+} from "./attendance.types.js";
 import {
   getActiveAttendanceSession,
   getAttendanceByDate,
@@ -31,11 +35,7 @@ export const processCheckIn = async (
   const todayStr = format(now, "yyyy-MM-dd");
   const currentDayIndex = getDay(now);
 
-  const existingAttendance = await getAttendanceByDate(
-    trx,
-    employeeCode,
-    todayStr
-  );
+  const existingAttendance = await getAttendanceByDate(employeeCode, todayStr);
 
   if (existingAttendance) {
     return {
@@ -45,7 +45,7 @@ export const processCheckIn = async (
     };
   }
 
-  const employeeData = await getEmployeeShift(trx, employeeCode);
+  const employeeData = await getEmployeeShift(employeeCode);
 
   if (!employeeData || !employeeData.shift_code) {
     return {
@@ -178,7 +178,7 @@ export const processCheckOut = async (
     };
   }
 
-  const employeeData = await getEmployeeShift(trx, employeeCode);
+  const employeeData = await getEmployeeShift(employeeCode);
 
   if (!employeeData || !employeeData.shift_code) {
     return {
@@ -249,4 +249,96 @@ export const processCheckOut = async (
       overTime_minutes: overTimeMinutes,
     },
   };
+};
+
+export const getDailyAttendanceStatusService = async (
+  employeeCode: string
+): Promise<AttendanceUIState> => {
+  const now = new Date();
+  const todayStr = format(now, "yyyy-MM-dd");
+
+  const [employeeData, existingAttendance] = await Promise.all([
+    getEmployeeShift(employeeCode),
+    getAttendanceByDate(employeeCode, todayStr),
+  ]);
+
+  let uiState: AttendanceUIState = {
+    status_message: "Memuat data...",
+    button_label: "Loading...",
+    button_variant: "disabled",
+    can_check_in: false,
+    can_check_out: false,
+    server_time: format(now, "HH:mm:ss"),
+    shift_detail: {
+      name: "-",
+      start: "-",
+      end: "-",
+      open_at: "-",
+    },
+  };
+
+  if (!employeeData || !employeeData.start_time) {
+    uiState.status_message = "Anda tidak memiliki jadwal shift hari ini.";
+    uiState.button_label = "No Shift";
+    return uiState;
+  }
+
+  const shiftTimes = calculateShiftTimes(now, employeeData);
+
+  uiState.shift_detail = {
+    name: employeeData.shift_name || "Regular",
+    start: employeeData.start_time,
+    end: employeeData.end_time,
+    open_at: format(shiftTimes.openGateTime, "HH:mm"),
+  };
+
+  if (existingAttendance && !existingAttendance.check_out_time) {
+    uiState.can_check_in = false;
+    uiState.can_check_out = true;
+    uiState.button_label = "Check Out";
+    uiState.button_variant = "danger"; // Merah untuk checkout
+    uiState.status_message = "Selamat bekerja! Jangan lupa absen pulang.";
+  }
+  // B. SUDAH SELESAI (Sudah Pulang)
+  else if (existingAttendance && existingAttendance.check_out_time) {
+    uiState.can_check_in = false;
+    uiState.can_check_out = false;
+    uiState.button_label = "Selesai";
+    uiState.button_variant = "success";
+    uiState.status_message = "Absensi hari ini selesai. Sampai jumpa besok!";
+  }
+  // C. BELUM ABSEN (Cek Waktu)
+  else {
+    // C1. Terlalu Pagi
+    if (isBefore(now, shiftTimes.openGateTime)) {
+      uiState.can_check_in = false;
+      uiState.button_label = "Belum Dibuka";
+      uiState.button_variant = "disabled";
+      uiState.status_message = `Absen dibuka pukul ${format(shiftTimes.openGateTime, "HH:mm")}`;
+    }
+    // C2. Shift Sudah Berakhir
+    else if (isAfter(now, shiftTimes.closedGateTime)) {
+      uiState.can_check_in = false;
+      uiState.button_label = "Shift Berakhir";
+      uiState.button_variant = "disabled";
+      uiState.status_message = "Jam kerja shift ini sudah berakhir.";
+    }
+    // C3. Waktunya Absen (Open Window)
+    else {
+      uiState.can_check_in = true;
+
+      // Cek apakah terlambat?
+      if (isAfter(now, shiftTimes.lateThresholdTime)) {
+        uiState.button_label = "Check In (Telat)";
+        uiState.button_variant = "warning";
+        uiState.status_message = `Anda terlambat! Toleransi habis pukul ${format(shiftTimes.lateThresholdTime, "HH:mm")}`;
+      } else {
+        uiState.button_label = "Check In";
+        uiState.button_variant = "primary";
+        uiState.status_message = "Silakan absen masuk.";
+      }
+    }
+  }
+
+  return uiState;
 };
