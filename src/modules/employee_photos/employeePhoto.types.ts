@@ -2,7 +2,8 @@
 export interface EmployeePhoto {
   id: number;
   employee_code: string;
-  photo: Buffer;
+  filename: string;
+  file_path: string;
   mimetype: string;
   file_size?: number;
   uploaded_at: Date;
@@ -14,6 +15,8 @@ export interface PhotoResponse {
   message: string;
   data?: {
     employee_code: string;
+    filename: string;
+    file_path: string;
     mimetype: string;
     file_size: number;
     uploaded_at: Date;

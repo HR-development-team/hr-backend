@@ -1,5 +1,5 @@
 // employeePhoto.model.ts
-import {db} from "@database/connection.js"; // Sesuaikan dengan path knex config Anda
+import { db } from "@database/connection.js";
 import type { EmployeePhoto } from "./employeePhoto.types.js";
 
 const TABLE_NAME = "employee_photos";
@@ -8,7 +8,8 @@ export const EmployeePhotoModel = {
   // Upload atau update foto
   async upsert(
     employee_code: string,
-    photo: Buffer,
+    filename: string,
+    file_path: string,
     mimetype: string,
     file_size: number
   ): Promise<void> {
@@ -21,7 +22,8 @@ export const EmployeePhotoModel = {
       await db(TABLE_NAME)
         .where({ employee_code })
         .update({
-          photo,
+          filename,
+          file_path,
           mimetype,
           file_size,
           updated_at: db.fn.now(),
@@ -30,7 +32,8 @@ export const EmployeePhotoModel = {
       // Insert foto baru
       await db(TABLE_NAME).insert({
         employee_code,
-        photo,
+        filename,
+        file_path,
         mimetype,
         file_size,
       });
