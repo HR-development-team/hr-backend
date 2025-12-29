@@ -70,6 +70,7 @@ export interface CheckOutResult extends CheckInResult {}
 export interface GetEmployeeShift {
   office_code: string;
   shift_code: string;
+  shift_name: string;
   work_days: number[];
   start_time: string;
   end_time: string;
@@ -86,4 +87,21 @@ export interface ShiftTimes {
   openGateTime: Date;
   closedGateTime: Date;
   lateThresholdTime: Date;
+}
+
+export interface ShiftDetailUI {
+  name: string;
+  start: string;
+  end: string;
+  open_at: string;
+}
+
+export interface AttendanceUIState {
+  status_message: string;
+  button_label: string;
+  button_variant: "disabled" | "primary" | "warning" | "success" | "danger";
+  can_check_in: boolean;
+  can_check_out: boolean;
+  server_time: string;
+  shift_detail: ShiftDetailUI;
 }
