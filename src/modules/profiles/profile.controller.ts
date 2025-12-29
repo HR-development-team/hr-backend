@@ -117,8 +117,7 @@ export const updateEmployeeProfile = async (
     }
 
     const employeeData = validation.data;
-    const updatedProfile = await editMasterEmployeesByCode({
-      employee_code: employeeCode,
+    const updatedProfile = await editMasterEmployeesByCode(employeeCode, {
       ...employeeData,
     });
 

@@ -7,6 +7,7 @@ import {
   addMasterShifts,
   editMasterShift,
   getAllMasterShifts,
+  getMasterShiftOptions,
   getMasterShiftsById,
   removeMasterShift,
 } from "./shift.model.js";
@@ -14,6 +15,7 @@ import {
   addMasterShiftSchema,
   updateMasterShiftSchema,
 } from "./shift.schemas.js";
+import { AuthenticatedRequest } from "@common/types/auth.type.js";
 
 /**
  * [GET] /master-shifts - Fetch all Shifts
@@ -79,6 +81,51 @@ export const fetchMasterShiftById = async (req: Request, res: Response) => {
   } catch (error) {
     const dbError = error as unknown;
     appLogger.error(`Error fetching shift by id: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan pada server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /master-shifts/options
+ */
+export const fetchMasterShiftOptions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const currentUser = req.user!;
+    const search = (req.query.search as string) || "";
+
+    if (!currentUser.office_code) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini tidak terhubung ke data karyawan",
+        401
+      );
+    }
+
+    const options = await getMasterShiftOptions(
+      currentUser.office_code,
+      search
+    );
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Berhasil mendapatkan data opsi shift",
+      options,
+      200,
+      RESPONSE_DATA_KEYS.SHIFTS
+    );
+  } catch (error) {
+    const dbError = error as unknown;
+    appLogger.error(`Error fetching shifts: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

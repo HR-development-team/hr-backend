@@ -79,7 +79,7 @@ export interface CreateEmployee {
   religion?: string | null;
   maritial_status?: string | null;
   resign_date?: string | null;
-  employment_status?: "aktif" | "inaktif" | null;
+  employment_status?: string;
   education?: string | null;
   blood_type?: string | null;
   profile_picture?: string | null;
@@ -90,7 +90,6 @@ export interface CreateEmployee {
 }
 
 export interface UpdateEmployee {
-  id: number;
   user_code?: string;
   position_code?: string;
   office_code?: string;
@@ -108,7 +107,7 @@ export interface UpdateEmployee {
   religion?: string | null;
   maritial_status?: string | null;
   resign_date?: string | null;
-  employment_status?: "aktif" | "inaktif" | null;
+  employment_status?: string | null;
   education?: string | null;
   blood_type?: string | null;
   profile_picture?: string | null;
@@ -118,33 +117,7 @@ export interface UpdateEmployee {
   bank_account?: string | null;
 }
 
-export interface UpdateEmployeeByCode {
-  employee_code: string;
-  position_code?: string;
-  office_code?: string;
-  full_name?: string;
-  join_date?: string;
-
-  // optional fields
-  shift_code: string | null;
-  ktp_number?: string | null;
-  birth_place?: string | null;
-  birth_date?: string | null;
-  gender?: "laki-laki" | "perempuan" | null;
-  address?: string | null;
-  contact_phone?: string | null;
-  religion?: string | null;
-  maritial_status?: string | null;
-  resign_date?: string | null;
-  employment_status?: "aktif" | "inaktif" | null;
-  education?: string | null;
-  blood_type?: string | null;
-  profile_picture?: string | null;
-  bpjs_ketenagakerjaan?: string | null;
-  bpjs_kesehatan?: string | null;
-  npwp?: string | null;
-  bank_account?: string | null;
-}
+export interface UpdateEmployeeByCode extends UpdateEmployee {}
 
 export interface GetAllEmployeeResponse {
   data: GetAllEmployee[];
@@ -154,4 +127,21 @@ export interface GetAllEmployeeResponse {
     total: number;
     total_page: number;
   };
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface DatabaseErrorResponse {
+  status: number;
+  apiStatus: string;
+  message: string;
+  errors?: ValidationError[];
+}
+
+export interface EmployeeServiceError {
+  status: number;
+  message: string;
 }
