@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  CreateHolidays,
+  createHolidays,
   destroyHolidays,
   fetchAllHolidays,
   fetchHolidaysById,
@@ -14,11 +14,11 @@ router.use(authMiddleware);
 // get all holidays
 router.get("/", fetchAllHolidays);
 
+// post holidays
+router.post("/", createHolidays);
+
 // get holidays by id
 router.get("/:id", fetchHolidaysById);
-
-// post holidays
-router.post("/", CreateHolidays);
 
 // put holidays
 router.put("/:id", updateHolidays);

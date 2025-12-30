@@ -11,6 +11,8 @@ import {
   GetEmployeeShift,
   ShiftTimes,
 } from "./attendance.types.js";
+import { db } from "@database/connection.js";
+import { HOLIDAY_TABLE } from "@common/constants/database.js";
 
 const safeDateFormat = (dateValue: string | Date | null): string => {
   if (!dateValue) {
@@ -131,4 +133,19 @@ export const calculateDistance = (
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
+};
+
+export const isHolidayForUser = async (
+  todayDate: string,
+  userOfficeCode: string
+) => {
+  const holidaysToday = await db(HOLIDAY_TABLE)
+    .select("office_code", "description")
+    .where("date", todayDate);
+
+  if (holidaysToday.length === 0) return false;
+
+  return holidaysToday.some((h) => {
+    return h.office_code === null || h.office_code === userOfficeCode;
+  });
 };

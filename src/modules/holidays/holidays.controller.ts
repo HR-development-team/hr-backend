@@ -86,7 +86,7 @@ export const fetchHolidaysById = async (req: Request, res: Response) => {
 /**
  * [POST] /holidays - Create a new holiday
  */
-export const CreateHolidays = async (req: Request, res: Response) => {
+export const createHolidays = async (req: Request, res: Response) => {
   const trx = await db.transaction();
   try {
     const validation = addHolidaysSchema.safeParse(req.body);

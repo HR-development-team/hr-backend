@@ -13,6 +13,6 @@ router.use(authMiddleware);
 router.post("/check-in", checkIn);
 router.put("/check-out", checkOut);
 router.get("/", fetchEmployeeAttendance);
-router.get("/todsay-status", getTodayAttendanceStatus);
+router.get("/today-status", getTodayAttendanceStatus);
 
 export default router;

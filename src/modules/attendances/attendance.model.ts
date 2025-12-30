@@ -62,6 +62,7 @@ export const recordCheckOut = async (
   return db(ATTENDANCE_TABLE).where(`${ATTENDANCE_TABLE}.id`, id).first();
 };
 
+
 /**
  * Get all attendance.
  */

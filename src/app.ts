@@ -1,10 +1,11 @@
 import cors from "cors";
 import express, { Application, Request, Response } from "express";
-import { httpLogger } from "@utils/logger.js";
+import { appLogger, httpLogger } from "@utils/logger.js";
 import { setResponseHeader } from "@middleware/set-headers.js";
 import { corsOptions } from "@config/cors.js";
 import router from "./app.routes.js";
 import cookieParser from "cookie-parser";
+import { runAutoAlphoJob } from "./jobs/auto-alpha/autoAlpha.job.js";
 
 const app: Application = express();
 
@@ -26,4 +27,10 @@ app.get("/", setResponseHeader, (req: Request, res: Response) => {
 // If you ever need v2, you just create app.routes.v2.ts and mount it line below.
 app.use("/api/v1", router);
 // app.use("/master-offices", officeRoutes);
+
+// 4. Cron Job for auto alpha attendance
+if (true) {
+  runAutoAlphoJob();
+  appLogger.info("⏰ Cron Job Service: ONLINE");
+}
 export default app;
