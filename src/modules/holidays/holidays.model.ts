@@ -79,7 +79,7 @@ export const addHolidays = async (
     description,
   });
 
-  return await getHolidayById(id);
+  return await connection(HOLIDAY_TABLE).select("*").where({ id }).first();
 };
 
 /**
@@ -98,7 +98,7 @@ export const editHolidays = async (
     description,
   });
 
-  return await getHolidayById(id);
+  return await connection(HOLIDAY_TABLE).select("*").where({ id }).first();
 };
 
 /**

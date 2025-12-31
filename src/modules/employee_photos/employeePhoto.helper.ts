@@ -14,25 +14,32 @@ const fileFilter = (
   cb: multer.FileFilterCallback
 ) => {
   const allowedTypes = [
-    "image/jpeg", 
-    "image/jpg", 
-    "image/png", 
-    "image/gif", 
-    "image/webp"
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
   ];
 
   // Cek apakah file HEIC/HEIF
-  const isHeic = file.mimetype.includes('heic') || 
-                 file.mimetype.includes('heif') || 
-                 file.originalname.toLowerCase().endsWith('.heic') ||
-                 file.originalname.toLowerCase().endsWith('.heif');
+  const isHeic =
+    file.mimetype.includes("heic") ||
+    file.mimetype.includes("heif") ||
+    file.originalname.toLowerCase().endsWith(".heic") ||
+    file.originalname.toLowerCase().endsWith(".heif");
 
   if (isHeic) {
-    cb(new Error('Format HEIC/HEIF tidak didukung. Silakan convert ke JPEG/PNG terlebih dahulu atau gunakan aplikasi converter seperti https://heictojpg.com'));
+    cb(
+      new Error(
+        "Format HEIC/HEIF tidak didukung. Silakan convert ke JPEG/PNG terlebih dahulu atau gunakan aplikasi converter seperti https://heictojpg.com"
+      )
+    );
   } else if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Hanya file gambar (JPEG, PNG, GIF, WEBP) yang diperbolehkan"));
+    cb(
+      new Error("Hanya file gambar (JPEG, PNG, GIF, WEBP) yang diperbolehkan")
+    );
   }
 };
 
@@ -45,7 +52,11 @@ export const uploadPhoto = multer({
 });
 
 // Path untuk menyimpan foto
-export const UPLOAD_DIR = path.join(process.cwd(), "uploads", "employee-photos");
+export const UPLOAD_DIR = path.join(
+  process.cwd(),
+  "uploads",
+  "employee-photos"
+);
 
 // Pastikan folder upload ada
 export const ensureUploadDirExists = async (): Promise<void> => {
@@ -58,8 +69,11 @@ export const ensureUploadDirExists = async (): Promise<void> => {
 };
 
 // Generate filename unik
-export const generateFilename = (employeeCode: string, mimetype: string): string => {
-  const ext = mimetype.split('/')[1]; // jpeg, png, etc
+export const generateFilename = (
+  employeeCode: string,
+  mimetype: string
+): string => {
+  const ext = mimetype.split("/")[1]; // jpeg, png, etc
   const timestamp = Date.now();
   return `${employeeCode}_${timestamp}.${ext}`;
 };
@@ -70,11 +84,18 @@ export const compressAndSaveImage = async (
   mimetype: string,
   employeeCode: string,
   originalFilename?: string
-): Promise<{ filename: string; filePath: string; mimetype: string; size: number }> => {
+): Promise<{
+  filename: string;
+  filePath: string;
+  mimetype: string;
+  size: number;
+}> => {
   const MAX_SIZE = 2 * 1024 * 1024; // 2MB
   const originalSize = buffer.length;
 
-  console.log(`Processing image: ${originalFilename || 'unknown'} - Size: ${(originalSize / 1024 / 1024).toFixed(2)}MB`);
+  console.log(
+    `Processing image: ${originalFilename || "unknown"} - Size: ${(originalSize / 1024 / 1024).toFixed(2)}MB`
+  );
 
   await ensureUploadDirExists();
 
@@ -83,7 +104,9 @@ export const compressAndSaveImage = async (
 
   // Jika lebih dari 2MB, compress
   if (originalSize > MAX_SIZE) {
-    console.log(`Original size: ${(originalSize / 1024 / 1024).toFixed(2)}MB - Compressing...`);
+    console.log(
+      `Original size: ${(originalSize / 1024 / 1024).toFixed(2)}MB - Compressing...`
+    );
 
     let quality = 80;
     let attempts = 0;
@@ -116,7 +139,9 @@ export const compressAndSaveImage = async (
         .jpeg({ quality: 60, mozjpeg: true })
         .toBuffer();
 
-      console.log(`Final aggressive resize: ${(processedBuffer.length / 1024 / 1024).toFixed(2)}MB`);
+      console.log(
+        `Final aggressive resize: ${(processedBuffer.length / 1024 / 1024).toFixed(2)}MB`
+      );
     }
 
     finalMimetype = "image/jpeg"; // After compression, always JPEG

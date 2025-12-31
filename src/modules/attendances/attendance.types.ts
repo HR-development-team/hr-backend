@@ -2,7 +2,7 @@ export interface Attendance {
   id: number;
   attendance_code: string;
   employee_code: string;
-  check_in_time: Date;
+  check_in_time: Date | null;
   check_out_time: Date | null;
   check_in_status: "in-time" | "late" | "absent";
   check_out_status: "in-time" | "early" | "overtime" | "missed";
@@ -17,7 +17,7 @@ export interface GetAllAttendance {
   id: number;
   attendance_code: string;
   employee_code: string;
-  check_in_time: string;
+  check_in_time: string | null;
   check_out_time: string | null;
   check_in_status: "in-time" | "late" | "absent";
   check_out_status: "in-time" | "early" | "overtime" | "missed";
@@ -41,7 +41,7 @@ export interface GetAllAttendanceResponse {
 export interface CheckInPayload {
   employee_code: string;
   // session_code: string;
-  check_in_time: Date;
+  check_in_time: Date | null;
   check_in_status: "in-time" | "late" | "absent";
   shift_code: string;
   date: string;

@@ -13,21 +13,17 @@ export const EmployeePhotoModel = {
     mimetype: string,
     file_size: number
   ): Promise<void> {
-    const exists = await db(TABLE_NAME)
-      .where({ employee_code })
-      .first();
+    const exists = await db(TABLE_NAME).where({ employee_code }).first();
 
     if (exists) {
       // Update foto yang sudah ada
-      await db(TABLE_NAME)
-        .where({ employee_code })
-        .update({
-          filename,
-          file_path,
-          mimetype,
-          file_size,
-          updated_at: db.fn.now(),
-        });
+      await db(TABLE_NAME).where({ employee_code }).update({
+        filename,
+        file_path,
+        mimetype,
+        file_size,
+        updated_at: db.fn.now(),
+      });
     } else {
       // Insert foto baru
       await db(TABLE_NAME).insert({
@@ -41,19 +37,17 @@ export const EmployeePhotoModel = {
   },
 
   // Ambil foto by employee_code
-  async findByEmployeeCode(employee_code: string): Promise<EmployeePhoto | null> {
-    const result = await db(TABLE_NAME)
-      .where({ employee_code })
-      .first();
+  async findByEmployeeCode(
+    employee_code: string
+  ): Promise<EmployeePhoto | null> {
+    const result = await db(TABLE_NAME).where({ employee_code }).first();
 
     return result || null;
   },
 
   // Hapus foto
   async delete(employee_code: string): Promise<boolean> {
-    const deleted = await db(TABLE_NAME)
-      .where({ employee_code })
-      .delete();
+    const deleted = await db(TABLE_NAME).where({ employee_code }).delete();
 
     return deleted > 0;
   },

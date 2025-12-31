@@ -1,7 +1,11 @@
 // employeePhoto.controller.ts
 import { Request, Response } from "express";
 import { EmployeePhotoModel } from "./employeePhoto.model.js";
-import { compressAndSaveImage, deletePhotoFile, UPLOAD_DIR } from "./employeePhoto.helper.js";
+import {
+  compressAndSaveImage,
+  deletePhotoFile,
+  UPLOAD_DIR,
+} from "./employeePhoto.helper.js";
 import path from "path";
 
 // Upload foto profil
@@ -33,11 +37,14 @@ export const uploadEmployeePhoto = async (
     }
 
     const originalSize = file.size;
-    console.log(`Uploading photo for ${employee_code} - Original: ${file.originalname} (${(originalSize / 1024 / 1024).toFixed(2)}MB)`);
+    console.log(
+      `Uploading photo for ${employee_code} - Original: ${file.originalname} (${(originalSize / 1024 / 1024).toFixed(2)}MB)`
+    );
 
     // Cek apakah sudah ada foto sebelumnya
-    const existingPhoto = await EmployeePhotoModel.findByEmployeeCode(employee_code);
-    
+    const existingPhoto =
+      await EmployeePhotoModel.findByEmployeeCode(employee_code);
+
     // Compress dan save ke filesystem
     const { filename, filePath, mimetype, size } = await compressAndSaveImage(
       file.buffer,
@@ -64,7 +71,7 @@ export const uploadEmployeePhoto = async (
 
     res.status(200).json({
       success: true,
-      message: wasCompressed 
+      message: wasCompressed
         ? `Foto profil untuk ${employee_code} berhasil diupload dan dikompres dari ${(originalSize / 1024 / 1024).toFixed(2)}MB ke ${(size / 1024 / 1024).toFixed(2)}MB`
         : `Foto profil untuk ${employee_code} berhasil diupload`,
       employee_code,
@@ -72,7 +79,7 @@ export const uploadEmployeePhoto = async (
         employee_code,
         filename,
         file_path: filePath,
-        photo_url: `${req.protocol}://${req.get('host')}/api/v1/employee-photos/${employee_code}`,
+        photo_url: `${req.protocol}://${req.get("host")}/api/v1/employee-photos/${employee_code}`,
         mimetype,
         file_size: size,
         uploaded_at: new Date(),
@@ -82,7 +89,8 @@ export const uploadEmployeePhoto = async (
     console.error("Error upload foto:", error);
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : "Gagal mengupload foto profil",
+      message:
+        error instanceof Error ? error.message : "Gagal mengupload foto profil",
       employee_code: req.params.employee_code || null,
     });
   }
@@ -109,11 +117,11 @@ export const fetchEmployeePhoto = async (
 
     // Serve file dari filesystem
     const filePath = path.join(UPLOAD_DIR, photo.filename);
-    
+
     // Set headers
     res.set("Content-Type", photo.mimetype);
     res.set("Cache-Control", "public, max-age=86400"); // Cache 1 hari
-    
+
     // Send file
     res.sendFile(filePath);
   } catch (error) {
