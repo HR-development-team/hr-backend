@@ -2,10 +2,10 @@ import { db } from "@database/connection.js";
 import { OFFICE_TABLE, SHIFT_TABLE } from "@constants/database.js";
 import {
   CreateShift,
-  GetAllShifts,
   UpdateShift,
   Shift,
   ShiftOptions,
+  GetAllShiftResponse,
 } from "./shift.types.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
 
@@ -34,12 +34,49 @@ async function generateShiftCode() {
 /**
  * Get all shift.
  */
-export const getAllMasterShifts = async (): Promise<GetAllShifts[]> =>
-  await db(SHIFT_TABLE)
+export const getAllMasterShifts = async (
+  limit: number,
+  page: number,
+  userOfficeCode: string,
+  filterOffice: string,
+  search?: string
+): Promise<GetAllShiftResponse> => {
+  const offset = (page - 1) * limit;
+
+  const query = db(SHIFT_TABLE).leftJoin(
+    `${OFFICE_TABLE}`,
+    `${SHIFT_TABLE}.office_code`,
+    `${OFFICE_TABLE}.office_code`
+  );
+
+  if (userOfficeCode) {
+    const allowedOfficesSubquery =
+      officeHierarchyQuery(userOfficeCode).select("office_code");
+
+    query.whereIn(`${SHIFT_TABLE}.office_code`, allowedOfficesSubquery);
+  }
+
+  if (search) {
+    query.andWhere((builder) => {
+      builder
+        .where(`${SHIFT_TABLE}.shift_code`, "like", `%${search}%`)
+        .orWhere(`${SHIFT_TABLE}.name`, "like", `%${search}%`);
+    });
+  }
+
+  if (filterOffice) {
+    query.where(`${SHIFT_TABLE}.office_code`, filterOffice);
+  }
+
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .count(`${SHIFT_TABLE}.id as total`)
+    .first();
+
+  const dataQuery = query
     .select(
       `${SHIFT_TABLE}.id`,
-      `${SHIFT_TABLE}.office_code`,
-      `${OFFICE_TABLE}.name as office_name`,
       `${SHIFT_TABLE}.shift_code`,
       `${SHIFT_TABLE}.name`,
       `${SHIFT_TABLE}.start_time`,
@@ -48,13 +85,29 @@ export const getAllMasterShifts = async (): Promise<GetAllShifts[]> =>
       `${SHIFT_TABLE}.late_tolerance_minutes`,
       `${SHIFT_TABLE}.check_in_limit_minutes`,
       `${SHIFT_TABLE}.check_out_limit_minutes`,
-      `${SHIFT_TABLE}.work_days`
-    )
-    .leftJoin(
-      `${OFFICE_TABLE}`,
+      `${SHIFT_TABLE}.work_days`,
       `${SHIFT_TABLE}.office_code`,
-      `${OFFICE_TABLE}.office_code`
-    );
+      `${OFFICE_TABLE}.name as office_name`
+    )
+    .orderBy(`${SHIFT_TABLE}.id`, "asc")
+    .limit(limit)
+    .offset(offset);
+
+  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+
+  const total = totalResult ? Number(totalResult.total) : 0;
+  const totalPage = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      total_page: totalPage,
+    },
+  };
+};
 
 /**
  * Get shift options

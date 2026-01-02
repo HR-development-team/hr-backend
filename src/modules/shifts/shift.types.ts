@@ -1,7 +1,7 @@
 export interface Shift {
   id: number;
   shift_code: string;
-  office_code: string;
+  office_code?: string | null;
   name: string;
   start_time: string;
   end_time: string;
@@ -17,16 +17,17 @@ export interface Shift {
 // If we ever need to calculate "duration" on the fly for the list view,
 // we could add it here. For now, it mirrors the base Shift.
 export interface GetAllShifts
-  extends Pick<
-    Shift,
-    | "id"
-    | "shift_code"
-    | "name"
-    | "office_code"
-    | "start_time"
-    | "end_time"
-    | "is_overnight"
-  > {}
+  extends Omit<Shift, "created_at" | "updated_at"> {}
+
+export interface GetAllShiftResponse {
+  data: GetAllShifts[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_page: number;
+  };
+}
 
 export interface CreateShift {
   office_code: string;

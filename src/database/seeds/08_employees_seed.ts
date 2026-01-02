@@ -1,8 +1,33 @@
+import { fakerID_ID as faker } from "@faker-js/faker";
 import type { Knex } from "knex";
 
 export async function seed(knex: Knex): Promise<void> {
+  // 1. Bersihkan tabel
   await knex("master_employees").del();
-  await knex("master_employees").insert([
+
+  // ==========================================================
+  // CONFIG & DATA REFERENSI
+  // ==========================================================
+
+  // Mapping Jabatan ke Kantor (Berdasarkan urutan di 04_positions_seed.ts)
+  // JBT01 - JBT20 = Kantor Pusat (OFC01)
+  // JBT21 - JBT40 = Kantor Cabang (OFC02)
+  const getOfficeByPosition = (posIndex: number) => {
+    return posIndex <= 20 ? "OFC0000001" : "OFC0000002";
+  };
+
+  const employmentStatuses = [
+    "EPS0000001", // Tetap
+    "EPS0000002", // Kontrak
+    "EPS0000003", // Training
+    "EPS0000004", // Keluar
+    "EPS0000005", // Magang
+  ];
+
+  // ==========================================================
+  // 1. KARYAWAN UTAMA (HARDCODED) - 6 Orang
+  // ==========================================================
+  const existingEmployees = [
     {
       employee_code: "MR0001",
       user_code: "USR0000001",
@@ -90,7 +115,6 @@ export async function seed(knex: Knex): Promise<void> {
       join_date: "2024-01-10",
       education: "S1 Akuntansi",
       blood_type: "O",
-      profile_picture: null,
       bpjs_ketenagakerjaan: "112233445566",
       bpjs_kesehatan: "665544332211",
       npwp: "11.222.333.4-555.000",
@@ -114,7 +138,6 @@ export async function seed(knex: Knex): Promise<void> {
       join_date: "2024-03-01",
       education: "D3 Teknik Komputer",
       blood_type: "B",
-      profile_picture: null,
       bpjs_ketenagakerjaan: "778899001122",
       bpjs_kesehatan: "223344556677",
       npwp: "99.888.777.6-555.000",
@@ -138,11 +161,93 @@ export async function seed(knex: Knex): Promise<void> {
       join_date: "2024-03-01",
       education: "D3 Teknik Komputer",
       blood_type: "B",
-      profile_picture: null,
       bpjs_ketenagakerjaan: "778899001123",
       bpjs_kesehatan: "223344556678",
       npwp: "99.888.777.6-777.000",
       bank_account: "Mandiri 1231231234",
     },
+  ];
+
+  // Helper untuk menghitung berapa user yang sudah ada di posisi tertentu
+  const countByPosition = existingEmployees.reduce(
+    (acc, emp) => {
+      acc[emp.position_code] = (acc[emp.position_code] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  // ==========================================================
+  // 2. GENERATE DUMMY (SISANYA)
+  // Target: 40 Posisi x 5 Orang = 200 Orang
+  // ==========================================================
+  const dummyEmployees = [];
+  let employeeIdCounter = 8; // Mulai dari MR0008
+
+  // Loop untuk 40 posisi (JBT0000001 - JBT0000040)
+  for (let i = 1; i <= 40; i++) {
+    const positionCode = `JBT${i.toString().padStart(7, "0")}`;
+    const officeCode = getOfficeByPosition(i);
+
+    // Cek berapa yang sudah ada (hardcoded)
+    const currentCount = countByPosition[positionCode] || 0;
+    const targetCount = 5;
+    const needed = targetCount - currentCount;
+
+    // Generate kekurangan karyawan untuk posisi ini
+    for (let j = 0; j < needed; j++) {
+      const gender = faker.person.sexType();
+
+      // Rotasi status karyawan supaya tidak random (1,2,3,4,5,1...)
+      // Menggunakan modulo untuk memilih status secara berurutan
+      const statusIndex = (i + j) % employmentStatuses.length;
+      const statusCode = employmentStatuses[statusIndex];
+
+      dummyEmployees.push({
+        employee_code: `MR${employeeIdCounter.toString().padStart(4, "0")}`,
+        user_code: null, // Kosongkan sesuai request
+
+        position_code: positionCode,
+        office_code: officeCode,
+        employment_status_code: statusCode,
+
+        full_name: faker.person.fullName({ sex: gender }),
+        ktp_number: faker.string.numeric(16),
+        birth_place: faker.location.city(),
+        birth_date: faker.date
+          .birthdate({ min: 20, max: 50, mode: "age" })
+          .toISOString()
+          .split("T")[0],
+        gender: gender === "male" ? "laki-laki" : "perempuan",
+        address: faker.location.streetAddress(false),
+        contact_phone: faker.phone.number().replace(/^(\+62|62)/, "08"),
+
+        religion: faker.helpers.arrayElement([
+          "Islam",
+          "Kristen",
+          "Katolik",
+          "Hindu",
+          "Buddha",
+        ]),
+        maritial_status: faker.helpers.arrayElement(["Single", "Married"]),
+        join_date: faker.date.past({ years: 3 }).toISOString().split("T")[0],
+
+        education: faker.helpers.arrayElement(["SMA", "D3", "S1"]),
+        blood_type: faker.helpers.arrayElement(["A", "B", "O", "AB"]),
+
+        bpjs_ketenagakerjaan: faker.string.numeric(11),
+        bpjs_kesehatan: faker.string.numeric(13),
+        npwp: faker.string.numeric(15),
+        bank_account: faker.finance.accountName(),
+      });
+
+      employeeIdCounter++;
+    }
+  }
+
+  // Gabungkan dan Insert
+  await knex("master_employees").insert([
+    ...existingEmployees,
+    ...dummyEmployees,
   ]);
 }

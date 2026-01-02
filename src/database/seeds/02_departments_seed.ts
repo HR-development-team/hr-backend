@@ -4,100 +4,76 @@ export async function seed(knex: Knex): Promise<void> {
   // Hapus data lama (Opsional, gunakan jika ingin reset total)
   // await knex("master_departments").del();
 
+  await knex("master_departments").del();
+
   await knex("master_departments")
     .insert([
       // ==========================================
-      // KANTOR PUSAT (OFC0000001) -> Prefix: 01
+      // DEPARTEMEN UNTUK KANTOR PUSAT (OFC0000001)
       // ==========================================
       {
         department_code: "DPT0100001",
-        name: "Technology",
+        name: "Technology & Infrastructure",
         office_code: "OFC0000001",
-        description: "IT & Development Team",
+        description: "Pengembangan software dan infrastruktur IT",
       },
       {
         department_code: "DPT0100002",
-        name: "Human Resources",
+        name: "Human Capital Management",
         office_code: "OFC0000001",
-        description: "Recruitment & Employee Relations",
+        description: "Manajemen SDM dan pelatihan",
       },
       {
         department_code: "DPT0100003",
-        name: "Finance & Accounting",
+        name: "Corporate Finance",
         office_code: "OFC0000001",
-        description: "Financial Management Pusat",
+        description: "Pengelolaan keuangan dan audit internal",
       },
       {
         department_code: "DPT0100004",
-        name: "Executive Management",
+        name: "Legal & Compliance",
         office_code: "OFC0000001",
-        description: "Board of Directors & Strategists",
+        description: "Urusan hukum dan kepatuhan regulasi",
+      },
+      {
+        department_code: "DPT0100005",
+        name: "Supply Chain Management",
+        office_code: "OFC0000001",
+        description: "Pengadaan barang dan logistik pusat",
       },
 
       // ==========================================
-      // CABANG JAWA TIMUR (OFC0000002) -> Prefix: 02
+      // DEPARTEMEN UNTUK KANTOR CABANG (OFC0000002)
       // ==========================================
       {
-        department_code: "DPT0200001", // <--- Reset sequence ke 1
-        name: "Sales Region Jatim",
+        department_code: "DPT0200001",
+        name: "Regional Sales",
         office_code: "OFC0000002",
-        description: "Penjualan Wilayah Jawa Timur",
+        description: "Target penjualan wilayah Jawa Timur",
       },
       {
         department_code: "DPT0200002",
-        name: "Marketing & Promotion",
+        name: "Area Marketing",
         office_code: "OFC0000002",
-        description: "Pemasaran Lokal Surabaya",
+        description: "Promosi dan aktivasi lokal",
       },
       {
         department_code: "DPT0200003",
-        name: "Customer Success",
+        name: "Customer Experience",
         office_code: "OFC0000002",
-        description: "Layanan Pelanggan Jatim",
-      },
-
-      // ==========================================
-      // UNIT MADIUN (OFC0000003) -> Prefix: 03
-      // ==========================================
-      {
-        department_code: "DPT0300001", // <--- Reset sequence ke 1
-        name: "Field Operations",
-        office_code: "OFC0000003",
-        description: "Tim Lapangan Area Madiun",
+        description: "Layanan bantuan pelanggan regional",
       },
       {
-        department_code: "DPT0300002",
-        name: "Unit Administration",
-        office_code: "OFC0000003",
-        description: "Administrasi Pemberkasan Unit",
+        department_code: "DPT0200004",
+        name: "Branch Operations",
+        office_code: "OFC0000002",
+        description: "Operasional harian kantor cabang",
       },
       {
-        department_code: "DPT0300003",
-        name: "Logistics & Warehouse",
-        office_code: "OFC0000003",
-        description: "Gudang & Logistik Madiun",
-      },
-
-      // ==========================================
-      // CABANG JAWA TENGAH (OFC0000004) -> Prefix: 04
-      // ==========================================
-      {
-        department_code: "DPT0400001", // <--- Reset sequence ke 1
-        name: "Sales Region Jateng",
-        office_code: "OFC0000004",
-        description: "Penjualan Wilayah Jawa Tengah",
-      },
-      {
-        department_code: "DPT0400002",
-        name: "General Affair",
-        office_code: "OFC0000004",
-        description: "Umum & Pemeliharaan Aset Jateng",
-      },
-      {
-        department_code: "DPT0400003",
-        name: "Business Development",
-        office_code: "OFC0000004",
-        description: "Pengembangan Bisnis Semarang",
+        department_code: "DPT0200005",
+        name: "Inventory & Warehouse",
+        office_code: "OFC0000002",
+        description: "Stok gudang dan distribusi regional",
       },
     ])
     .onConflict("department_code") // Mencegah error duplikat jika di-run ulang

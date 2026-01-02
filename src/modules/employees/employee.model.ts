@@ -27,7 +27,8 @@ export const getAllMasterEmployees = async (
   filterOffice: string,
   filterDept: string,
   filterDiv: string,
-  filterPos: string
+  filterPos: string,
+  filterStatus: string
 ): Promise<GetAllEmployeeResponse> => {
   const offset = (page - 1) * limit;
 
@@ -99,6 +100,10 @@ export const getAllMasterEmployees = async (
 
   if (filterPos) {
     query.where(`${EMPLOYEE_TABLE}.position_code`, filterPos);
+  }
+
+  if (filterStatus) {
+    query.where(`${EMPLOYEE_TABLE}.employment_status`, filterStatus);
   }
 
   // 5. Count Query (Clone strategy)

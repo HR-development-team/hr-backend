@@ -20,17 +20,43 @@ import { AuthenticatedRequest } from "@common/types/auth.type.js";
 /**
  * [GET] /master-shifts - Fetch all Shifts
  */
-export const fetchAllMasterShift = async (req: Request, res: Response) => {
+export const fetchAllMasterShift = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const shifts = await getAllMasterShifts();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 5;
+    const search = (req.query.search as string) || "";
+    const filterOffice = (req.query.office_code as string) || "";
+
+    const currentUser = req.user!;
+
+    if (!currentUser.office_code) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini tidak terhubung ke data karyawan",
+        403
+      );
+    }
+
+    const { data, meta } = await getAllMasterShifts(
+      limit,
+      page,
+      currentUser.office_code,
+      filterOffice,
+      search
+    );
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data Shift berhasil didapatkan",
-      shifts,
+      data,
       200,
-      RESPONSE_DATA_KEYS.SHIFTS
+      RESPONSE_DATA_KEYS.SHIFTS,
+      meta
     );
   } catch (error) {
     const dbError = error as unknown;
