@@ -43,6 +43,7 @@ export const fetchAllMasterEmployees = async (
     const filterDept = (req.query.department_code as string) || ""; // Added for completeness
     const filterDiv = (req.query.division_code as string) || "";
     const filterPos = (req.query.position_code as string) || "";
+    const filterStatus = (req.query.employment_status as string) || "";
 
     const currentUser = req.user!;
 
@@ -54,7 +55,8 @@ export const fetchAllMasterEmployees = async (
       filterOffice,
       filterDept,
       filterDiv,
-      filterPos
+      filterPos,
+      filterStatus
     );
 
     return successResponse(
