@@ -1,6 +1,7 @@
 import { ROLE_PERMISSION_TABLE } from "@common/constants/database.js";
 import { API_STATUS } from "@common/constants/general.js";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
+import { appLogger } from "@common/utils/logger.js";
 import { errorResponse } from "@common/utils/response.js";
 import { db } from "@database/connection.js";
 import { NextFunction, Response } from "express";
@@ -48,8 +49,7 @@ export const checkPermission = (
 
       next();
     } catch (error) {
-      console.error("Permission Check Error", error);
-
+      appLogger.error(`Permission Check Error ${error}`);
       return errorResponse(
         res,
         API_STATUS.FAILED,

@@ -63,5 +63,10 @@ export async function seed(knex: Knex): Promise<void> {
       name: "Leave Balance",
       description: "View and adjust employee leave balances",
     },
+    {
+      feature_code: "FTR0000011",
+      name: "Shift Management",
+      description: "View and manage shift",
+    },
   ]);
 }

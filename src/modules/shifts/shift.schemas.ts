@@ -44,14 +44,16 @@ export const addMasterShiftSchema = z
         invalid_type_error: "Batas check-in harus berupa angka",
       })
       .int("Batas harus berupa bilangan bulat")
-      .positive(),
+      .positive()
+      .min(30, "Batas check-in minimal harus 30 menit"),
 
     check_out_limit_minutes: z
       .number({
         invalid_type_error: "Batas check-out harus berupa angka",
       })
       .int("Batas harus berupa bilangan bulat")
-      .positive(),
+      .positive()
+      .min(30, "Batas check-out minimal harus 30 menit"),
     work_days: z
       .array(
         z
@@ -106,13 +108,12 @@ export const updateMasterShiftSchema = z
       .number()
       .int("Toleransi harus berupa bilangan bulat")
       .min(0, "Toleransi minimal 0 menit")
-      .positive()
       .optional(),
 
     check_in_limit_minutes: z
       .number()
       .int("Batas check-in harus berupa bilangan bulat")
-      .min(60, "Batas check-in minimal 60 menit (1 jam)")
+      .min(30, "Batas check-in minimal 30 menit")
       .positive()
       .optional(),
 

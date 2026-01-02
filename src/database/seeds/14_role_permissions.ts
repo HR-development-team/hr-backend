@@ -20,6 +20,7 @@ export async function seed(knex: Knex): Promise<void> {
     "FTR0000008", // Organization Management
     "FTR0000009", // Leave Request
     "FTR0000010", // Leave Balance
+    "FTR0000011", // Shift Management
   ];
 
   const permissionsToInsert: any[] = [];
@@ -52,7 +53,7 @@ export async function seed(knex: Knex): Promise<void> {
     "FTR0000007", // Pos
     "FTR0000008", // Org
   ];
-  const transactionFeatures = ["FTR0000009", "FTR0000010"]; // Leaves
+  const transactionFeatures = ["FTR0000009", "FTR0000010", "FTR0000011"]; // Leaves
 
   // Admin: Read Only for System Features (Cannot delete SuperAdmin, etc.)
   systemFeatures.forEach((feature_code) => {
