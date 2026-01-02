@@ -32,3 +32,6 @@ export const PAYROLLS_TABLE = "payrolls";
 
 // Holiday Table
 export const HOLIDAY_TABLE = "holidays";
+
+// Bank Account Table
+export const BANK_ACCOUNT_TABLE = "bank_accounts";
