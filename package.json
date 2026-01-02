@@ -27,6 +27,7 @@
   "license": "ISC",
   "description": "HR Management System (HRMS) backend for Marstech, built with TypeScript, Express, Knex, and secure authentication (JWT/Bcrypt).",
   "dependencies": {
+    "@faker-js/faker": "^10.1.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -46,7 +47,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
-    "@faker-js/faker": "^10.1.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
