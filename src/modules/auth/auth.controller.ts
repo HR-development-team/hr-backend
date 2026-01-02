@@ -177,8 +177,12 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
  * [DELETE] /api/v1/auth/logout - Logout User (Employee or Admin)
  */
 export const logoutUser = async (req: Request, res: Response) => {
-  // 1. ALWAYS clear the cookie first.
-  // This is the most critical step to prevent "Zombie Cookies".
+  let token = req.cookies?.accessToken;
+
+  if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
   res.cookie("accessToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -187,18 +191,9 @@ export const logoutUser = async (req: Request, res: Response) => {
     path: "/",
   });
 
-  // 2. Manual Token Extraction ("Best Effort" logic)
-  // Since we removed authMiddleware, we must parse the header manually.
-  const authHeader = req.headers.authorization;
-
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.split(" ")[1];
-
+  if (token) {
     try {
-      // Use your existing 'jose' helper to verify and decode
       const payload = await verifyJwtSignature(token);
-
-      // If valid, remove the session from the database
       if (payload && payload.user_code) {
         await deleteUserSessionToken(payload.user_code);
       }
@@ -207,7 +202,6 @@ export const logoutUser = async (req: Request, res: Response) => {
     }
   }
 
-  // 4. Always return success
   return successResponse(
     res,
     API_STATUS.SUCCESS,
