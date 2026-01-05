@@ -228,7 +228,20 @@ Table holidays {
   date date [not null]
   description varchar [null]
   created_at timestamp [default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [default: `CURRTENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+//////////////////////////////////////////////////////
+// BANK ACCOUNT
+//////////////////////////////////////////////////////
+Table bank_accounts {
+  id int [pk, increment]
+  bank_account_code varchar(10) [not null]
+  employee_code varchar(10) [not null]
+  bank_name varchar(50) [not null]
+  account_number varchar(30) [not null]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
 //////////////////////////////////////////////////////
@@ -265,3 +278,5 @@ Ref: master_employees.shift_code > master_shifts.shift_code
 
 Ref: holidays.office_code > master_offices.office_code
 Ref: holidays.department_code > master_departments.department_code
+
+Ref: bank_accounts.employee_code - master_employees.employee_code
