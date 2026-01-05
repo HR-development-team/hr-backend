@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+  
 export const addMasterDepartmentsSchema = z.object({
   office_code: z.string({ required_error: "Office code wajib diisi" }),
   name: z

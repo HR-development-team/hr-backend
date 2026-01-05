@@ -68,7 +68,9 @@ export const checkIn = async (req: AuthenticatedRequest, res: Response) => {
       res,
       API_STATUS.SUCCESS,
       result.message,
-      result.data
+      result.data,
+      result.statusCode,
+      RESPONSE_DATA_KEYS.ATTENDANCES
     );
   } catch (error) {
     await trx.rollback();
@@ -138,7 +140,7 @@ export const checkOut = async (req: AuthenticatedRequest, res: Response) => {
       API_STATUS.SUCCESS,
       result.message,
       result.data,
-      200
+      result.statusCode
     );
   } catch (error) {
     await trx.rollback();

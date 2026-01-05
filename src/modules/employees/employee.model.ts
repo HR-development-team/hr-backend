@@ -1,5 +1,7 @@
 import { db } from "@database/connection.js";
 import {
+  BANK_ACCOUNT_TABLE,
+  BANK_TABLE,
   DEPARTMENT_TABLE,
   DIVISION_TABLE,
   EMPLOYEE_TABLE,
@@ -63,6 +65,16 @@ export const getAllMasterEmployees = async (
       `${SHIFT_TABLE}`,
       `${EMPLOYEE_TABLE}.shift_code`,
       `${SHIFT_TABLE}.shift_code`
+    )
+    .leftJoin(
+      `${BANK_ACCOUNT_TABLE}`,
+      `${EMPLOYEE_TABLE}.employee_code`,
+      `${BANK_ACCOUNT_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${BANK_TABLE}`,
+      `${BANK_ACCOUNT_TABLE}.bank_code`,
+      `${BANK_TABLE}.bank_code`
     );
 
   // 2. SECURITY SCOPE: User's Hierarchy
@@ -132,7 +144,13 @@ export const getAllMasterEmployees = async (
       `${DIVISION_TABLE}.division_code`,
       `${DIVISION_TABLE}.name as division_name`,
       `${POSITION_TABLE}.position_code`,
-      `${POSITION_TABLE}.name as position_name`
+      `${POSITION_TABLE}.name as position_name`,
+
+      // Bank Account
+      `${BANK_TABLE}.alias as bank_alias`,
+      `${BANK_ACCOUNT_TABLE}.bank_code`,
+      `${BANK_ACCOUNT_TABLE}.account_name as bank_account_name`,
+      `${BANK_ACCOUNT_TABLE}.account_number as bank_account_number`
     )
     .orderBy(`${EMPLOYEE_TABLE}.id`, "asc") // Consistent ordering
     .limit(limit)
@@ -178,7 +196,13 @@ export const getMasterEmployeesById = async (
 
       // Department fields
       `${DEPARTMENT_TABLE}.department_code as department_code`,
-      `${DEPARTMENT_TABLE}.name as department_name`
+      `${DEPARTMENT_TABLE}.name as department_name`,
+
+      // Bank Account
+      `${BANK_TABLE}.alias as bank_alias`,
+      `${BANK_ACCOUNT_TABLE}.bank_code`,
+      `${BANK_ACCOUNT_TABLE}.account_name as bank_account_name`,
+      `${BANK_ACCOUNT_TABLE}.account_number as bank_account_number`
     )
     .leftJoin(
       `${POSITION_TABLE}`,
@@ -199,6 +223,16 @@ export const getMasterEmployeesById = async (
       `${OFFICE_TABLE}`,
       `${EMPLOYEE_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
+    )
+    .leftJoin(
+      `${BANK_ACCOUNT_TABLE}`,
+      `${EMPLOYEE_TABLE}.employee_code`,
+      `${BANK_ACCOUNT_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${BANK_TABLE}`,
+      `${BANK_ACCOUNT_TABLE}.bank_code`,
+      `${BANK_TABLE}.bank_code`
     )
     .where({ "master_employees.id": id })
     .first();

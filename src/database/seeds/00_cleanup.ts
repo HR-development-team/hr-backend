@@ -20,6 +20,8 @@ export async function seed(knex: Knex): Promise<void> {
     "features",
     "roles",
     "payroll_periods",
+    "master_shifts",
+    "master_banks",
   ];
 
   for (const table of tables) {
