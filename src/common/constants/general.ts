@@ -34,6 +34,12 @@ export const RESPONSE_DATA_KEYS = {
 
   // holidays data
   HOLIDAYS: "holidays",
+
+  // Bank Account
+  BANK_ACCOUNT: "bank_accounts",
+
+  // Master Bank
+  BANK: "master_banks",
 };
 
 export const FEATURES = {

@@ -18,6 +18,8 @@ import featureRoutes from "@modules/features/feature.routes.js";
 import permissionRoutes from "@modules/permissions/permission.routes.js";
 import employmentStatusRoutes from "@modules/employee-status/status.routes.js";
 import employeePhotoRoutes from "@modules/employee_photos/employeePhoto.routes.js";
+import bankAccountRoutes from "@modules/bank-accounts/bank-account.routes.js";
+import bankRoutes from "@modules/banks/banks.routes.js";
 
 // Employee Specific Routes
 import employeeAttendanceRoutes from "@modules/attendances/employee-attendance.routes.js";
@@ -46,6 +48,7 @@ router.use("/master-employees", masterEmployeeRoutes);
 router.use("/master-leave-types", masterLeaveTypeRoutes);
 router.use("/master-offices", masterOfficeRoutes);
 router.use("/master-shifts", masterShiftRoutes);
+router.use("/bank-accounts", bankAccountRoutes);
 
 // ==========================
 // ||    Core Features     ||
@@ -61,6 +64,9 @@ router.use("/payroll-periods", payrollPeriodRoutes);
 router.use("/payrolls", payrollRoutes);
 router.use("/employment-status", employmentStatusRoutes);
 router.use("/employee-photos", employeePhotoRoutes);
+router.use("/bank-accounts", bankAccountRoutes);
+router.use("/master-banks", bankRoutes);
+
 // ==========================
 // ||   Employee Portal    ||
 // ==========================

@@ -49,7 +49,7 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_ketenagakerjaan: "23098",
       bpjs_kesehatan: "12098",
       npwp: "54.321",
-      bank_account: "BCA",
+      // bank_account: "BCA",
     },
     {
       employee_code: "MR0002",
@@ -72,7 +72,7 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_ketenagakerjaan: "23012",
       bpjs_kesehatan: "12012",
       npwp: "45.678",
-      bank_account: "Mandiri",
+      // bank_account: "Mandiri",
     },
     {
       employee_code: "MR0003",
@@ -95,7 +95,7 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_ketenagakerjaan: "23987",
       bpjs_kesehatan: "12987",
       npwp: "12.987",
-      bank_account: "BRI",
+      // bank_account: "BRI",
     },
     {
       employee_code: "MR0005",
@@ -118,7 +118,7 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_ketenagakerjaan: "112233445566",
       bpjs_kesehatan: "665544332211",
       npwp: "11.222.333.4-555.000",
-      bank_account: "BCA 5566778899",
+      // bank_account: "BCA 5566778899",
     },
     {
       employee_code: "MR0006",
@@ -141,7 +141,7 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_ketenagakerjaan: "778899001122",
       bpjs_kesehatan: "223344556677",
       npwp: "99.888.777.6-555.000",
-      bank_account: "Mandiri 1231231234",
+      // bank_account: "Mandiri 1231231234",
     },
     {
       employee_code: "MR0007",
@@ -164,7 +164,7 @@ export async function seed(knex: Knex): Promise<void> {
       bpjs_ketenagakerjaan: "778899001123",
       bpjs_kesehatan: "223344556678",
       npwp: "99.888.777.6-777.000",
-      bank_account: "Mandiri 1231231234",
+      // bank_account: "Mandiri 1231231234",
     },
   ];
 
@@ -238,7 +238,7 @@ export async function seed(knex: Knex): Promise<void> {
         bpjs_ketenagakerjaan: faker.string.numeric(11),
         bpjs_kesehatan: faker.string.numeric(13),
         npwp: faker.string.numeric(15),
-        bank_account: faker.finance.accountName(),
+        // bank_account: faker.finance.accountName(),
       });
 
       employeeIdCounter++;
