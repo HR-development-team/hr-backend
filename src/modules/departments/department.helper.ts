@@ -55,3 +55,26 @@ export const getDepartmentsById = async (
 
   return result;
 };
+
+export const formatDepartmentResponse = (item: any) => {
+  const {
+    leader_name,
+    leader_employee_code,
+    leader_role,
+    leader_position,
+    ...deptData
+  } = item;
+
+  if (!item) return null;
+  return {
+    ...deptData,
+    leader: leader_employee_code
+      ? {
+          employee_code: leader_employee_code,
+          name: leader_name,
+          role: leader_role,
+          position: leader_position,
+        }
+      : null,
+  };
+};

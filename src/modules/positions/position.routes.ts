@@ -8,6 +8,9 @@ import {
   updateMasterPosition,
   destroyMasterPositions,
   fetchPositionOptions,
+  createOfficePosition,
+  createDepartmentPosition,
+  createDivisionPosition,
 } from "./position.controller.js";
 import { authMiddleware } from "@common/middleware/authMiddleware.js";
 import { FEATURES, PERMISSIONS } from "@common/constants/general.js";
@@ -59,6 +62,27 @@ router.post(
   "/",
   checkPermission(POS_FEATURE, PERMISSIONS.CREATE),
   createMasterPositions
+);
+
+// create office position
+router.post(
+  "/office",
+  checkPermission(POS_FEATURE, PERMISSIONS.CREATE),
+  createOfficePosition
+);
+
+// create department position
+router.post(
+  "/department",
+  checkPermission(POS_FEATURE, PERMISSIONS.CREATE),
+  createDepartmentPosition
+);
+
+// create division position
+router.post(
+  "/division",
+  checkPermission(POS_FEATURE, PERMISSIONS.CREATE),
+  createDivisionPosition
 );
 
 // update position by id

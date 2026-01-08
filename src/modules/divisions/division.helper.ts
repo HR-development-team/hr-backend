@@ -55,3 +55,27 @@ export const isDivisionNameExist = async (
 
   return !!result;
 };
+
+export const formatDivisionReponse = (item: any) => {
+  const {
+    leader_name,
+    leader_employee_code,
+    leader_role,
+    leader_position,
+    ...divData
+  } = item;
+
+  if (!item) return null;
+  return {
+    ...divData,
+    // Konversi string ke float, atau null jika datanya kosong
+    leader: leader_employee_code
+      ? {
+          employee_code: leader_employee_code,
+          name: leader_name,
+          role: leader_role,
+          position: leader_position,
+        }
+      : null,
+  };
+};

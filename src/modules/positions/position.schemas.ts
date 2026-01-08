@@ -12,7 +12,14 @@ export const addMasterPositionsSchema = z.object({
     })
     .min(3, "Nama posisi minimal 3 karakter")
     .max(100, "Nama posisi maksimal 100 karakter"),
-  division_code: z.string().length(10, "Kode divisi harus tepat 10 karakter"),
+  division_code: z
+    .string()
+    .length(10, "Kode divisi harus tepat 10 karakter")
+    .nullable(),
+  department_code: z
+    .string()
+    .length(10, "Kode department maksimal 10 karakter")
+    .nullable(),
   base_salary: z
     .number({
       invalid_type_error: "Gaji pokok harus berupa angka.",
@@ -24,6 +31,70 @@ export const addMasterPositionsSchema = z.object({
     .string()
     .max(500, "Deskripsi maksimal 500 karakter.")
     .optional(),
+});
+
+export const createOfficePositionSchema = z.object({
+  office_code: z
+    .string({ required_error: "Kode kantor wajib diisi" })
+    .length(10, "Kode kantor maksimal 10"),
+  name: z
+    .string({ required_error: "Nama jabatan wajib diisi" })
+    .min(3, "Nama jabatan minimal 3 karakter")
+    .max(100, "Nama jabatan maksimal 100 karakter"),
+
+  base_salary: z
+    .number({
+      invalid_type_error: "Gaji pokok harus berupa angka",
+      required_error: "Gaji pokok wajib diisi",
+    })
+    .min(1000000, "Gaji pokok minimal 1.000.000"),
+
+  // Parent Position (Atasan) opsional (misal CEO tidak punya atasan)
+  parent_position_code: z
+    .string()
+    .length(10, "Kode atasan harus 10 karakter")
+    .optional()
+    .nullable(),
+
+  description: z.string().max(500).optional(),
+});
+
+export const createDepartmentPositionSchema = z.object({
+  department_code: z
+    .string({ required_error: "Kode departemen wajib diisi" })
+    .length(10, "Kode departemen harus tepat 10 karakter"),
+
+  name: z
+    .string({ required_error: "Nama jabatan wajib diisi" })
+    .min(3, "Nama jabatan minimal 3 karakter")
+    .max(100, "Nama jabatan maksimal 100 karakter"),
+
+  base_salary: z
+    .number({
+      invalid_type_error: "Gaji pokok harus berupa angka",
+      required_error: "Gaji pokok wajib diisi",
+    })
+    .min(1000000, "Gaji pokok minimal 1.000.000"),
+  description: z.string().max(500).optional(),
+});
+
+export const createDivisionPositionSchema = z.object({
+  division_code: z
+    .string({ required_error: "Kode divisi wajib diisi" })
+    .length(10, "Kode divisi harus tepat 10 karakter"),
+
+  name: z
+    .string({ required_error: "Nama jabatan wajib diisi" })
+    .min(3, "Nama jabatan minimal 3 karakter")
+    .max(100, "Nama jabatan maksimal 100 karakter"),
+
+  base_salary: z
+    .number({
+      invalid_type_error: "Gaji pokok harus berupa angka",
+      required_error: "Gaji pokok wajib diisi",
+    })
+    .min(1000000, "Gaji pokok minimal 1.000.000"),
+  description: z.string().max(500).optional(),
 });
 
 export const updateMasterPositionsSchema = z
@@ -41,7 +112,13 @@ export const updateMasterPositionsSchema = z
     division_code: z
       .string()
       .length(10, "Kode divisi harus tepat 10 karakter")
-      .optional(),
+      .optional()
+      .nullable(),
+    department_code: z
+      .string()
+      .length(10, "Kode department maksimal 10 karakter")
+      .optional()
+      .nullable(),
     base_salary: z
       .number({
         invalid_type_error: "Gaji pokok harus berupa angka.",

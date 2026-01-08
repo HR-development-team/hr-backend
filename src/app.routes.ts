@@ -20,6 +20,7 @@ import employmentStatusRoutes from "@modules/employee-status/status.routes.js";
 import employeePhotoRoutes from "@modules/employee_photos/employeePhoto.routes.js";
 import bankAccountRoutes from "@modules/bank-accounts/bank-account.routes.js";
 import bankRoutes from "@modules/banks/banks.routes.js";
+import orgResponsibilities from "@modules/org-responsibilities/org-responsibilities.routes.js";
 
 // Employee Specific Routes
 import employeeAttendanceRoutes from "@modules/attendances/employee-attendance.routes.js";
@@ -66,6 +67,7 @@ router.use("/employment-status", employmentStatusRoutes);
 router.use("/employee-photos", employeePhotoRoutes);
 router.use("/bank-accounts", bankAccountRoutes);
 router.use("/master-banks", bankRoutes);
+router.use("/org-responsibilities", orgResponsibilities);
 
 // ==========================
 // ||   Employee Portal    ||

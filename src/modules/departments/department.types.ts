@@ -8,12 +8,20 @@ export interface Department {
   updated_at?: Date;
 }
 
+export interface DepartmentLeader {
+  employee_code: string;
+  name: string;
+  role: string;
+  position: string;
+}
+
 export interface GetAllDepartment {
   id: number;
   department_code: string;
   office_code: string;
   name: string;
   description: string;
+  leader: DepartmentLeader | null;
 }
 
 export interface CreateDepartment {
@@ -31,6 +39,7 @@ export interface UpdateDepartment {
 
 export interface GetDepartmentDetail extends Department {
   office_name: string;
+  leader: DepartmentLeader | null;
 }
 
 export interface DepartmentOption {

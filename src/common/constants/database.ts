@@ -38,3 +38,6 @@ export const BANK_ACCOUNT_TABLE = "bank_accounts";
 
 // Master Bank Table
 export const BANK_TABLE = "master_banks";
+
+// Organization Leader Table
+export const ORG_RESPONSIBILITIES_TABLE = "org_responsibilities";
