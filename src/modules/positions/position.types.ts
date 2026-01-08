@@ -2,7 +2,8 @@ export interface Position {
   id: number;
   parent_position_code: string | null;
   position_code: string;
-  division_code: string;
+  division_code: string | null;
+  department_code: string | null;
   name: string;
   base_salary: string;
   sort_order: string;
@@ -11,7 +12,8 @@ export interface Position {
   description: string | null;
 }
 
-export interface GetAllPosition extends Position {
+export interface GetAllPosition
+  extends Omit<Position, "updated_at" | "created_at"> {
   office_code: string;
   office_name: string;
   department_code: string;
@@ -29,10 +31,17 @@ export interface GetAllPositionResponse {
   };
 }
 
-export interface GetPositionById extends GetAllPosition {}
+export interface GetPositionById extends Position {
+  office_code: string;
+  office_name: string;
+  department_code: string;
+  department_name: string;
+  division_name: string;
+}
 
 export interface CreatePosition {
-  division_code: string;
+  division_code: string | null;
+  department_code: string | null;
   parent_position_code: string | null;
   name: string;
   base_salary: number;
@@ -42,7 +51,8 @@ export interface CreatePosition {
 export interface UpdatePosition {
   id: number;
   name?: string;
-  division_code?: string;
+  division_code?: string | null;
+  department_code?: string | null;
   parent_division_code?: string;
   base_salary?: number;
   description?: string;

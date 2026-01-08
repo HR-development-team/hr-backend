@@ -63,12 +63,30 @@ export const officeHierarchyQuery = (
 // format office location to number helper
 // ==========================================================================
 export const formatOfficeLocation = (item: any) => {
+  const {
+    leader_name,
+    leader_employee_code,
+    leader_role,
+    leader_position,
+    latitude,
+    longitude,
+    ...officeData
+  } = item;
+
   if (!item) return null;
   return {
-    ...item,
+    ...officeData,
     // Konversi string ke float, atau null jika datanya kosong
-    latitude: item.latitude ? parseFloat(item.latitude) : null,
-    longitude: item.longitude ? parseFloat(item.longitude) : null,
+    latitude: latitude ? parseFloat(item.latitude) : null,
+    longitude: longitude ? parseFloat(item.longitude) : null,
+    leader: leader_employee_code
+      ? {
+          employee_code: leader_employee_code,
+          name: leader_name,
+          role: leader_role,
+          position: leader_position,
+        }
+      : null,
   };
 };
 

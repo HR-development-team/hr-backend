@@ -40,6 +40,9 @@ export const RESPONSE_DATA_KEYS = {
 
   // Master Bank
   BANK: "master_banks",
+
+  // Leader
+  ORG_RESPONSIBILITIES: "org_responsibilities",
 };
 
 export const FEATURES = {

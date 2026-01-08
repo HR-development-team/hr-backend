@@ -1,7 +1,10 @@
 import {
   DEPARTMENT_TABLE,
   DIVISION_TABLE,
+  EMPLOYEE_TABLE,
   OFFICE_TABLE,
+  ORG_RESPONSIBILITIES_TABLE,
+  POSITION_TABLE,
 } from "@constants/database.js";
 import { db } from "@database/connection.js";
 import {
@@ -14,7 +17,10 @@ import {
   UpdateDivision,
 } from "./division.types.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
-import { generateDivisionCode } from "./division.helper.js";
+import {
+  formatDivisionReponse,
+  generateDivisionCode,
+} from "./division.helper.js";
 
 /**
  * Get all master division.
@@ -40,6 +46,26 @@ export const getAllMasterDivision = async (
       `${OFFICE_TABLE}`,
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
+    )
+    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+      join
+        .on(
+          `${DIVISION_TABLE}.division_code`,
+          "=",
+          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+        )
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    })
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE}`,
+      `${EMPLOYEE_TABLE}.position_code`,
+      `${POSITION_TABLE}.position_code`
     );
 
   // 2. Security Scope (User Hierarchy)
@@ -82,17 +108,29 @@ export const getAllMasterDivision = async (
       `${DIVISION_TABLE}.*`,
       `${DEPARTMENT_TABLE}.name as department_name`,
       `${OFFICE_TABLE}.office_code`,
-      `${OFFICE_TABLE}.name as office_name`
+      `${OFFICE_TABLE}.name as office_name`,
+
+      // leader name
+      `${EMPLOYEE_TABLE}.full_name as leader_name`,
+      `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
+
+      // leader rolee
+      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+
+      // leader position
+      `${POSITION_TABLE}.name as leader_position`
     )
     .orderBy(`${DIVISION_TABLE}.id`, "asc")
     .limit(limit)
     .offset(offset);
 
   // 8. Execute in Parallel
-  const [totalResult, data] = await Promise.all([countQuery, dataQuery]);
+  const [totalResult, rawData] = await Promise.all([countQuery, dataQuery]);
 
   const total = totalResult ? Number(totalResult.total) : 0;
   const totalPage = Math.ceil(total / limit);
+
+  const data = rawData.map(formatDivisionReponse);
 
   return {
     data,
@@ -110,49 +148,119 @@ export const getAllMasterDivision = async (
  */
 export const getMasterDivisionsById = async (
   id: number
-): Promise<GetDivisionById | null> =>
-  await db(DIVISION_TABLE)
+): Promise<GetDivisionById | null> => {
+  const query = await db(DIVISION_TABLE)
     .select(
-      "master_divisions.*",
-      "master_departments.name as department_name",
-      "master_offices.office_code",
-      "master_offices.name as office_name"
+      `${DIVISION_TABLE}.*`,
+      `${DEPARTMENT_TABLE}.name as department_name`,
+      `${OFFICE_TABLE}.office_code`,
+      `${OFFICE_TABLE}.name as office_name`,
+
+      // leader name
+      `${EMPLOYEE_TABLE}.full_name as leader_name`,
+      `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
+
+      // leader rolee
+      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+
+      // leader position
+      `${POSITION_TABLE}.name as leader_position`
     )
     .leftJoin(
-      "master_departments",
-      "master_divisions.department_code",
-      "master_departments.department_code"
+      `${DEPARTMENT_TABLE}`,
+      `${DIVISION_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.department_code`
     )
     .leftJoin(
-      "master_offices",
-      "master_departments.office_code",
-      "master_offices.office_code"
+      `${OFFICE_TABLE}`,
+      `${DEPARTMENT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
     )
-    .where({ "master_divisions.id": id })
+    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+      join
+        .on(
+          `${DIVISION_TABLE}.division_code`,
+          "=",
+          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+        )
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    })
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE}`,
+      `${EMPLOYEE_TABLE}.position_code`,
+      `${POSITION_TABLE}.position_code`
+    )
+    .where(`${DIVISION_TABLE}.id`, id)
     .first();
 
+  const data = formatDivisionReponse(query);
+
+  return data;
+};
+
 export const getMasterDivisionsByCode = async (
-  divisionCode: string
-): Promise<GetDivisionByCode | null> =>
-  await db(DIVISION_TABLE)
+  divisionCode: string | ""
+): Promise<GetDivisionByCode | null> => {
+  const query = await db(DIVISION_TABLE)
     .select(
-      "master_divisions.*",
-      "master_departments.name as department_name",
-      "master_offices.office_code",
-      "master_offices.name as office_name"
+      `${DIVISION_TABLE}.*`,
+      `${DEPARTMENT_TABLE}.name as department_name`,
+      `${OFFICE_TABLE}.office_code`,
+      `${OFFICE_TABLE}.name as office_name`,
+
+      // leader name
+      `${EMPLOYEE_TABLE}.full_name as leader_name`,
+      `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
+
+      // leader rolee
+      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+
+      // leader position
+      `${POSITION_TABLE}.name as leader_position`
     )
     .leftJoin(
-      "master_departments",
-      "master_divisions.department_code",
-      "master_departments.department_code"
+      `${DEPARTMENT_TABLE}`,
+      `${DIVISION_TABLE}.department_code`,
+      `${DEPARTMENT_TABLE}.department_code`
     )
     .leftJoin(
-      "master_offices",
-      "master_departments.office_code",
-      "master_offices.office_code"
+      `${OFFICE_TABLE}`,
+      `${DEPARTMENT_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
     )
-    .where({ "master_divisions.division_code": divisionCode })
+    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+      join
+        .on(
+          `${DIVISION_TABLE}.division_code`,
+          "=",
+          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+        )
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    })
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE}`,
+      `${EMPLOYEE_TABLE}.position_code`,
+      `${POSITION_TABLE}.position_code`
+    )
+    .where(`${DIVISION_TABLE}.division_code`, divisionCode)
     .first();
+
+  const data = formatDivisionReponse(query);
+
+  return data;
+};
 
 export const getDivisionOptions = async (
   userOfficeCode: string | null,

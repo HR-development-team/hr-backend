@@ -54,7 +54,7 @@ export const fetchOfficeList = async (
 ) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 100;
+    const limit = parseInt(req.query.limit as string) || 5;
     const search = (req.query.search as string) || "";
     const filterParent = (req.query.parent_office_code as string) || "";
 

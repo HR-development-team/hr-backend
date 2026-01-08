@@ -365,6 +365,7 @@ export const addMasterPosition = async (
   const {
     parent_position_code,
     division_code,
+    department_code,
     name,
     base_salary,
     description,
@@ -375,7 +376,8 @@ export const addMasterPosition = async (
 
   const [id] = await db(POSITION_TABLE).insert({
     position_code,
-    division_code,
+    division_code: division_code || null,
+    department_code: department_code || null,
     parent_position_code,
     name,
     base_salary,

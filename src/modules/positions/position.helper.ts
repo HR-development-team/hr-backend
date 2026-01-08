@@ -33,11 +33,13 @@ export const buildOrganizationTree = (
 };
 
 export const isPositionNameExist = async (
-  divisionCode: string,
+  departmentCode: string | null,
+  divisionCode: string | null,
   name: string
 ): Promise<Boolean> => {
   const result = await db(POSITION_TABLE)
     .where({
+      department_code: departmentCode,
       division_code: divisionCode,
       name: name,
     })

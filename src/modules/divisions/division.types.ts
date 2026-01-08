@@ -8,10 +8,18 @@ export interface Division {
   updated_at?: Date;
 }
 
+export interface DivisionLeader {
+  employee_code: string;
+  name: string;
+  role: string;
+  position: string;
+}
+
 export interface GetDivisionById extends Division {
   office_code: string;
   office_name: string;
   department_name: string;
+  leader: DivisionLeader | null;
 }
 
 export interface GetDivisionByCode extends GetDivisionById {}
@@ -24,6 +32,7 @@ export interface GetAllDivision {
   department_code: string;
   department_name: string;
   name: string;
+  leader: DivisionLeader | null;
 }
 
 export interface CreateDivision {

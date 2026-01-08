@@ -1,5 +1,10 @@
 import { db } from "@database/connection.js";
-import { OFFICE_TABLE } from "@constants/database.js";
+import {
+  EMPLOYEE_TABLE,
+  OFFICE_TABLE,
+  ORG_RESPONSIBILITIES_TABLE,
+  POSITION_TABLE,
+} from "@constants/database.js";
 import {
   CreateOffice,
   GetAllOfficesResponse,
@@ -82,7 +87,40 @@ export const getAllOffices = async (
 
   // 6. Data Query
   const dataQuery = query
-    .select("office_tree.*", "parent.name as parent_office_name")
+    .select(
+      "office_tree.*",
+      "parent.name as parent_office_name",
+
+      // leader name
+      `${EMPLOYEE_TABLE}.full_name as leader_name`,
+      `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
+
+      // leader rolee
+      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+
+      // leader position
+      `${POSITION_TABLE}.name as leader_position`
+    )
+    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+      join
+        .on(
+          "office_tree.office_code",
+          "=",
+          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+        )
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "office")
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    })
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE}`,
+      `${EMPLOYEE_TABLE}.position_code`,
+      `${POSITION_TABLE}.position_code`
+    )
     .orderBy("office_tree.sort_order", "asc")
     .orderBy("office_tree.id", "asc")
     .limit(limit)
@@ -142,11 +180,44 @@ export const getMasterOfficeById = async (
   if (!userOfficeCode) return null;
 
   const result = await officeHierarchyQuery(userOfficeCode)
-    .select("office_tree.*", "parent.name as parent_office_name")
+    .select(
+      "office_tree.*",
+      "parent.name as parent_office_name",
+
+      // leader name
+      `${EMPLOYEE_TABLE}.full_name as leader_name`,
+      `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
+
+      // leader role
+      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+
+      // leader position
+      `${POSITION_TABLE}.name as leader_position`
+    )
     .leftJoin(
       `${OFFICE_TABLE} as parent`,
       "office_tree.parent_office_code",
       "parent.office_code"
+    )
+    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+      join
+        .on(
+          "office_tree.office_code",
+          "=",
+          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+        )
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "office")
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    })
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE}`,
+      `${EMPLOYEE_TABLE}.position_code`,
+      `${POSITION_TABLE}.position_code`
     )
     .where("office_tree.id", id)
     .first();
@@ -159,11 +230,44 @@ export const getMasterOfficeByCode = async (
   officeCode: string | null
 ): Promise<GetOfficeById | null> => {
   const result = await officeHierarchyQuery(officeCode)
-    .select("office_tree.*", "parent.name as parent_office_name")
+    .select(
+      "office_tree.*",
+      "parent.name as parent_office_name",
+
+      // leader name
+      `${EMPLOYEE_TABLE}.full_name as leader_name`,
+      `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
+
+      // leader rolee
+      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+
+      // leader position
+      `${POSITION_TABLE}.name as leader_position`
+    )
     .leftJoin(
       `${OFFICE_TABLE} as parent`,
       "office_tree.parent_office_code",
       "parent.office_code"
+    )
+    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+      join
+        .on(
+          "office_tree.office_code",
+          "=",
+          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+        )
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "office")
+        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    })
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
+      `${EMPLOYEE_TABLE}.employee_code`
+    )
+    .leftJoin(
+      `${POSITION_TABLE}`,
+      `${EMPLOYEE_TABLE}.position_code`,
+      `${POSITION_TABLE}.position_code`
     )
     .where("office_tree.office_code", officeCodeParams)
     .first();

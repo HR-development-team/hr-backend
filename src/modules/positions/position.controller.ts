@@ -11,7 +11,6 @@ import {
   countEmployeesByPositionCode,
   countChildPositionsByCode,
   deletePositionById,
-  addMasterPosition,
   getPositionOptions,
 } from "./position.model.js";
 import { API_STATUS, RESPONSE_DATA_KEYS } from "@common/constants/general.js";
@@ -22,12 +21,20 @@ import { getMasterDivisionsByCode } from "@modules/divisions/division.model.js";
 import { getMasterDepartmentByCode } from "@modules/departments/department.model.js";
 import {
   addMasterPositionsSchema,
+  createDepartmentPositionSchema,
+  createDivisionPositionSchema,
+  createOfficePositionSchema,
   updateMasterPositionsSchema,
 } from "./position.schemas.js";
+import { buildOrganizationTree } from "./position.helper.js";
 import {
-  buildOrganizationTree,
-  isPositionNameExist,
-} from "./position.helper.js";
+  createDepartmentPositionService,
+  createDivisionPositionService,
+  createGeneralPositionService,
+  createOfficePositionService,
+  ServiceError,
+} from "./position.service.js";
+import { DatabaseError } from "@common/types/error.types.js";
 
 /**
  * 1. [GET] Organization Tree
@@ -299,6 +306,15 @@ export const createMasterPositions = async (
     const currentUser = req.user!;
     const validation = addMasterPositionsSchema.safeParse(req.body);
 
+    if (!currentUser.office_code) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini tidak terhubung ke data kantor",
+        403
+      );
+    }
+
     if (!validation.success) {
       return errorResponse(
         res,
@@ -312,80 +328,29 @@ export const createMasterPositions = async (
       );
     }
 
-    const {
-      division_code,
-      parent_position_code,
-      name,
-      base_salary,
-      description,
-    } = validation.data;
-
-    const parentDivision = await getMasterDivisionsByCode(division_code);
-
-    if (!parentDivision) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Divisi tidak ditemukan",
-        404
-      );
-    }
-
-    const parentDepartment = await getMasterDepartmentByCode(
-      parentDivision.department_code
-    );
-
-    if (!parentDepartment) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Departemen induk tidak ditemukan",
-        404
-      );
-    }
-
-    const isAllowed = await checkOfficeScope(
+    const newPosition = await createGeneralPositionService(
       currentUser.office_code,
-      parentDepartment.office_code
+      validation.data
     );
-
-    if (!isAllowed) {
-      return errorResponse(
-        res,
-        API_STATUS.UNAUTHORIZED,
-        "Anda tidak memiliki akses ke divisi ini",
-        403
-      );
-    }
-
-    const isDuplicate = await isPositionNameExist(division_code, name);
-
-    if (isDuplicate) {
-      return errorResponse(
-        res,
-        API_STATUS.BAD_REQUEST,
-        "Nama jabatan sudah ada di divisi ini",
-        400
-      );
-    }
-
-    const newOffice = await addMasterPosition({
-      division_code,
-      parent_position_code: parent_position_code || null,
-      name,
-      base_salary,
-      description,
-    });
 
     return successResponse(
       res,
       API_STATUS.SUCCESS,
       "Data Jabatan Berhasil Ditambahkan",
-      newOffice,
+      newPosition,
       200,
       RESPONSE_DATA_KEYS.POSITIONS
     );
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return errorResponse(
+        res,
+        API_STATUS.FAILED,
+        error.message,
+        error.statusCode
+      );
+    }
+
     const dbError = error as unknown;
     appLogger.error(`Error creating position: ${dbError}`);
     return errorResponse(
@@ -397,6 +362,194 @@ export const createMasterPositions = async (
   }
 };
 
+/**
+ * Create position for office leader
+ */
+export const createOfficePosition = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const validation = createOfficePositionSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Validasi gagal",
+        400,
+        validation.error.errors.map((err) => ({
+          field: err.path[0],
+          message: err.message,
+        }))
+      );
+    }
+
+    const result = await createOfficePositionService(validation.data);
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Jabatan Office Berhasili Dibuat",
+      result,
+      201,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return errorResponse(
+        res,
+        API_STATUS.FAILED,
+        error.message,
+        error.statusCode
+      );
+    }
+
+    const dbError = error as DatabaseError;
+    appLogger.error(`Error create office pos: ${dbError}`);
+
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan server",
+      500
+    );
+  }
+};
+
+/**
+ * 2. Create DEPARTMENT Position
+ */
+export const createDepartmentPosition = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const currentUser = req.user!;
+
+    if (!currentUser.office_code) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini belum terhubung ke data kantor",
+        403
+      );
+    }
+
+    const validation = createDepartmentPositionSchema.safeParse(req.body);
+    if (!validation.success) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Validasi gagal",
+        400,
+        validation.error.errors.map((err) => ({
+          field: err.path[0],
+          message: err.message,
+        }))
+      );
+    }
+
+    // Panggil Service (Kirim user info juga)
+    const result = await createDepartmentPositionService(
+      currentUser.office_code,
+      validation.data
+    );
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Jabatan Departemen Berhasil Dibuat",
+      result,
+      201,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return errorResponse(
+        res,
+        API_STATUS.FAILED,
+        error.message,
+        error.statusCode
+      );
+    }
+
+    const dbError = error as DatabaseError;
+    appLogger.error(`Error create dept pos: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan server",
+      500
+    );
+  }
+};
+
+/**
+ * 3. Create DIVISION Position
+ */
+export const createDivisionPosition = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const currentUser = req.user!;
+
+    if (!currentUser.office_code) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Akun ini tidak terhubung ke data kantor",
+        403
+      );
+    }
+
+    const validation = createDivisionPositionSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return errorResponse(
+        res,
+        API_STATUS.BAD_REQUEST,
+        "Validasi gagal",
+        400,
+        validation.error.errors
+      );
+    }
+
+    // Panggil Service
+    const result = await createDivisionPositionService(
+      currentUser.office_code,
+      validation.data
+    );
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Jabatan Divisi Berhasil Dibuat",
+      result,
+      201,
+      RESPONSE_DATA_KEYS.POSITIONS
+    );
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return errorResponse(
+        res,
+        API_STATUS.FAILED,
+        error.message,
+        error.statusCode
+      );
+    }
+
+    const dbError = error as DatabaseError;
+    appLogger.error(`Error create div pos: ${dbError}`);
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan server",
+      500
+    );
+  }
+};
 // ==========================================
 // 2. CONTROLLER UTAMA
 // ==========================================
@@ -591,7 +744,7 @@ export const destroyMasterPositions = async (
     const existing = (await getPositionById(id)) || null;
 
     const parentDivision = await getMasterDivisionsByCode(
-      existing.division_code
+      existing.division_code || ""
     );
 
     if (!parentDivision) {
