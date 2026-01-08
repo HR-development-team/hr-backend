@@ -6,6 +6,7 @@ export const API_STATUS = {
   UNAUTHORIZED: "04",
   CONFLICT: "05",
   BAD_REQUEST: "99",
+  FORBIDDEN: "06",
 };
 
 export const RESPONSE_DATA_KEYS = {
@@ -23,6 +24,7 @@ export const RESPONSE_DATA_KEYS = {
   PERMISSIONS: "role_permissions",
   AUTH: "auth",
   EMPLOYMENT_STATUS: "employment_status",
+  ORGANIZATION: "organization",
 
   // transaction Data
   ATTENDANCES: "attendances",

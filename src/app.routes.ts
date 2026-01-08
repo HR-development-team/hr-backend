@@ -20,7 +20,8 @@ import employmentStatusRoutes from "@modules/employee-status/status.routes.js";
 import employeePhotoRoutes from "@modules/employee_photos/employeePhoto.routes.js";
 import bankAccountRoutes from "@modules/bank-accounts/bank-account.routes.js";
 import bankRoutes from "@modules/banks/banks.routes.js";
-import orgResponsibilities from "@modules/org-responsibilities/org-responsibilities.routes.js";
+import orgResponsibilitiesRoutes from "@modules/org-responsibilities/org-responsibilities.routes.js";
+import organizationRoutes from "@modules/organization/organization.routes.js";
 
 // Employee Specific Routes
 import employeeAttendanceRoutes from "@modules/attendances/employee-attendance.routes.js";
@@ -47,7 +48,7 @@ router.use("/master-divisions", masterDivisionRoutes);
 router.use("/master-positions", masterPositionRoutes);
 router.use("/master-employees", masterEmployeeRoutes);
 router.use("/master-leave-types", masterLeaveTypeRoutes);
-router.use("/master-offices", masterOfficeRoutes);
+router.use("/master-offices", masterOfficeRoutes, organizationRoutes);
 router.use("/master-shifts", masterShiftRoutes);
 router.use("/bank-accounts", bankAccountRoutes);
 
@@ -67,7 +68,8 @@ router.use("/employment-status", employmentStatusRoutes);
 router.use("/employee-photos", employeePhotoRoutes);
 router.use("/bank-accounts", bankAccountRoutes);
 router.use("/master-banks", bankRoutes);
-router.use("/org-responsibilities", orgResponsibilities);
+router.use("/org-responsibilities", orgResponsibilitiesRoutes);
+router.use("/organization", organizationRoutes);
 
 // ==========================
 // ||   Employee Portal    ||

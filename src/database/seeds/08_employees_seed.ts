@@ -5,17 +5,6 @@ export async function seed(knex: Knex): Promise<void> {
   // 1. Bersihkan tabel
   await knex("master_employees").del();
 
-  // ==========================================================
-  // CONFIG & DATA REFERENSI
-  // ==========================================================
-
-  // Mapping Jabatan ke Kantor (Berdasarkan urutan di 04_positions_seed.ts)
-  // JBT01 - JBT20 = Kantor Pusat (OFC01)
-  // JBT21 - JBT40 = Kantor Cabang (OFC02)
-  const getOfficeByPosition = (posIndex: number) => {
-    return posIndex <= 20 ? "OFC0000001" : "OFC0000002";
-  };
-
   const employmentStatuses = [
     "EPS0000001", // Tetap
     "EPS0000002", // Kontrak
@@ -25,7 +14,7 @@ export async function seed(knex: Knex): Promise<void> {
   ];
 
   // ==========================================================
-  // 1. KARYAWAN UTAMA (HARDCODED) - 6 Orang
+  // 1. KARYAWAN UTAMA (HARDCODED) - JANGAN DIUBAH
   // ==========================================================
   const existingEmployees = [
     {
@@ -168,80 +157,97 @@ export async function seed(knex: Knex): Promise<void> {
     },
   ];
 
-  // Helper untuk menghitung berapa user yang sudah ada di posisi tertentu
-  const countByPosition = existingEmployees.reduce(
-    (acc, emp) => {
-      acc[emp.position_code] = (acc[emp.position_code] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  // ==========================================================
+  // 2. GENERATE DUMMY EMPLOYEES
+  // Target: 5 Karyawan per Kantor
+  // ==========================================================
 
-  // ==========================================================
-  // 2. GENERATE DUMMY (SISANYA)
-  // Target: 40 Posisi x 5 Orang = 200 Orang
-  // ==========================================================
+  const offices = [
+    "OFC0000001", // Pusat
+    "OFC0000002", // Cabang
+    "OFC0000003", // Unit Madiun
+    "OFC0000004", // Unit Malang
+    "OFC0000005", // Unit Kediri
+  ];
+
+  // Helper untuk menentukan range Jabatan (ID) per Kantor
+  // OFC1: JBT 1-20
+  // OFC2: JBT 21-40
+  // OFC3: JBT 41-60
+  // OFC4: JBT 61-80
+  // OFC5: JBT 81-100
+  const getPosRange = (officeIndex: number) => {
+    const start = officeIndex * 20 + 1;
+    const end = start + 19;
+    return { start, end };
+  };
+
   const dummyEmployees = [];
-  let employeeIdCounter = 8; // Mulai dari MR0008
+  let employeeIdCounter = 8; // Lanjutkan dari MR0008
 
-  // Loop untuk 40 posisi (JBT0000001 - JBT0000040)
-  for (let i = 1; i <= 40; i++) {
-    const positionCode = `JBT${i.toString().padStart(7, "0")}`;
-    const officeCode = getOfficeByPosition(i);
+  for (let i = 0; i < offices.length; i++) {
+    const officeCode = offices[i];
 
-    // Cek berapa yang sudah ada (hardcoded)
-    const currentCount = countByPosition[positionCode] || 0;
-    const targetCount = 5;
-    const needed = targetCount - currentCount;
+    // Hitung berapa karyawan yang SUDAH ADA di kantor ini
+    const existingCount = existingEmployees.filter(
+      (e) => e.office_code === officeCode
+    ).length;
 
-    // Generate kekurangan karyawan untuk posisi ini
-    for (let j = 0; j < needed; j++) {
-      const gender = faker.person.sexType();
+    // Hitung kekurangannya
+    const targetPerOffice = 5;
+    const needed = targetPerOffice - existingCount;
 
-      // Rotasi status karyawan supaya tidak random (1,2,3,4,5,1...)
-      // Menggunakan modulo untuk memilih status secara berurutan
-      const statusIndex = (i + j) % employmentStatuses.length;
-      const statusCode = employmentStatuses[statusIndex];
+    if (needed > 0) {
+      const { start, end } = getPosRange(i);
 
-      dummyEmployees.push({
-        employee_code: `MR${employeeIdCounter.toString().padStart(4, "0")}`,
-        user_code: null, // Kosongkan sesuai request
+      for (let j = 0; j < needed; j++) {
+        const gender = faker.person.sexType();
+        const statusIndex = employeeIdCounter % employmentStatuses.length;
 
-        position_code: positionCode,
-        office_code: officeCode,
-        employment_status_code: statusCode,
+        // Pilih Jabatan Random dalam range kantor tersebut
+        const randomPosId =
+          Math.floor(Math.random() * (end - start + 1)) + start;
+        const positionCode = `JBT${randomPosId.toString().padStart(7, "0")}`;
 
-        full_name: faker.person.fullName({ sex: gender }),
-        ktp_number: faker.string.numeric(16),
-        birth_place: faker.location.city(),
-        birth_date: faker.date
-          .birthdate({ min: 20, max: 50, mode: "age" })
-          .toISOString()
-          .split("T")[0],
-        gender: gender === "male" ? "laki-laki" : "perempuan",
-        address: faker.location.streetAddress(false),
-        contact_phone: faker.phone.number().replace(/^(\+62|62)/, "08"),
+        dummyEmployees.push({
+          employee_code: `MR${employeeIdCounter.toString().padStart(4, "0")}`,
+          user_code: null, // User code null untuk dummy
+          position_code: positionCode,
+          office_code: officeCode,
+          employment_status_code: employmentStatuses[statusIndex],
 
-        religion: faker.helpers.arrayElement([
-          "Islam",
-          "Kristen",
-          "Katolik",
-          "Hindu",
-          "Buddha",
-        ]),
-        maritial_status: faker.helpers.arrayElement(["Single", "Married"]),
-        join_date: faker.date.past({ years: 3 }).toISOString().split("T")[0],
+          full_name: faker.person.fullName({ sex: gender }),
+          ktp_number: faker.string.numeric(16),
+          birth_place: faker.location.city(),
+          birth_date: faker.date
+            .birthdate({ min: 20, max: 45, mode: "age" })
+            .toISOString()
+            .split("T")[0],
+          gender: gender === "male" ? "laki-laki" : "perempuan",
+          address: faker.location.streetAddress(false),
+          contact_phone: faker.phone.number().replace(/^(\+62|62)/, "08"),
 
-        education: faker.helpers.arrayElement(["SMA", "D3", "S1"]),
-        blood_type: faker.helpers.arrayElement(["A", "B", "O", "AB"]),
+          religion: faker.helpers.arrayElement([
+            "Islam",
+            "Kristen",
+            "Katolik",
+            "Hindu",
+            "Buddha",
+          ]),
+          maritial_status: faker.helpers.arrayElement(["Single", "Married"]),
+          join_date: faker.date.past({ years: 2 }).toISOString().split("T")[0],
 
-        bpjs_ketenagakerjaan: faker.string.numeric(11),
-        bpjs_kesehatan: faker.string.numeric(13),
-        npwp: faker.string.numeric(15),
-        // bank_account: faker.finance.accountName(),
-      });
+          education: faker.helpers.arrayElement(["SMA", "D3", "S1"]),
+          blood_type: faker.helpers.arrayElement(["A", "B", "O", "AB"]),
 
-      employeeIdCounter++;
+          bpjs_ketenagakerjaan: faker.string.numeric(11),
+          bpjs_kesehatan: faker.string.numeric(13),
+          npwp: faker.string.numeric(15),
+          // bank_account: faker.finance.accountName(),
+        });
+
+        employeeIdCounter++;
+      }
     }
   }
 
