@@ -48,7 +48,7 @@ export const getAllMasterEmployees = async (
     )
     .leftJoin(
       `${DEPARTMENT_TABLE}`,
-      `${DIVISION_TABLE}.department_code`,
+      `${POSITION_TABLE}.department_code`,
       `${DEPARTMENT_TABLE}.department_code`
     )
     .leftJoin(
@@ -216,7 +216,7 @@ export const getMasterEmployeesById = async (
     )
     .leftJoin(
       `${DEPARTMENT_TABLE}`,
-      `${DIVISION_TABLE}.department_code`,
+      `${POSITION_TABLE}.department_code`,
       `${DEPARTMENT_TABLE}.department_code`
     )
     .leftJoin(
@@ -274,7 +274,7 @@ export const getMasterEmployeesByCode = async (
     )
     .leftJoin(
       `${DEPARTMENT_TABLE}`,
-      `${DIVISION_TABLE}.department_code`,
+      `${POSITION_TABLE}.department_code`,
       `${DEPARTMENT_TABLE}.department_code`
     )
     .leftJoin(
