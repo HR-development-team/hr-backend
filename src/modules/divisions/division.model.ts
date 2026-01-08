@@ -3,7 +3,6 @@ import {
   DIVISION_TABLE,
   EMPLOYEE_TABLE,
   OFFICE_TABLE,
-  ORG_RESPONSIBILITIES_TABLE,
   POSITION_TABLE,
 } from "@constants/database.js";
 import { db } from "@database/connection.js";
@@ -47,25 +46,25 @@ export const getAllMasterDivision = async (
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
     )
-    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
-      join
-        .on(
-          `${DIVISION_TABLE}.division_code`,
-          "=",
-          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
-        )
-        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
-        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
-    })
-    .leftJoin(
-      `${EMPLOYEE_TABLE}`,
-      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.employee_code`
-    )
+    // .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+    //   join
+    //     .on(
+    //       `${DIVISION_TABLE}.division_code`,
+    //       "=",
+    //       `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+    //     )
+    //     .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
+    //     .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    // })
     .leftJoin(
       `${POSITION_TABLE}`,
-      `${EMPLOYEE_TABLE}.position_code`,
+      `${DIVISION_TABLE}.leader_position_code`,
       `${POSITION_TABLE}.position_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${POSITION_TABLE}.position_code`,
+      `${EMPLOYEE_TABLE}.position_code`
     );
 
   // 2. Security Scope (User Hierarchy)
@@ -115,7 +114,7 @@ export const getAllMasterDivision = async (
       `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
 
       // leader rolee
-      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+      // `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
 
       // leader position
       `${POSITION_TABLE}.name as leader_position`
@@ -161,7 +160,7 @@ export const getMasterDivisionsById = async (
       `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
 
       // leader rolee
-      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+      // `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
 
       // leader position
       `${POSITION_TABLE}.name as leader_position`
@@ -176,25 +175,25 @@ export const getMasterDivisionsById = async (
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
     )
-    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
-      join
-        .on(
-          `${DIVISION_TABLE}.division_code`,
-          "=",
-          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
-        )
-        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
-        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
-    })
-    .leftJoin(
-      `${EMPLOYEE_TABLE}`,
-      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.employee_code`
-    )
+    // .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+    //   join
+    //     .on(
+    //       `${DIVISION_TABLE}.division_code`,
+    //       "=",
+    //       `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+    //     )
+    //     .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
+    //     .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    // })
     .leftJoin(
       `${POSITION_TABLE}`,
-      `${EMPLOYEE_TABLE}.position_code`,
+      `${DIVISION_TABLE}.leader_position_code`,
       `${POSITION_TABLE}.position_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${POSITION_TABLE}.position_code`,
+      `${EMPLOYEE_TABLE}.position_code`
     )
     .where(`${DIVISION_TABLE}.id`, id)
     .first();
@@ -219,7 +218,7 @@ export const getMasterDivisionsByCode = async (
       `${EMPLOYEE_TABLE}.employee_code as leader_employee_code`,
 
       // leader rolee
-      `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
+      // `${ORG_RESPONSIBILITIES_TABLE}.role as leader_role`,
 
       // leader position
       `${POSITION_TABLE}.name as leader_position`
@@ -234,25 +233,25 @@ export const getMasterDivisionsByCode = async (
       `${DEPARTMENT_TABLE}.office_code`,
       `${OFFICE_TABLE}.office_code`
     )
-    .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
-      join
-        .on(
-          `${DIVISION_TABLE}.division_code`,
-          "=",
-          `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
-        )
-        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
-        .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
-    })
-    .leftJoin(
-      `${EMPLOYEE_TABLE}`,
-      `${ORG_RESPONSIBILITIES_TABLE}.employee_code`,
-      `${EMPLOYEE_TABLE}.employee_code`
-    )
+    // .leftJoin(`${ORG_RESPONSIBILITIES_TABLE}`, (join) => {
+    //   join
+    //     .on(
+    //       `${DIVISION_TABLE}.division_code`,
+    //       "=",
+    //       `${ORG_RESPONSIBILITIES_TABLE}.scope_code`
+    //     )
+    //     .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.scope_type`, "=", "division")
+    //     .andOnVal(`${ORG_RESPONSIBILITIES_TABLE}.is_active`, "=", 1);
+    // })
     .leftJoin(
       `${POSITION_TABLE}`,
-      `${EMPLOYEE_TABLE}.position_code`,
+      `${DIVISION_TABLE}.leader_position_code`,
       `${POSITION_TABLE}.position_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${POSITION_TABLE}.position_code`,
+      `${EMPLOYEE_TABLE}.position_code`
     )
     .where(`${DIVISION_TABLE}.division_code`, divisionCode)
     .first();
