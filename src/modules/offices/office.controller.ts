@@ -12,7 +12,8 @@ import {
   getAllOfficesOrganization,
   getMasterOfficeByCode,
   hasChildOffices,
-  getOfficeOptions, // Pastikan ini ada di office.model.ts Anda
+  getOfficeOptions,
+  isHeadOfficeExists,
 } from "./office.model.js";
 import {
   addMasterOfficeSchema,
@@ -264,24 +265,8 @@ export const createMasterOffice = async (
 ) => {
   try {
     const currentUser = req.user!;
-    const parentOfficeCode = req.body.parent_office_code;
 
-    if (parentOfficeCode) {
-      const isAllowed = await checkOfficeScope(
-        currentUser.office_code,
-        parentOfficeCode
-      );
-
-      if (!isAllowed) {
-        return errorResponse(
-          res,
-          API_STATUS.UNAUTHORIZED,
-          "Anda tidak memiliki akses ke induk kantor tersebut",
-          403
-        );
-      }
-    }
-
+    // 1. Validation
     const validation = addMasterOfficeSchema.safeParse(req.body);
 
     if (!validation.success) {
@@ -297,6 +282,42 @@ export const createMasterOffice = async (
       );
     }
 
+    const { parent_office_code } = validation.data;
+
+    // 2. Logic Check: Single Head Office
+    if (!parent_office_code) {
+      // Logic moved to Model
+      const exists = await isHeadOfficeExists();
+
+      if (exists) {
+        return errorResponse(
+          res,
+          API_STATUS.BAD_REQUEST,
+          "Kantor Pusat (Head Office) sudah ada. Kantor baru wajib memiliki Parent Office.",
+          400
+        );
+      }
+    }
+
+    // 3. Logic Check: Permission Scope
+    if (parent_office_code) {
+      // This uses your existing scope check utility
+      const isAllowed = await checkOfficeScope(
+        currentUser.office_code,
+        parent_office_code
+      );
+
+      if (!isAllowed) {
+        return errorResponse(
+          res,
+          API_STATUS.UNAUTHORIZED,
+          "Anda tidak memiliki akses ke induk kantor tersebut",
+          403
+        );
+      }
+    }
+
+    // 4. Insert Data
     const newOffice = await addMasterOffice(validation.data);
 
     return successResponse(
@@ -308,9 +329,8 @@ export const createMasterOffice = async (
       RESPONSE_DATA_KEYS.OFFICES
     );
   } catch (error) {
-    const dbError = error as DatabaseError;
+    const dbError = error as any;
 
-    // Handle Foreign Key Error (Parent Not Found)
     if (dbError.code === "ER_NO_REFERENCED_ROW_2" || dbError.errno === 1452) {
       return errorResponse(
         res,

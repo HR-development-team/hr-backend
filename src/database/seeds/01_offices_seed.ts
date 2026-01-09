@@ -26,41 +26,5 @@ export async function seed(knex: Knex): Promise<void> {
       sort_order: 2,
       description: "Branch Office Kota Besar",
     },
-    // 3. UNIT 1 (Child of Cabang Surabaya)
-    {
-      office_code: "OFC0000003",
-      name: "Kantor Unit Madiun",
-      address: "Jl. Pahlawan, Madiun",
-      latitude: -7.6298,
-      longitude: 111.5177,
-      radius_meters: 30,
-      parent_office_code: "OFC0000002",
-      sort_order: 3,
-      description: "Unit Operasional Madiun",
-    },
-    // 4. UNIT 2 (Child of Cabang Surabaya)
-    {
-      office_code: "OFC0000004",
-      name: "Kantor Unit Malang",
-      address: "Jl. Ijen, Malang",
-      latitude: -7.9666,
-      longitude: 112.6326,
-      radius_meters: 30,
-      parent_office_code: "OFC0000002",
-      sort_order: 4,
-      description: "Unit Operasional Malang",
-    },
-    // 5. UNIT 3 (Child of Cabang Surabaya)
-    {
-      office_code: "OFC0000005",
-      name: "Kantor Unit Kediri",
-      address: "Jl. Dhoho, Kediri",
-      latitude: -7.8485,
-      longitude: 112.0178,
-      radius_meters: 30,
-      parent_office_code: "OFC0000002",
-      sort_order: 5,
-      description: "Unit Operasional Kediri",
-    },
   ]);
 }

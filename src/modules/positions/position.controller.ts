@@ -7,7 +7,7 @@ import {
   getPositionById,
   getPositionByCode,
   checkPositionExists,
-  updatePosition, // <--- [FIX 1] Import ini tadi hilang
+  updatePosition,
   countEmployeesByPositionCode,
   countChildPositionsByCode,
   deletePositionById,
@@ -86,11 +86,14 @@ export const fetchPositionList = async (
 ) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 5;
+    const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || "";
+
+    // Filters
     const filterOffice = (req.query.office_code as string) || "";
     const filterDept = (req.query.department_code as string) || "";
     const filterDiv = (req.query.division_code as string) || "";
+    const filterScope = (req.query.scope as string) || "";
 
     const currentUser = req.user!;
 
@@ -101,7 +104,8 @@ export const fetchPositionList = async (
       search,
       filterOffice,
       filterDept,
-      filterDiv
+      filterDiv,
+      filterScope
     );
 
     return successResponse(

@@ -170,6 +170,16 @@ export const getOfficeOptions = async (
 };
 
 /**
+ * Head office check
+ */
+export const isHeadOfficeExists = async (): Promise<boolean> => {
+  const existingRoot = await db(OFFICE_TABLE)
+    .whereNull("parent_office_code")
+    .first();
+  return !!existingRoot; // Returns true if exists, false if not
+};
+
+/**
  * Get office by ID.
  */
 export const getMasterOfficeById = async (

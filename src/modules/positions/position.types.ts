@@ -19,6 +19,7 @@ export interface GetAllPosition
   department_code: string;
   department_name: string;
   division_name: string;
+  scope: "Office Lead" | "Department Lead" | "Division Lead" | "Staff";
 }
 
 export interface GetAllPositionResponse {
@@ -40,6 +41,7 @@ export interface GetPositionById extends Position {
 }
 
 export interface CreatePosition {
+  office_code: string | null;
   division_code: string | null;
   department_code: string | null;
   parent_position_code: string | null;

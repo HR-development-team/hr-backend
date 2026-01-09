@@ -77,6 +77,56 @@ export const getPositionsByOffice = async (
 };
 
 /**
+ * Get basic office info (parent, name, and current leader)
+ */
+export const getOfficeHierarchyInfo = async (officeCode: string) => {
+  return await db(OFFICE_TABLE)
+    .where("office_code", officeCode)
+    .select("office_code", "parent_office_code", "name", "leader_position_code")
+    .first();
+};
+
+/**
+ * Get Department info for hierarchy validation
+ */
+export const getDepartmentHierarchyInfo = async (departmentCode: string) => {
+  return await db(DEPARTMENT_TABLE)
+    .where("department_code", departmentCode)
+    .select(
+      "department_code",
+      "name",
+      "office_code",
+      "leader_position_code" // To check if leader already exists
+    )
+    .first();
+};
+
+/**
+ * Get Division info for hierarchy validation
+ */
+export const getDivisionHierarchyInfo = async (divisionCode: string) => {
+  return await db(DIVISION_TABLE)
+    .where("division_code", divisionCode)
+    .select(
+      "division_code",
+      "name",
+      "department_code",
+      "leader_position_code" // To check if leader already exists
+    )
+    .first();
+};
+
+/**
+ * Get Parent Office details specifically for hierarchy checks
+ */
+export const getParentOffice = async (parentOfficeCode: string) => {
+  return await db(OFFICE_TABLE)
+    .where("office_code", parentOfficeCode)
+    .select("office_code", "name", "leader_position_code")
+    .first();
+};
+
+/**
  * 3. Ambil List Jabatan (Bisa filter by Office Code)
  */
 export const getAllPositions = async (
@@ -86,26 +136,40 @@ export const getAllPositions = async (
   search: string,
   filterOffice: string,
   filterDept: string,
-  filterDiv: string
+  filterDiv: string,
+  filterScope:
+    | "office_lead"
+    | "department_lead"
+    | "division_lead"
+    | "staff"
+    | string
 ): Promise<GetAllPositionResponse> => {
   const offset = (page - 1) * limit;
 
   const query = db(POSITION_TABLE)
     .leftJoin(
+      `${OFFICE_TABLE}`,
+      `${POSITION_TABLE}.office_code`,
+      `${OFFICE_TABLE}.office_code`
+    )
+    .leftJoin(
       `${DIVISION_TABLE}`,
       `${POSITION_TABLE}.division_code`,
       `${DIVISION_TABLE}.division_code`
     )
-    .leftJoin(
-      `${DEPARTMENT_TABLE}`,
-      `${DIVISION_TABLE}.department_code`,
-      `${DEPARTMENT_TABLE}.department_code`
-    )
-    .leftJoin(
-      `${OFFICE_TABLE}`,
-      `${DEPARTMENT_TABLE}.office_code`,
-      `${OFFICE_TABLE}.office_code`
-    )
+    .leftJoin(`${DEPARTMENT_TABLE}`, (join) => {
+      join
+        .on(
+          `${DEPARTMENT_TABLE}.department_code`,
+          "=",
+          `${POSITION_TABLE}.department_code`
+        )
+        .orOn(
+          `${DEPARTMENT_TABLE}.department_code`,
+          "=",
+          `${DIVISION_TABLE}.department_code`
+        );
+    })
     .leftJoin(
       `${POSITION_TABLE} as parent_pos`,
       `${POSITION_TABLE}.parent_position_code`,
@@ -115,8 +179,7 @@ export const getAllPositions = async (
   if (userOfficeCode) {
     const allowedOfficesSubquery =
       officeHierarchyQuery(userOfficeCode).select("office_code");
-
-    query.whereIn(`${DEPARTMENT_TABLE}.office_code`, allowedOfficesSubquery);
+    query.whereIn(`${POSITION_TABLE}.office_code`, allowedOfficesSubquery);
   }
 
   if (search) {
@@ -127,19 +190,79 @@ export const getAllPositions = async (
     });
   }
 
-  if (filterOffice) {
-    // We filter on the Department table's office_code column as it links to the Division
-    query.andWhere(`${DEPARTMENT_TABLE}.office_code`, filterOffice);
-  }
-
+  if (filterOffice)
+    query.andWhere(`${POSITION_TABLE}.office_code`, filterOffice);
   if (filterDept) {
-    // We filter on the Division table's department_code column (or Department table directly)
-    query.andWhere(`${DIVISION_TABLE}.department_code`, filterDept);
+    query.where((builder) => {
+      builder
+        .where(`${POSITION_TABLE}.department_code`, filterDept)
+        .orWhere(`${DIVISION_TABLE}.department_code`, filterDept);
+    });
   }
+  if (filterDiv) query.andWhere(`${POSITION_TABLE}.division_code`, filterDiv);
 
-  if (filterDiv) {
-    // Updated to use strict equality for code matching (safer than LIKE for codes)
-    query.andWhere(`${POSITION_TABLE}.division_code`, filterDiv);
+  if (filterScope) {
+    switch (filterScope) {
+      case "office_lead":
+        query.whereRaw(
+          `${OFFICE_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code`
+        );
+        break;
+
+      case "department_lead":
+        // Must be Dept Leader AND NOT Office Leader (to avoid duplicates if someone holds both)
+        query.where((builder) => {
+          builder
+            .whereRaw(
+              `${DEPARTMENT_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code`
+            )
+            .andWhereRaw(
+              `${OFFICE_TABLE}.leader_position_code != ${POSITION_TABLE}.position_code` // Priority Check
+            );
+        });
+        break;
+
+      case "division_lead":
+        // Must be Div Leader AND NOT Office/Dept Leader
+        query.where((builder) => {
+          builder
+            .whereRaw(
+              `${DIVISION_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code`
+            )
+            .andWhereRaw(
+              `${OFFICE_TABLE}.leader_position_code != ${POSITION_TABLE}.position_code`
+            )
+            .andWhereRaw(
+              `${DEPARTMENT_TABLE}.leader_position_code != ${POSITION_TABLE}.position_code`
+            );
+        });
+        break;
+
+      case "staff":
+        // Must NOT be any leader
+        query.where((builder) => {
+          builder
+            .whereRaw(
+              `${OFFICE_TABLE}.leader_position_code != ${POSITION_TABLE}.position_code`
+            )
+            .orWhereNull(`${OFFICE_TABLE}.leader_position_code`);
+        });
+        query.where((builder) => {
+          builder
+            .whereRaw(
+              `${DEPARTMENT_TABLE}.leader_position_code != ${POSITION_TABLE}.position_code`
+            )
+            .orWhereNull(`${DEPARTMENT_TABLE}.leader_position_code`);
+        });
+        query.where((builder) => {
+          builder
+            .whereRaw(
+              `${DIVISION_TABLE}.leader_position_code != ${POSITION_TABLE}.position_code`
+            )
+            .orWhereNull(`${DIVISION_TABLE}.leader_position_code`);
+        });
+        break;
+    }
   }
 
   const countQuery = query
@@ -157,9 +280,30 @@ export const getAllPositions = async (
       `${DEPARTMENT_TABLE}.department_code`,
       `${DIVISION_TABLE}.name as division_name`,
       `${DIVISION_TABLE}.division_code`,
-      "parent_pos.name as parent_position_name"
+      "parent_pos.name as parent_position_name",
+      // Scope Calculation
+      db.raw(`
+        CASE
+          WHEN ${OFFICE_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code THEN 'Office Lead'
+          WHEN ${DEPARTMENT_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code THEN 'Department Lead'
+          WHEN ${DIVISION_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code THEN 'Division Lead'
+          ELSE 'Staff'
+        END as scope
+      `)
+    )
+    // Priority Sorting
+    .orderByRaw(
+      `
+      CASE
+        WHEN ${OFFICE_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code THEN 0
+        WHEN ${DEPARTMENT_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code THEN 1
+        WHEN ${DIVISION_TABLE}.leader_position_code = ${POSITION_TABLE}.position_code THEN 2
+        ELSE 3
+      END ASC
+    `
     )
     .orderBy(`${POSITION_TABLE}.sort_order`, "asc")
+    .orderBy(`${POSITION_TABLE}.position_code`, "asc")
     .limit(limit)
     .offset(offset);
 
@@ -170,12 +314,7 @@ export const getAllPositions = async (
 
   return {
     data,
-    meta: {
-      page,
-      limit,
-      total,
-      total_page: totalPage,
-    },
+    meta: { page, limit, total, total_page: totalPage },
   };
 };
 
@@ -362,27 +501,19 @@ export const getPositionOptions = async (
 export const addMasterPosition = async (
   data: CreatePosition
 ): Promise<Position> => {
-  const {
-    parent_position_code,
-    division_code,
-    department_code,
-    name,
-    base_salary,
-    description,
-  } = data;
-
   const position_code = await generateNextPositionCode();
   const sort_order = await positionSortOrder();
 
   const [id] = await db(POSITION_TABLE).insert({
     position_code,
-    division_code: division_code || null,
-    department_code: department_code || null,
-    parent_position_code,
-    name,
-    base_salary,
+    office_code: data.office_code, // Just insert what the Service sent
+    division_code: data.division_code || null,
+    department_code: data.department_code || null,
+    parent_position_code: data.parent_position_code || null,
+    name: data.name,
+    base_salary: data.base_salary,
     sort_order,
-    description,
+    description: data.description,
   });
 
   return await db(POSITION_TABLE).where("id", id).first();
