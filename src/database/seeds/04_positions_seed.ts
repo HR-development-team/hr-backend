@@ -237,4 +237,35 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("master_offices")
     .where("office_code", "OFC0000002")
     .update({ leader_position_code: "JBT0000002" });
+
+  // B. Department Leaders
+  await knex("master_departments")
+    .where("department_code", "DPT0100001")
+    .update({ leader_position_code: "JBT0000003" });
+  await knex("master_departments")
+    .where("department_code", "DPT0100002")
+    .update({ leader_position_code: "JBT0000008" });
+  await knex("master_departments")
+    .where("department_code", "DPT0200001")
+    .update({ leader_position_code: "JBT0000021" });
+  await knex("master_departments")
+    .where("department_code", "DPT0200002")
+    .update({ leader_position_code: "JBT0000025" });
+
+  // C. DIVISION LEADERS
+  const divLeaders = [
+    { division_code: "DIV0101001", leader: "JBT0000004" }, // Soft Eng
+    { division_code: "DIV0101002", leader: "JBT0000006" }, // Infra
+    { division_code: "DIV0102001", leader: "JBT0000009" }, // Recruitment
+    { division_code: "DIV0102002", leader: "JBT0000011" }, // L&D
+    { division_code: "DIV0201001", leader: "JBT0000022" }, // B2B Sales
+    { division_code: "DIV0201002", leader: "JBT0000023" }, // Direct Sales
+    { division_code: "DIV0202001", leader: "JBT0000026" }, // Digital
+    { division_code: "DIV0202002", leader: "JBT0000027" }, // Events
+  ];
+  for (const item of divLeaders) {
+    await knex("master_divisions")
+      .where("division_code", item.division_code)
+      .update({ leader_position_code: item.leader });
+  }
 }
