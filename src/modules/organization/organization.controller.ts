@@ -2,7 +2,10 @@ import { API_STATUS, RESPONSE_DATA_KEYS } from "@common/constants/general.js";
 import { AuthenticatedRequest } from "@common/types/auth.type.js";
 import { errorResponse, successResponse } from "@common/utils/response.js";
 import { Response } from "express";
-import { getOrgStructureService } from "./organization.service.js";
+import {
+  getOfficeStructureService,
+  getOrgStructureService,
+} from "./organization.service.js";
 import { DatabaseError } from "@common/types/error.types.js";
 import { appLogger } from "@common/utils/logger.js";
 import { officeHierarchyQuery } from "@modules/offices/office.helper.js";
@@ -52,6 +55,40 @@ export const fetchOrganizationStructure = async (
     const dbError = error as DatabaseError;
     appLogger.error(`Error fetching office hierarchy: ${dbError}`);
 
+    return errorResponse(
+      res,
+      API_STATUS.FAILED,
+      "Terjadi kesalahan server",
+      500
+    );
+  }
+};
+
+/**
+ * [GET] /organization/offices/structure
+ * Returns the global office hierarchy tree
+ */
+export const fetchOfficeStructure = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    // You might want to check user permissions here if needed
+    // const currentUser = req.user!;
+
+    const data = await getOfficeStructureService();
+
+    return successResponse(
+      res,
+      API_STATUS.SUCCESS,
+      "Data Hierarki Kantor Berhasil Didapatkan",
+      data, // Returns the tree array
+      200,
+      RESPONSE_DATA_KEYS.ORGANIZATION // Or a new key like 'OFFICE_STRUCTURE'
+    );
+  } catch (error) {
+    const dbError = error as DatabaseError;
+    appLogger.error(`Error fetching office hierarchy: ${dbError}`);
     return errorResponse(
       res,
       API_STATUS.FAILED,

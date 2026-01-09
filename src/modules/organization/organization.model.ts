@@ -10,6 +10,7 @@ import {
   DepartmentNode,
   DivisionNode,
   OfficeNode,
+  OfficeHierarchyNode,
 } from "./organization.type.js";
 
 /**
@@ -148,4 +149,35 @@ export const getPositionsByScope = async (officeCode: string[]) => {
     )
     .whereIn(`${POSITION_TABLE}.office_code`, officeCode) // Optimization: Use position's own office_code
     .orderBy(`${POSITION_TABLE}.name`, "asc");
+};
+
+/**
+ * Fetch all offices with leader details for hierarchy construction
+ */
+export const getAllOfficesWithLeaders = async (): Promise<
+  OfficeHierarchyNode[]
+> => {
+  return await db(OFFICE_TABLE)
+    .select(
+      `${OFFICE_TABLE}.id`,
+      `${OFFICE_TABLE}.office_code`,
+      `${OFFICE_TABLE}.parent_office_code`,
+      `${OFFICE_TABLE}.name`,
+      `${OFFICE_TABLE}.address`,
+      `${OFFICE_TABLE}.description`,
+      // Leader Info
+      `${POSITION_TABLE}.name as leader_position_name`,
+      `${EMPLOYEE_TABLE}.full_name as leader_employee_name`
+    )
+    .leftJoin(
+      `${POSITION_TABLE}`,
+      `${OFFICE_TABLE}.leader_position_code`,
+      `${POSITION_TABLE}.position_code`
+    )
+    .leftJoin(
+      `${EMPLOYEE_TABLE}`,
+      `${POSITION_TABLE}.position_code`,
+      `${EMPLOYEE_TABLE}.position_code`
+    )
+    .orderBy(`${OFFICE_TABLE}.sort_order`, "asc");
 };

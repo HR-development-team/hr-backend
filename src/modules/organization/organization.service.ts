@@ -1,4 +1,7 @@
-import { buildOrganizationTree } from "./organization.helper.js";
+import {
+  buildOfficeTree,
+  buildOrganizationTree,
+} from "./organization.helper.js";
 import * as OrgModel from "./organization.model.js";
 import { OrganizationNode } from "./organization.type.js";
 
@@ -25,6 +28,18 @@ export const getOrgStructureService = async (
     divisions,
     positions
   );
+
+  return treeData;
+};
+
+/**
+ * Get Global Office Hierarchy (Head Office -> Branches)
+ */
+export const getOfficeStructureService = async (): Promise<
+  OrganizationNode[]
+> => {
+  const offices = await OrgModel.getAllOfficesWithLeaders();
+  const treeData = buildOfficeTree(offices);
 
   return treeData;
 };

@@ -5,7 +5,6 @@ import {
   fetchOfficeList,
   fetchMasterOfficeById,
   updateMasterOffice,
-  fetchOrganizationTree,
   fetchMasterOfficeByCode,
   fetchOfficeOptions,
 } from "./office.controller.js";
@@ -17,14 +16,6 @@ const router = Router();
 router.use(authMiddleware);
 
 const OFFICE_FEATURE = FEATURES.OFFICE_MANAGEMENT;
-
-// 1. Organization Tree (WAJIB PALING ATAS)
-// Agar tidak tertangkap oleh /:id
-router.get(
-  "/organization",
-  checkPermission(OFFICE_FEATURE, PERMISSIONS.READ),
-  fetchOrganizationTree
-);
 
 // 2. Pagination List
 router.get(

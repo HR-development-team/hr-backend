@@ -3,16 +3,31 @@ export interface OrganizationNode {
   type: "office" | "department" | "division" | "position";
   label: string;
   expanded: boolean;
-  data?: unknown;
+  data: any;
   children: OrganizationNode[];
+}
+
+export interface OfficeHierarchyRow {
+  id: number;
+  office_code: string;
+  parent_office_code: string | null;
+  name: string;
+  address: string;
+  description: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  leader_position_name: string | null;
+  leader_employee_name: string | null;
 }
 
 export interface OfficeNode {
   id: number;
   office_code: string;
   name: string;
-  parent_office_code: string;
   address: string;
+  description: string | null;
+  leader_position_name: string | null;
+  leader_employee_name: string | null;
 }
 
 export interface DepartmentNode {
@@ -20,7 +35,9 @@ export interface DepartmentNode {
   department_code: string;
   office_code: string;
   name: string;
-  description: string;
+  description: string | null;
+  leader_position_name: string | null;
+  leader_employee_name: string | null;
 }
 
 export interface DivisionNode {
@@ -28,7 +45,9 @@ export interface DivisionNode {
   department_code: string;
   division_code: string;
   name: string;
-  description: string;
+  description: string | null;
+  leader_position_name: string | null;
+  leader_employee_name: string | null;
 }
 
 export interface PositionNode {
@@ -36,6 +55,19 @@ export interface PositionNode {
   position_code: string;
   division_code: string | null;
   name: string;
-  employee_name: string;
-  employee_code: string;
+  employee_name: string | null;
+  employee_code: string | null;
+}
+
+export interface OfficeHierarchyNode {
+  id: number;
+  office_code: string;
+  parent_office_code: string | null;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  description: string | null;
+  leader_position_name: string | null;
+  leader_employee_name: string | null;
 }
