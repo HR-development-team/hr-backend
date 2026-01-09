@@ -326,32 +326,49 @@ export const getPositionById = async (id: number): Promise<GetPositionById> => {
     .select(
       "pos.*",
       "parent.name as parent_position_name",
+
+      // Office Info
       "ofc.name as office_name",
       "ofc.office_code",
+
+      // Dept Info
       "dept.name as department_name",
       "dept.department_code",
+
+      // Division Info
       "div.name as division_name",
-      "div.division_code"
+      "div.division_code",
+
+      // Scope Calculation (Consistent with List View)
+      db.raw(`
+        CASE
+          WHEN ofc.leader_position_code = pos.position_code THEN 'Office Lead'
+          WHEN dept.leader_position_code = pos.position_code THEN 'Department Lead'
+          WHEN div.leader_position_code = pos.position_code THEN 'Division Lead'
+          ELSE 'Staff'
+        END as scope
+      `)
     )
+    // 1. Join Parent Position
     .leftJoin(
       `${POSITION_TABLE} as parent`,
       "pos.parent_position_code",
       "parent.position_code"
     )
-    // 2. Join Division
+    // 2. Direct Join to Office (Every position has an office_code now)
+    .leftJoin(`${OFFICE_TABLE} as ofc`, "pos.office_code", "ofc.office_code")
+    // 3. Direct Join to Department (Nullable)
+    .leftJoin(
+      `${DEPARTMENT_TABLE} as dept`,
+      "pos.department_code",
+      "dept.department_code"
+    )
+    // 4. Direct Join to Division (Nullable)
     .leftJoin(
       `${DIVISION_TABLE} as div`,
       "pos.division_code",
       "div.division_code"
     )
-    // 3. Join Department
-    .leftJoin(
-      `${DEPARTMENT_TABLE} as dept`,
-      "div.department_code",
-      "dept.department_code"
-    )
-    // 4. Join Office
-    .leftJoin(`${OFFICE_TABLE} as ofc`, "dept.office_code", "ofc.office_code")
     .where("pos.id", id)
     .first();
 };

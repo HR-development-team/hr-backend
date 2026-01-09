@@ -745,40 +745,7 @@ export const destroyMasterPositions = async (
       );
     }
 
-    const existing = (await getPositionById(id)) || null;
-
-    const parentDivision = await getMasterDivisionsByCode(
-      existing.division_code || ""
-    );
-
-    if (!parentDivision) {
-      return errorResponse(
-        res,
-        API_STATUS.NOT_FOUND,
-        "Divisi tidak ditemukan",
-        404
-      );
-    }
-
-    const parentDepartment = await getMasterDepartmentByCode(
-      parentDivision.department_code
-    );
-
-    const hasAccess = await checkOfficeScope(
-      currentUser.office_code,
-      parentDepartment.office_code || ""
-    );
-
-    if (!hasAccess) {
-      return errorResponse(
-        res,
-        API_STATUS.UNAUTHORIZED,
-        "Anda tidak memiliki wewenang untuk menghapus jabatan dari divisi ini",
-        403
-      );
-    }
-
-    const existingPosition = await getPositionById(positionId);
+    const existingPosition = await getPositionById(id);
     if (!existingPosition) {
       return errorResponse(
         res,
@@ -788,16 +755,39 @@ export const destroyMasterPositions = async (
       );
     }
 
+    const hasAccess = await checkOfficeScope(
+      currentUser.office_code,
+      existingPosition.office_code
+    );
+
+    if (!hasAccess) {
+      return errorResponse(
+        res,
+        API_STATUS.UNAUTHORIZED,
+        "Anda tidak memiliki wewenang untuk menghapus jabatan dari kantor/unit ini",
+        403
+      );
+    }
+
     const positionCode = existingPosition.position_code;
 
     const employeeCount = await countEmployeesByPositionCode(positionCode);
     const childCount = await countChildPositionsByCode(positionCode);
 
-    if (employeeCount > 0 || childCount > 0) {
+    if (employeeCount > 0) {
       return errorResponse(
         res,
         API_STATUS.CONFLICT,
-        "Tidak dapat menghapus jabatan yang memiliki karyawan terasosiasi atau posisi bawahan",
+        "Gagal hapus: Masih ada karyawan yang menjabat posisi ini.",
+        409
+      );
+    }
+
+    if (childCount > 0) {
+      return errorResponse(
+        res,
+        API_STATUS.CONFLICT,
+        "Gagal hapus: Posisi ini masih menjadi atasan (Parent) bagi posisi lain.",
         409
       );
     }
