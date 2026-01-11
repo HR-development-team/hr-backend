@@ -7,8 +7,7 @@ import {
 import { db } from "@database/connection.js";
 import { HOLIDAY_TABLE } from "@common/constants/database.js";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
-
-const TIMEZONE = "Asia/Jakarta";
+import { TIMEZONE } from "@common/constants/general.js";
 
 const safeDateFormat = (dateValue: string | Date | null): string => {
   if (!dateValue) {

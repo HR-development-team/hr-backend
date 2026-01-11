@@ -68,3 +68,5 @@ export const PERMISSIONS = {
   DELETE: "can_delete",
   PRINT: "can_print",
 };
+
+export const TIMEZONE = "Asia/Jakarta";
