@@ -16,14 +16,11 @@ import {
   calculateShiftTimes,
   parseWorkDays,
 } from "./attendance.helper.js";
-import {
-  differenceInMinutes,
-  format,
-  getDay,
-  isAfter,
-  isBefore,
-} from "date-fns";
+import { differenceInMinutes, getDay, isAfter, isBefore } from "date-fns";
 import { getHolidayDateAndOffice } from "@modules/holidays/holidays.model.js";
+import { appLogger } from "@common/utils/logger.js";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { TIMEZONE } from "@common/constants/general.js";
 
 export const processCheckIn = async (
   trx: Knex.Transaction,
@@ -32,8 +29,10 @@ export const processCheckIn = async (
   userLong: number
 ): Promise<CheckInResult> => {
   const now = new Date();
-  const todayStr = format(now, "yyyy-MM-dd");
-  const currentDayIndex = getDay(now);
+  const todayStr = formatInTimeZone(now, TIMEZONE, "yyyy-MM-dd");
+
+  const nowWIB = toZonedTime(now, TIMEZONE);
+  const currentDayIndex = getDay(nowWIB);
 
   const existingAttendance = await getAttendanceByDate(employeeCode, todayStr);
 
@@ -85,8 +84,8 @@ export const processCheckIn = async (
     return {
       success: false,
       statusCode: 400,
-      message: `Sesi belum dibuka. Absen mulai pukul ${format(openGateTime, "HH:mm")}`,
-      data: [{ open_time: format(openGateTime, "HH:mm") }],
+      message: `Sesi belum dibuka. Absen mulai pukul ${formatInTimeZone(openGateTime, TIMEZONE, "HH:mm")}`,
+      data: [{ open_time: formatInTimeZone(openGateTime, TIMEZONE, "HH:mm") }],
     };
   }
 
@@ -121,7 +120,7 @@ export const processCheckIn = async (
 
     const MAX_RADIUS = employeeData.radius_meters || 100;
 
-    console.log(
+    appLogger.info(
       `[GEO] User Dist: ${distanceMeters.toFixed(2)}m | Max: ${MAX_RADIUS}m`
     );
 
@@ -150,10 +149,10 @@ export const processCheckIn = async (
     message: message,
     data: [
       {
-        shift_start: format(shiftStartTime, "HH:mm"),
-        late_threshold: format(lateThresholdTime, "HH:mm"),
-        check_in_deadline: format(closedGateTime, "HH:mm"),
-        server_time: format(now, "HH:mm:ss"),
+        shift_start: formatInTimeZone(shiftStartTime, TIMEZONE, "HH:mm"),
+        late_threshold: formatInTimeZone(lateThresholdTime, TIMEZONE, "HH:mm"),
+        check_in_deadline: formatInTimeZone(closedGateTime, TIMEZONE, "HH:mm"),
+        server_time: formatInTimeZone(now, TIMEZONE, "HH:mm:ss"),
         status_prediction: attendanceStatus,
         late_minutes: lateMinutes,
       },
@@ -201,7 +200,7 @@ export const processCheckOut = async (
 
     const MAX_RADIUS = employeeData.radius_meters || 100;
 
-    console.log(
+    appLogger.info(
       `[GEO] User Dist: ${distanceMeters.toFixed(2)}m | Max: ${MAX_RADIUS}m`
     );
 
@@ -242,9 +241,9 @@ export const processCheckOut = async (
     statusCode: 200,
     message: "Berhasil Check-Out",
     data: {
-      shift_end: format(shiftEndTime, "HH:mm"),
+      shift_end: formatInTimeZone(shiftEndTime, TIMEZONE, "HH:mm"),
       attendance_code: activeAttendance.attendance_code,
-      check_out_time: format(now, "HH:mm"),
+      check_out_time: formatInTimeZone(now, TIMEZONE, "HH:mm"),
       status: checkOutStatus,
       overTime_minutes: overTimeMinutes,
     },
@@ -255,7 +254,7 @@ export const getDailyAttendanceStatusService = async (
   employeeCode: string
 ): Promise<AttendanceUIState> => {
   const now = new Date();
-  const todayStr = format(now, "yyyy-MM-dd");
+  const todayStr = formatInTimeZone(now, TIMEZONE, "yyyy-MM-dd");
 
   const [employeeData, existingAttendance] = await Promise.all([
     getEmployeeShift(employeeCode),
@@ -268,7 +267,7 @@ export const getDailyAttendanceStatusService = async (
     button_variant: "disabled",
     can_check_in: false,
     can_check_out: false,
-    server_time: format(now, "HH:mm:ss"),
+    server_time: formatInTimeZone(now, TIMEZONE, "HH:mm:ss"),
     shift_detail: {
       name: "-",
       start: "-",
@@ -289,7 +288,7 @@ export const getDailyAttendanceStatusService = async (
     name: employeeData.shift_name || "Regular",
     start: employeeData.start_time,
     end: employeeData.end_time,
-    open_at: format(shiftTimes.openGateTime, "HH:mm"),
+    open_at: formatInTimeZone(shiftTimes.openGateTime, TIMEZONE, "HH:mm"),
   };
 
   if (existingAttendance && !existingAttendance.check_out_time) {
@@ -314,7 +313,7 @@ export const getDailyAttendanceStatusService = async (
       uiState.can_check_in = false;
       uiState.button_label = "Belum Dibuka";
       uiState.button_variant = "disabled";
-      uiState.status_message = `Absen dibuka pukul ${format(shiftTimes.openGateTime, "HH:mm")}`;
+      uiState.status_message = `Absen dibuka pukul ${formatInTimeZone(shiftTimes.openGateTime, TIMEZONE, "HH:mm")}`;
     }
     // C2. Shift Sudah Berakhir
     else if (isAfter(now, shiftTimes.closedGateTime)) {
@@ -331,7 +330,7 @@ export const getDailyAttendanceStatusService = async (
       if (isAfter(now, shiftTimes.lateThresholdTime)) {
         uiState.button_label = "Check In (Telat)";
         uiState.button_variant = "warning";
-        uiState.status_message = `Anda terlambat! Toleransi habis pukul ${format(shiftTimes.lateThresholdTime, "HH:mm")}`;
+        uiState.status_message = `Anda terlambat! Toleransi habis pukul ${formatInTimeZone(shiftTimes.lateThresholdTime, TIMEZONE, "HH:mm")}`;
       } else {
         uiState.button_label = "Check In";
         uiState.button_variant = "primary";
