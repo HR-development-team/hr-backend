@@ -1,11 +1,4 @@
-import {
-  addDays,
-  addMinutes,
-  format,
-  isBefore,
-  set,
-  subMinutes,
-} from "date-fns";
+import { addDays, addMinutes, isBefore, subMinutes } from "date-fns";
 import {
   GetAllAttendance,
   GetEmployeeShift,
@@ -13,6 +6,9 @@ import {
 } from "./attendance.types.js";
 import { db } from "@database/connection.js";
 import { HOLIDAY_TABLE } from "@common/constants/database.js";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+
+const TIMEZONE = "Asia/Jakarta";
 
 const safeDateFormat = (dateValue: string | Date | null): string => {
   if (!dateValue) {
@@ -34,7 +30,7 @@ const safeDateFormat = (dateValue: string | Date | null): string => {
     return "-";
   }
 
-  return format(dateObj, "yyyy-MM-dd HH:mm:ss");
+  return formatInTimeZone(dateObj, TIMEZONE, "yyyy-MM-dd HH:mm:ss");
 };
 
 export const toAttendanceSimpleResponse = (
@@ -49,7 +45,7 @@ export const toAttendanceSimpleResponse = (
   check_out_status: attendance.check_out_status,
   employee_name: attendance.employee_name,
   shift_code: attendance.shift_code,
-  date: format(attendance.date, "yyyy-MM-dd"),
+  date: formatInTimeZone(attendance.date, TIMEZONE, "yyyy-MM-dd"),
   late_minutes: attendance.late_minutes,
   overtime_minutes: attendance.overtime_minutes,
 });
@@ -58,22 +54,30 @@ export const calculateShiftTimes = (
   now: Date,
   shiftData: GetEmployeeShift
 ): ShiftTimes => {
-  const [startHours, startMinutes] = shiftData.start_time.split(":");
-  const shiftStartTime = set(now, {
-    hours: parseInt(startHours),
-    minutes: parseInt(startMinutes),
-    seconds: 0,
-    milliseconds: 0,
-  });
+  const todayWIBStr = formatInTimeZone(now, TIMEZONE, "yyyy-MM-dd");
 
-  const [endHours, endMinutes] = shiftData.end_time.split(":");
+  const startDateTimeStr = `${todayWIBStr} ${shiftData.start_time}:00`;
+  const endDateTimeStr = `${todayWIBStr} ${shiftData.end_time}:00`;
 
-  let shiftEndTime = set(now, {
-    hours: parseInt(endHours),
-    minutes: parseInt(endMinutes),
-    seconds: 0,
-    milliseconds: 0,
-  });
+  const shiftStartTime = fromZonedTime(startDateTimeStr, TIMEZONE);
+  let shiftEndTime = fromZonedTime(endDateTimeStr, TIMEZONE);
+
+  // const [startHours, startMinutes] = shiftData.start_time.split(":");
+  // const shiftStartTime = set(now, {
+  //   hours: parseInt(startHours),
+  //   minutes: parseInt(startMinutes),
+  //   seconds: 0,
+  //   milliseconds: 0,
+  // });
+
+  // const [endHours, endMinutes] = shiftData.end_time.split(":");
+
+  // let shiftEndTime = set(now, {
+  //   hours: parseInt(endHours),
+  //   minutes: parseInt(endMinutes),
+  //   seconds: 0,
+  //   milliseconds: 0,
+  // });
 
   if (isBefore(shiftEndTime, shiftStartTime)) {
     shiftEndTime = addDays(shiftEndTime, 1);
