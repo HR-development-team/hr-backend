@@ -5,7 +5,7 @@ import { setResponseHeader } from "@middleware/set-headers.js";
 import { corsOptions } from "@config/cors.js";
 import router from "./app.routes.js";
 import cookieParser from "cookie-parser";
-import { runAutoAlphoJob } from "./jobs/auto-alpha/autoAlpha.job.js";
+import { runAutoAlphoJob } from "./modules/jobs/auto-alpha/autoAlpha.job.js";
 
 const app: Application = express();
 

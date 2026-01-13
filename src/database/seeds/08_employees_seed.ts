@@ -135,7 +135,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       employee_code: "MR0007",
       user_code: "USR0000007",
-      position_code: "JBT0000004",
+      position_code: "JBT0000005",
       office_code: "OFC0000002",
       employment_status_code: "EPS0000003",
       full_name: "Eko Prasetyo",
